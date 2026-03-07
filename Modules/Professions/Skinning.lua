@@ -35,6 +35,48 @@ local function Initialize()
     Module:RegisterChatCommand("skinning", "HandleSkinningCommand")
 end
 
+-- Using a separate function for the hook to ensure it only happens once
+local function HookHyperlinks()
+    if Module.isWaypointHooked then return end
+    
+    -- SetItemRef is the global engine-level handler for all link clicks
+    hooksecurefunc("SetItemRef", function(link, text, button, chatFrame)
+        -- Format: addon:FQoL:rare:ID
+        local linkType, addon, action, rareID = strsplit(":", link)
+        if linkType == "addon" and addon == "FQoL" and action == "rare" then
+            Module:SetRareWaypoint(tonumber(rareID))
+        end
+    end)
+    
+    Module.isWaypointHooked = true
+end
+
+function Module:SetRareWaypoint(rareID)
+    local data = nil
+    for _, d in ipairs(questData) do
+        if d.id == rareID then
+            data = d
+            break
+        end
+    end
+
+    if not data then return end
+
+    if C_AddOns.IsAddOnLoaded("TomTom") and TomTom and TomTom.AddWaypoint then
+        -- TomTom API expects x and y as 0.0 to 1.0
+        TomTom:AddWaypoint(data.mapID, data.x / 100, data.y / 100, {
+            title = string.format("%s (%s)", data.name, data.zone),
+            persistent = false,
+            arrivaldistance = 15,
+        })
+    else
+        -- Native Blizzard Waypoint (User Waypoint)
+        local point = UiMapPoint.CreateFromCoordinates(data.mapID, data.x / 100, data.y / 100)
+        C_Map.SetUserWaypoint(point)
+        self:Print(string.format("Waypoint set for |cFFFFD100%s|r. (TomTom not found for named labels)", data.name))
+    end
+end
+
 function Module:HandleSkinningCommand(input)
     -- Check if both the main module and the skinning sub-feature are enabled
     if not FQoL.db.profile.modules["Professions"] or not FQoL.db.profile.skinningEnabled then
@@ -69,15 +111,8 @@ function Module:HandleSkinningCommand(input)
                 displayName = "|cFFFFD100" .. displayName .. "|r"
             end
 
-            -- Create a clickable map link (pin)
-            local coords = ""
-            if data.mapID and data.x and data.y then
-                -- Map links use normalized coordinates multiplied by 10000
-                -- Since our data is 0-100, we multiply by 100
-                local payloadX = math.floor(data.x * 100)
-                local payloadY = math.floor(data.y * 100)
-                coords = string.format(" |Hworldmap:%d:%d:%d|h[|cff8888ff%.1f, %.1f|r]|h", data.mapID, payloadX, payloadY, data.x, data.y)
-            end
+            -- Create our custom fqolrare clickable link
+            local coords = string.format(" |Haddon:FQoL:rare:%d|h[|cff8888ff%.1f, %.1f|r]|h", data.id, data.x, data.y)
             
             self:Print(string.format("%s %s%s", status, displayName, coords))
         end
@@ -91,4 +126,10 @@ local oldInit = Module.OnInitialize
 function Module:OnInitialize()
     if oldInit then oldInit(self) end
     Initialize()
+end
+
+local oldEnable = Module.OnEnable
+function Module:OnEnable()
+    if oldEnable then oldEnable(self) end
+    HookHyperlinks()
 end
