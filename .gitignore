@@ -1,0 +1,22 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Local/Temporary files
+*.bak
+*.old
+*.swp
+*.tmp
+*.log
+
+# Project specific
+# (Optional) Ignore any local database files if they aren't meant to be shared
+# FQoLDB is usually in SavedVariables, which is outside the addon folder.
