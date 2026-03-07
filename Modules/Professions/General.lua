@@ -1,7 +1,7 @@
 local FQoL = LibStub("AceAddon-3.0"):GetAddon("FQoL")
-local Module = FQoL:NewModule("Professions", "AceEvent-3.0", "AceHook-3.0")
+local Module = FQoL:NewModule("Professions", "AceEvent-3.0", "AceHook-3.0", "AceConsole-3.0")
 
-Module.description = "Adds a summary view to the Professions Recipe Tracker in the Objective Tracker."
+Module.description = "Quality-of-life improvements for professions, including tracker enhancements and utility commands."
 
 -- Helper to find the tracker module in Midnight (12.0)
 local function GetTrackerModule()
