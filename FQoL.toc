@@ -31,3 +31,4 @@ Core.lua
 Modules\General\HelloWorld.lua
 Modules\Professions\General.lua
 Modules\Professions\Skinning.lua
+Modules\Professions\SkinningTracker.lua

@@ -1,7 +1,7 @@
 local FQoL = LibStub("AceAddon-3.0"):GetAddon("FQoL")
 local Module = FQoL:GetModule("Professions")
 
-local questData = {
+Module.skinningQuestData = {
     { id = 88545, name = "Ghostclaw Elder", zone = "Eversong", mapID = 2395, x = 41.95, y = 80.05 },
     { id = 88526, name = "Silverscale", zone = "Zul'Aman", mapID = 2437, x = 47.69, y = 53.25 },
     { id = 88531, name = "Lumenfin", zone = "Harandar", mapID = 2413, x = 66.28, y = 47.91 },
@@ -14,6 +14,9 @@ local questData = {
 local function Initialize()
     if FQoL.db.profile.skinningEnabled == nil then
         FQoL.db.profile.skinningEnabled = true
+    end
+    if FQoL.db.profile.skinningTrackerUI == nil then
+        FQoL.db.profile.skinningTrackerUI = true
     end
 
     -- Add to Professions options
@@ -29,7 +32,21 @@ local function Initialize()
         desc = "Enables the /skinning command and other skinning-specific features.",
         order = 11,
         get = function() return FQoL.db.profile.skinningEnabled end,
-        set = function(_, val) FQoL.db.profile.skinningEnabled = val end,
+        set = function(_, val) 
+            FQoL.db.profile.skinningEnabled = val 
+            if Module.UpdateSkinningTracker then Module:UpdateSkinningTracker() end
+        end,
+    }
+    options.skinningTrackerUI = {
+        type = "toggle",
+        name = "Show Tracker UI",
+        desc = "Shows a standalone UI or integrates with MKPT.",
+        order = 12,
+        get = function() return FQoL.db.profile.skinningTrackerUI end,
+        set = function(_, val) 
+            FQoL.db.profile.skinningTrackerUI = val 
+            if Module.UpdateSkinningTracker then Module:UpdateSkinningTracker() end
+        end,
     }
 
     Module:RegisterChatCommand("skinning", "HandleSkinningCommand")
@@ -53,7 +70,7 @@ end
 
 function Module:SetRareWaypoint(rareID)
     local data = nil
-    for _, d in ipairs(questData) do
+    for _, d in ipairs(Module.skinningQuestData) do
         if d.id == rareID then
             data = d
             break
@@ -87,6 +104,7 @@ function Module:HandleSkinningCommand(input)
     if not input or input:trim() == "" then
         self:Print("Available parameters:")
         self:Print("  |cFFFFD100rares|r - Check completion of daily skinning rare quests.")
+        self:Print("  |cFFFFD100tracker|r - Toggle the standalone tracker UI.")
         return
     end
 
@@ -102,7 +120,7 @@ function Module:HandleSkinningCommand(input)
 
         self:Print("Daily Skinning Rares" .. timeStr .. ":")
         
-        for _, data in ipairs(questData) do
+        for _, data in ipairs(Module.skinningQuestData) do
             local isCompleted = C_QuestLog.IsQuestFlaggedCompleted(data.id)
             local status = isCompleted and "|TInterface\\RaidFrame\\ReadyCheck-Ready:14:14:0:0|t" or "|TInterface\\RaidFrame\\ReadyCheck-NotReady:14:14:0:0|t"
             local displayName = string.format("%s (%s)", data.name, data.zone)
@@ -116,6 +134,10 @@ function Module:HandleSkinningCommand(input)
             
             self:Print(string.format("%s %s%s", status, displayName, coords))
         end
+    elseif arg1 == "tracker" then
+        FQoL.db.profile.skinningTrackerUI = not FQoL.db.profile.skinningTrackerUI
+        if Module.UpdateSkinningTracker then Module:UpdateSkinningTracker() end
+        self:Print("Skinning Tracker UI: " .. (FQoL.db.profile.skinningTrackerUI and "|cFF00FF00Enabled|r" or "|cFFFF0000Disabled|r"))
     else
         self:Print(string.format("Unknown parameter '|cFFFF0000%s|r'. Use |cFFFFD100/skinning|r for help.", arg1))
     end
