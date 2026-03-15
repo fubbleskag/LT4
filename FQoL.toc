@@ -5,6 +5,7 @@
 ## Version: 1.0.0
 ## SavedVariables: FQoLDB
 ## OptionalDeps: Ace3
+## IconTexture: Interface\AddOns\FQoL\Media\FQoL
 
 # Libraries
 Libs\LibStub\LibStub.lua

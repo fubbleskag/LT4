@@ -6,6 +6,7 @@ local defaults = {
     profile = {
         minimap = {
             hide = false,
+            showInCompartment = true,
         },
         modules = {
             ["*"] = false, 
@@ -28,11 +29,26 @@ function FQoL:OnInitialize()
                 args = {
                     minimapIcon = {
                         type = "toggle",
-                        name = "Show Minimap Icon",
-                        get = function() return not self.db.profile.minimap.hide end,
+                        name = "Hide Minimap Icon",
+                        order = 1,
+                        get = function() return self.db.profile.minimap.hide end,
                         set = function(_, val)
-                            self.db.profile.minimap.hide = not val
-                            if val then LibStub("LibDBIcon-1.0"):Show("FQoL") else LibStub("LibDBIcon-1.0"):Hide("FQoL") end
+                            self.db.profile.minimap.hide = val
+                            if val then LibStub("LibDBIcon-1.0"):Hide("FQoL") else LibStub("LibDBIcon-1.0"):Show("FQoL") end
+                        end,
+                    },
+                    compartmentIcon = {
+                        type = "toggle",
+                        name = "Hide in Addon Compartment",
+                        order = 2,
+                        get = function() return not self.db.profile.minimap.showInCompartment end,
+                        set = function(_, val)
+                            self.db.profile.minimap.showInCompartment = not val
+                            if not val then
+                                LibStub("LibDBIcon-1.0"):AddButtonToCompartment("FQoL")
+                            else
+                                LibStub("LibDBIcon-1.0"):RemoveButtonFromCompartment("FQoL")
+                            end
                         end,
                     },
                 },
