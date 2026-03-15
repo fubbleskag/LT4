@@ -18,6 +18,12 @@ local function Initialize()
     if FQoL.db.profile.skinningTrackerUI == nil then
         FQoL.db.profile.skinningTrackerUI = true
     end
+    if FQoL.db.profile.skinningTrackerCollapsed == nil then
+        FQoL.db.profile.skinningTrackerCollapsed = false
+    end
+    if FQoL.db.profile.skinningTrackerPosition == nil then
+        FQoL.db.profile.skinningTrackerPosition = {}
+    end
 
     -- Add to Professions options
     local options = FQoL.options.args.modules.args["Professions"].args
@@ -69,6 +75,20 @@ local function HookHyperlinks()
 end
 
 function Module:SetRareWaypoint(rareID)
+    -- Toggle: If clicking the same one, clear it
+    if self.currentRareWaypointID == rareID then
+        if C_AddOns.IsAddOnLoaded("TomTom") and TomTom and TomTom.RemoveWaypoint then
+            if self.currentTomTomWaypoint then
+                TomTom:RemoveWaypoint(self.currentTomTomWaypoint)
+            end
+        else
+            C_Map.ClearUserWaypoint()
+        end
+        self.currentRareWaypointID = nil
+        self.currentTomTomWaypoint = nil
+        return
+    end
+
     local data = nil
     for _, d in ipairs(Module.skinningQuestData) do
         if d.id == rareID then
@@ -80,8 +100,12 @@ function Module:SetRareWaypoint(rareID)
     if not data then return end
 
     if C_AddOns.IsAddOnLoaded("TomTom") and TomTom and TomTom.AddWaypoint then
+        -- Clear previous if exists
+        if self.currentTomTomWaypoint then
+            TomTom:RemoveWaypoint(self.currentTomTomWaypoint)
+        end
         -- TomTom API expects x and y as 0.0 to 1.0
-        TomTom:AddWaypoint(data.mapID, data.x / 100, data.y / 100, {
+        self.currentTomTomWaypoint = TomTom:AddWaypoint(data.mapID, data.x / 100, data.y / 100, {
             title = string.format("%s (%s)", data.name, data.zone),
             persistent = false,
             arrivaldistance = 15,
@@ -92,6 +116,7 @@ function Module:SetRareWaypoint(rareID)
         C_Map.SetUserWaypoint(point)
         self:Print(string.format("Waypoint set for |cFFFFD100%s|r. (TomTom not found for named labels)", data.name))
     end
+    self.currentRareWaypointID = rareID
 end
 
 function Module:HandleSkinningCommand(input)
