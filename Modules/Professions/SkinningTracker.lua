@@ -123,8 +123,22 @@ local function UpdateTracker()
     end
 end
 
+local function HasSkinning()
+    local prof1, prof2 = GetProfessions()
+    local profs = {prof1, prof2}
+    for _, index in pairs(profs) do
+        if index then
+            local _, _, _, _, _, _, skillLine = GetProfessionInfo(index)
+            if skillLine == 393 then -- Skinning
+                return true
+            end
+        end
+    end
+    return false
+end
+
 function Module:UpdateSkinningTracker()
-    if not FQoL.db.profile.modules["Professions"] or not FQoL.db.profile.skinningEnabled or not FQoL.db.profile.skinningTrackerUI then
+    if not HasSkinning() or not FQoL.db.profile.modules["Professions"] or not FQoL.db.profile.skinningEnabled or not FQoL.db.profile.skinningTrackerUI then
         if trackerFrame then trackerFrame:Hide() end
         return
     end

@@ -9,9 +9,25 @@ Module.skinningQuestData = {
     { id = 88524, name = "Netherscythe", zone = "Voidstorm", mapID = 2405, x = 43.25, y = 82.75, emphasize = true },
 }
 
+local function HasSkinning()
+    local prof1, prof2 = GetProfessions()
+    local profs = {prof1, prof2}
+    for _, index in pairs(profs) do
+        if index then
+            local _, _, _, _, _, _, skillLine = GetProfessionInfo(index)
+            if skillLine == 393 then -- Skinning
+                return true
+            end
+        end
+    end
+    return false
+end
+
 -- We use a local hook to initialize when the parent module does, 
 -- or immediately if it's already initialized.
 local function Initialize()
+    if not HasSkinning() then return end
+
     if FQoL.db.profile.skinningEnabled == nil then
         FQoL.db.profile.skinningEnabled = true
     end
@@ -60,6 +76,7 @@ end
 
 -- Using a separate function for the hook to ensure it only happens once
 local function HookHyperlinks()
+    if not HasSkinning() then return end
     if Module.isWaypointHooked then return end
     
     -- SetItemRef is the global engine-level handler for all link clicks
