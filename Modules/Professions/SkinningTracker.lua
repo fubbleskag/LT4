@@ -104,7 +104,7 @@ local function UpdateTracker()
             local isCompleted = C_QuestLog.IsQuestFlaggedCompleted(data.id)
             btn.icon:SetTexture(isCompleted and "Interface\\RaidFrame\\ReadyCheck-Ready" or "Interface\\RaidFrame\\ReadyCheck-NotReady")
             
-            local displayName = data.name .. " |cFF888888[" .. data.zone .. "]|r"
+            local displayName = string.format("%s (%s) |cFF888888[%.0f, %.0f]|r", data.name, data.zone, data.x, data.y)
             if data.emphasize then
                 displayName = "|cFFFFD100" .. displayName .. "|r"
             else

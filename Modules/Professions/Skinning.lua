@@ -2,7 +2,7 @@ local FQoL = LibStub("AceAddon-3.0"):GetAddon("FQoL")
 local Module = FQoL:GetModule("Professions")
 
 Module.skinningQuestData = {
-    { id = 88545, name = "Ghostclaw Elder", zone = "Eversong", mapID = 2395, x = 41.95, y = 80.05 },
+    { id = 88545, name = "Gloomclaw", zone = "Eversong", mapID = 2395, x = 41.95, y = 80.05 },
     { id = 88526, name = "Silverscale", zone = "Zul'Aman", mapID = 2437, x = 47.69, y = 53.25 },
     { id = 88531, name = "Lumenfin", zone = "Harandar", mapID = 2413, x = 66.28, y = 47.91 },
     { id = 88532, name = "Umbrafang", zone = "Voidstorm", mapID = 2405, x = 54.60, y = 65.80 },
@@ -172,7 +172,7 @@ function Module:HandleSkinningCommand(input)
             end
 
             -- Create our custom fqolrare clickable link
-            local coords = string.format(" |Haddon:FQoL:rare:%d|h[|cff8888ff%.1f, %.1f|r]|h", data.id, data.x, data.y)
+            local coords = string.format(" |Haddon:FQoL:rare:%d|h[|cff8888ff%.0f, %.0f|r]|h", data.id, data.x, data.y)
             
             self:Print(string.format("%s %s%s", status, displayName, coords))
         end
