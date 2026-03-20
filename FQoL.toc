@@ -28,7 +28,8 @@ Libs\AceConsole-3.0\AceConsole-3.0.xml
 Core.lua
 
 # Modules
-Modules\General\HelloWorld.lua
+# Modules\General\HelloWorld.lua
+Modules\General\ElvUISkins.lua
 Modules\Professions\General.lua
 Modules\Professions\Skinning.lua
 Modules\Professions\SkinningTracker.lua

@@ -11,6 +11,9 @@ local defaults = {
         modules = {
             ["*"] = false, 
         },
+        elvuiSkins = {
+            ["*"] = true,
+        },
     },
 }
 
