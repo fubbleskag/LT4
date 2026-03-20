@@ -2,6 +2,10 @@ FQoL = LibStub("AceAddon-3.0"):NewAddon("FQoL", "AceConsole-3.0", "AceEvent-3.0"
 local LDB = LibStub("LibDataBroker-1.1")
 local icon = LibStub("LibDBIcon-1.0")
 
+-- Get AddOn metadata
+FQoL.version = C_AddOns.GetAddOnMetadata("FQoL", "Version") or "1.0.0"
+FQoL.title = C_AddOns.GetAddOnMetadata("FQoL", "Title") or "FQoL"
+
 local defaults = {
     profile = {
         minimap = {
@@ -22,7 +26,7 @@ function FQoL:OnInitialize()
     
     self.options = {
         type = "group",
-        name = "FQoL",
+        name = self.title,
         args = {
             general = {
                 type = "group",
@@ -30,6 +34,11 @@ function FQoL:OnInitialize()
                 inline = true,
                 order = 1,
                 args = {
+                    version = {
+                        type = "description",
+                        name = "|cFF00AAFFVersion:|r " .. self.version,
+                        order = 0,
+                    },
                     minimapIcon = {
                         type = "toggle",
                         name = "Hide Minimap Icon",
@@ -37,7 +46,7 @@ function FQoL:OnInitialize()
                         get = function() return self.db.profile.minimap.hide end,
                         set = function(_, val)
                             self.db.profile.minimap.hide = val
-                            if val then LibStub("LibDBIcon-1.0"):Hide("FQoL") else LibStub("LibDBIcon-1.0"):Show("FQoL") end
+                            if val then icon:Hide("FQoL") else icon:Show("FQoL") end
                         end,
                     },
                     compartmentIcon = {
@@ -48,9 +57,9 @@ function FQoL:OnInitialize()
                         set = function(_, val)
                             self.db.profile.minimap.showInCompartment = not val
                             if not val then
-                                LibStub("LibDBIcon-1.0"):AddButtonToCompartment("FQoL")
+                                icon:AddButtonToCompartment("FQoL")
                             else
-                                LibStub("LibDBIcon-1.0"):RemoveButtonFromCompartment("FQoL")
+                                icon:RemoveButtonFromCompartment("FQoL")
                             end
                         end,
                     },
@@ -61,13 +70,13 @@ function FQoL:OnInitialize()
                 name = "Modules", 
                 inline = true, 
                 order = 2,
-                args = {} -- We'll fill this in a second
+                args = {}
             },
         },
     }
 
     LibStub("AceConfig-3.0"):RegisterOptionsTable("FQoL", self.options)
-    self.optionsFrame, self.categoryID = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("FQoL", "FQoL")
+    self.optionsFrame, self.categoryID = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("FQoL", self.title)
     
     -- Register Minimap Button
     local FQoL_LDB = LDB:NewDataObject("FQoL", {
@@ -76,42 +85,49 @@ function FQoL:OnInitialize()
         icon = "Interface\\Addons\\FQoL\\Media\\FQoL",
         OnClick = function() self:OpenOptions() end,
         OnTooltipShow = function(tooltip)
-            tooltip:AddLine("|cFF00AAFFFQoL|r")
+            tooltip:AddLine("|cFF00AAFF" .. FQoL.title .. "|r")
             tooltip:AddLine("|cFFFFFFFFLeft-Click:|r Open Settings")
         end,
     })
     icon:Register("FQoL", FQoL_LDB, self.db.profile.minimap)
 
     self:RegisterChatCommand("fqol", "OpenOptions")
-
 end
 
 function FQoL:OnEnable()
     local enabledModules = {}
-
-    -- Iterate through all registered modules
     for name, module in self:IterateModules() do
         if module:IsEnabled() then
             table.insert(enabledModules, "|cFF00FF00" .. name .. "|r")
         end
     end
 
-    -- Construct the message logic properly
-    local status
-    if #enabledModules > 0 then
-        status = "Active Modules: " .. table.concat(enabledModules, ", ")
-    else
-        status = "|cFFFF8800No modules enabled.|r"
-    end
-
-    self:Print("|cFF00AAFFv1.0.0 Loaded.|r " .. status)
+    local status = #enabledModules > 0 and ("Active Modules: " .. table.concat(enabledModules, ", ")) or "|cFFFF8800No modules enabled.|r"
+    self:Print(string.format("|cFF00AAFFv%s Loaded.|r %s", self.version, status))
 end
 
 function FQoL:OpenOptions()
     if self.categoryID then
         Settings.OpenToCategory(self.categoryID)
     else
-        -- This is the fallback if the settings window is already open
-        Settings.OpenToCategory("FQoL")
+        Settings.OpenToCategory(self.title)
     end
+end
+
+-- Shared Helpers
+function FQoL:GetModuleEnabled(name)
+    return self.db.profile.modules[name]
+end
+
+function FQoL:SetModuleEnabled(name, value)
+    self.db.profile.modules[name] = value
+    local module = self:GetModule(name, true)
+    if module then
+        if value then module:Enable() else module:Disable() end
+    end
+end
+
+function FQoL:RegisterModuleOptions(name, options, order)
+    self.options.args.modules.args[name] = options
+    if order then self.options.args.modules.args[name].order = order end
 end
