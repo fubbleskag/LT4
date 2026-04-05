@@ -9,38 +9,18 @@ Module.skinningQuestData = {
     { id = 88524, name = "Netherscythe", zone = "Voidstorm", mapID = 2405, x = 43.25, y = 82.75, emphasize = true },
 }
 
-local function HasSkinning()
-    local prof1, prof2 = GetProfessions()
-    for _, index in pairs({prof1, prof2}) do
-        if index then
-            local _, _, _, _, _, _, skillLine = GetProfessionInfo(index)
-            if skillLine == 393 then return true end
-        end
-    end
-    return false
-end
-
 function Module:InitSkinning()
-    if not HasSkinning() then return end
+    if not self:HasSkinning() or not LT4.db then return end
 
     local p = LT4.db.profile
-    if p.skinningEnabled == nil then p.skinningEnabled = true end
     if p.skinningTrackerUI == nil then p.skinningTrackerUI = true end
     if p.skinningTrackerCollapsed == nil then p.skinningTrackerCollapsed = false end
     if p.skinningTrackerPosition == nil then p.skinningTrackerPosition = {} end
 
-    local options = LT4.options.args.modules.args["Professions"].args
+    local options = self.options.args
     options.skinningHeader = { type = "header", name = "Skinning", order = 10 }
-    options.skinningEnabled = {
-        type = "toggle", name = "Enable Skinning Utilities", order = 11,
-        get = function() return LT4.db.profile.skinningEnabled end,
-        set = function(_, val) 
-            LT4.db.profile.skinningEnabled = val 
-            if self.UpdateSkinningTracker then self:UpdateSkinningTracker() end
-        end,
-    }
     options.skinningTrackerUI = {
-        type = "toggle", name = "Show Tracker UI", order = 12,
+        type = "toggle", name = "Show Rare Tracker UI", order = 11,
         get = function() return LT4.db.profile.skinningTrackerUI end,
         set = function(_, val) 
             LT4.db.profile.skinningTrackerUI = val 
@@ -52,7 +32,7 @@ function Module:InitSkinning()
 end
 
 function Module:EnableSkinning()
-    if not HasSkinning() or self.isWaypointHooked then return end
+    if not self:HasSkinning() or self.isWaypointHooked then return end
     hooksecurefunc("SetItemRef", function(link)
         local linkType, addon, action, rareID = strsplit(":", link)
         if linkType == "addon" and addon == "LT4" and action == "rare" then
@@ -91,8 +71,8 @@ function Module:SetRareWaypoint(rareID)
 end
 
 function Module:HandleSkinningCommand(input)
-    if not LT4:GetModuleEnabled("Professions") or not LT4.db.profile.skinningEnabled then
-        self:Print("|cFFFF0000Error:|r The Skinning utility is currently disabled.")
+    if not LT4:GetModuleEnabled("Professions") then
+        self:Print("|cFFFF0000Error:|r The Professions module is currently disabled.")
         return
     end
 

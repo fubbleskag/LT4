@@ -18,6 +18,7 @@ Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 # Ace3 Core
 Libs\AceAddon-3.0\AceAddon-3.0.xml
 Libs\AceEvent-3.0\AceEvent-3.0.xml
+Libs\AceTimer-3.0\AceTimer-3.0.xml
 Libs\AceGUI-3.0\AceGUI-3.0.xml
 Libs\AceConfig-3.0\AceConfig-3.0.xml
 Libs\AceDB-3.0\AceDB-3.0.xml
@@ -33,3 +34,20 @@ Modules\General\ElvUISkins.lua
 Modules\Professions\General.lua
 Modules\Professions\Skinning.lua
 Modules\Professions\SkinningTracker.lua
+
+# LumiBar Module
+Modules\LumiBar\Core.lua
+Modules\LumiBar\Data.lua
+Modules\LumiBar\Utils.lua
+Modules\LumiBar\SecureFlyout.lua
+Modules\LumiBar\Options.lua
+Modules\LumiBar\Modules\Currency.lua
+Modules\LumiBar\Modules\DataBar.lua
+Modules\LumiBar\Modules\Durability.lua
+Modules\LumiBar\Modules\Hearthstone.lua
+Modules\LumiBar\Modules\MicroMenu.lua
+Modules\LumiBar\Modules\Profession.lua
+Modules\LumiBar\Modules\SpecSwitch.lua
+Modules\LumiBar\Modules\System.lua
+Modules\LumiBar\Modules\Time.lua
+Modules\LumiBar\Modules\Volume.lua

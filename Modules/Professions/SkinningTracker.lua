@@ -3,19 +3,8 @@ local Module = LT4:GetModule("Professions")
 
 local trackerFrame, buttons, refreshTicker = nil, {}, nil
 
-local function HasSkinning()
-    local prof1, prof2 = GetProfessions()
-    for _, index in pairs({prof1, prof2}) do
-        if index then
-            local _, _, _, _, _, _, skillLine = GetProfessionInfo(index)
-            if skillLine == 393 then return true end
-        end
-    end
-    return false
-end
-
 local function InternalUpdate()
-    if not trackerFrame then return end
+    if not LT4.db or not trackerFrame then return end
     
     local isCollapsed = LT4.db.profile.skinningTrackerCollapsed
     local rowHeight, yOffset = 20, -22
@@ -61,7 +50,7 @@ local function InternalUpdate()
 end
 
 function Module:UpdateSkinningTracker()
-    if not HasSkinning() or not LT4:GetModuleEnabled("Professions") or not LT4.db.profile.skinningEnabled or not LT4.db.profile.skinningTrackerUI then
+    if not self:HasSkinning() or not LT4:GetModuleEnabled("Professions") or not LT4.db.profile.skinningTrackerUI then
         if trackerFrame then trackerFrame:Hide() end
         return
     end

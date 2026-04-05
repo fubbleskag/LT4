@@ -41,18 +41,11 @@ function Module:OnInitialize()
         type = "group",
         name = "Professions",
         args = {
-            enable = {
-                type = "toggle",
-                name = "Enable Module",
-                order = 1,
-                get = function() return LT4:GetModuleEnabled(self:GetName()) end,
-                set = function(_, val) LT4:SetModuleEnabled(self:GetName(), val) end,
-            },
             summaryView = {
                 type = "toggle",
                 name = "Summary View",
                 desc = "Toggle between individual recipe reagents and a total summary of all tracked recipes.",
-                order = 2,
+                order = 1,
                 get = function() return LT4.db.profile.professionsSummaryView end,
                 set = function(_, val) 
                     LT4.db.profile.professionsSummaryView = val
@@ -62,8 +55,8 @@ function Module:OnInitialize()
         }
     }
 
+    self.options = options
     LT4:RegisterModuleOptions(self:GetName(), options)
-
     if LT4.db.profile.professionsSummaryView == nil then LT4.db.profile.professionsSummaryView = false end
 
     -- Initialize sub-features if they exist
@@ -71,19 +64,36 @@ function Module:OnInitialize()
 
     if not LT4:GetModuleEnabled(self:GetName()) then self:SetEnabledState(false) end
 end
+function Module:HasSkinning()
+    local prof1, prof2 = GetProfessions()
+    for _, index in pairs({prof1, prof2}) do
+        if index then
+            local _, _, _, _, _, _, skillLine = GetProfessionInfo(index)
+            if skillLine == 393 then return true end
+        end
+    end
+    return false
+end
 
 function Module:OnEnable()
-    local events = {"TRACKED_RECIPE_UPDATE", "BAG_UPDATE", "BAG_UPDATE_DELAYED", "PLAYER_ENTERING_WORLD", "GET_ITEM_INFO_RECEIVED"}
-    for _, event in ipairs(events) do self:RegisterEvent(event, "UpdateTracker") end
+    local events = {"TRACKED_RECIPE_UPDATE", "BAG_UPDATE", "BAG_UPDATE_DELAYED", "PLAYER_ENTERING_WORLD", "GET_ITEM_INFO_RECEIVED", "SKILL_LINES_CHANGED"}
+    for _, event in ipairs(events) do self:RegisterEvent(event, "RefreshAll") end
     
     local tracker = GetTrackerModule()
     if tracker and tracker.Update then self:SecureHook(tracker, "Update", "OnTrackerUpdate") end
     
     -- Enable sub-features
     if self.EnableSkinning then self:EnableSkinning() end
-    if self.UpdateSkinningTracker then C_Timer.After(1, function() self:UpdateSkinningTracker() end) end
+    
+    self:RefreshAll()
+    -- Delayed retry for login sequence
+    C_Timer.After(2, function() self:RefreshAll() end)
+    C_Timer.After(5, function() self:RefreshAll() end)
+end
 
+function Module:RefreshAll()
     self:UpdateTracker()
+    if self.UpdateSkinningTracker then self:UpdateSkinningTracker() end
 end
 
 function Module:OnDisable()
@@ -91,6 +101,7 @@ function Module:OnDisable()
     self:UnhookAll()
     if self.toggleButton then self.toggleButton:Hide() end
     if self.summaryFrame then self.summaryFrame:Hide() end
+    if self.UpdateSkinningTracker then self:UpdateSkinningTracker() end
     
     local tracker = GetTrackerModule()
     if tracker and tracker.ContentsFrame then tracker.ContentsFrame:Show() end

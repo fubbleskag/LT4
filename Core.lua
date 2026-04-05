@@ -1,4 +1,5 @@
 LT4 = LibStub("AceAddon-3.0"):NewAddon("LT4", "AceConsole-3.0", "AceEvent-3.0")
+LT4:SetDefaultModuleState(false)
 local LDB = LibStub("LibDataBroker-1.1")
 local icon = LibStub("LibDBIcon-1.0")
 
@@ -23,6 +24,17 @@ local defaults = {
 
 function LT4:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("LT4DB", defaults, true)
+    
+    StaticPopupDialogs["LT4_RELOAD_UI"] = {
+        text = "|cFF00AAFF" .. self.title .. "|r: A UI reload is required to fully apply these changes. Reload now?",
+        button1 = "Reload",
+        button2 = "Later",
+        OnAccept = function() ReloadUI() end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+    }
     
     self.options = {
         type = "group",
@@ -65,10 +77,10 @@ function LT4:OnInitialize()
                     },
                 },
             },
-            modules = { 
-                type = "group", 
-                name = "Modules", 
-                inline = true, 
+            moduleToggles = {
+                type = "group",
+                name = "Module Control",
+                inline = true,
                 order = 2,
                 args = {}
             },
@@ -97,7 +109,8 @@ end
 function LT4:OnEnable()
     local enabledModules = {}
     for name, module in self:IterateModules() do
-        if module:IsEnabled() then
+        if self:GetModuleEnabled(name) then
+            module:Enable()
             table.insert(enabledModules, "|cFF00FF00" .. name .. "|r")
         end
     end
@@ -116,18 +129,39 @@ end
 
 -- Shared Helpers
 function LT4:GetModuleEnabled(name)
+    if not self.db then return false end
     return self.db.profile.modules[name]
 end
 
 function LT4:SetModuleEnabled(name, value)
+    if not self.db then return end
     self.db.profile.modules[name] = value
     local module = self:GetModule(name, true)
     if module then
-        if value then module:Enable() else module:Disable() end
+        if value then 
+            module:Enable() 
+        else 
+            module:Disable() 
+            if module.requiresReload then
+                StaticPopup_Show("LT4_RELOAD_UI")
+            end
+        end
     end
 end
 
 function LT4:RegisterModuleOptions(name, options, order)
-    self.options.args.modules.args[name] = options
-    if order then self.options.args.modules.args[name].order = order end
+    -- Add toggle to main page
+    self.options.args.moduleToggles.args[name] = {
+        type = "toggle",
+        name = "Enable " .. name,
+        desc = "Enable or disable the " .. name .. " module.",
+        order = order or 100,
+        get = function() return self:GetModuleEnabled(name) end,
+        set = function(_, val) self:SetModuleEnabled(name, val) end,
+    }
+
+    -- Register as sub-category
+    local appName = "LT4_" .. name
+    LibStub("AceConfig-3.0"):RegisterOptionsTable(appName, options)
+    LibStub("AceConfigDialog-3.0"):AddToBlizOptions(appName, name, self.title)
 end

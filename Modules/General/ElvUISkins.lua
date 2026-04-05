@@ -185,12 +185,7 @@ function Module:OnInitialize()
     LT4:RegisterModuleOptions(self:GetName(), {
         type = "group", name = "ElvUI Skins", desc = self.description, order = 10,
         args = {
-            enabled = {
-                type = "toggle", name = "Enable Module", order = 1,
-                get = function() return LT4:GetModuleEnabled(self:GetName()) end,
-                set = function(_, val) LT4:SetModuleEnabled(self:GetName(), val) end,
-            },
-            skins = { type = "group", name = "Addon Skins", inline = true, order = 3, args = skinOptions },
+            skins = { type = "group", name = "Addon Skins", inline = true, order = 1, args = skinOptions },
         },
     })
     if not LT4:GetModuleEnabled(self:GetName()) then self:SetEnabledState(false) end
