@@ -1,19 +1,19 @@
-local FQoL = LibStub("AceAddon-3.0"):GetAddon("FQoL")
-local Module = FQoL:NewModule("HelloWorld", "AceEvent-3.0")
+local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
+local Module = LT4:NewModule("HelloWorld", "AceEvent-3.0")
 
 Module.description = "Prints a friendly greeting in chat upon login and loading screens to verify the addon is working."
 
 function Module:OnInitialize()
-    FQoL:RegisterModuleOptions(self:GetName(), {
+    LT4:RegisterModuleOptions(self:GetName(), {
         type = "toggle",
         name = self:GetName(),
         desc = self.description,
         descStyle = "tooltip",
-        get = function() return FQoL:GetModuleEnabled(self:GetName()) end,
-        set = function(_, val) FQoL:SetModuleEnabled(self:GetName(), val) end,
+        get = function() return LT4:GetModuleEnabled(self:GetName()) end,
+        set = function(_, val) LT4:SetModuleEnabled(self:GetName(), val) end,
     })
 
-    if not FQoL:GetModuleEnabled(self:GetName()) then
+    if not LT4:GetModuleEnabled(self:GetName()) then
         self:SetEnabledState(false)
     end
 end

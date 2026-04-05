@@ -1,10 +1,10 @@
-FQoL = LibStub("AceAddon-3.0"):NewAddon("FQoL", "AceConsole-3.0", "AceEvent-3.0")
+LT4 = LibStub("AceAddon-3.0"):NewAddon("LT4", "AceConsole-3.0", "AceEvent-3.0")
 local LDB = LibStub("LibDataBroker-1.1")
 local icon = LibStub("LibDBIcon-1.0")
 
 -- Get AddOn metadata
-FQoL.version = C_AddOns.GetAddOnMetadata("FQoL", "Version") or "1.0.0"
-FQoL.title = C_AddOns.GetAddOnMetadata("FQoL", "Title") or "FQoL"
+LT4.version = C_AddOns.GetAddOnMetadata("LT4", "Version") or "1.0.0"
+LT4.title = C_AddOns.GetAddOnMetadata("LT4", "Title") or "LT4"
 
 local defaults = {
     profile = {
@@ -21,8 +21,8 @@ local defaults = {
     },
 }
 
-function FQoL:OnInitialize()
-    self.db = LibStub("AceDB-3.0"):New("FQoLDB", defaults, true)
+function LT4:OnInitialize()
+    self.db = LibStub("AceDB-3.0"):New("LT4DB", defaults, true)
     
     self.options = {
         type = "group",
@@ -46,7 +46,7 @@ function FQoL:OnInitialize()
                         get = function() return self.db.profile.minimap.hide end,
                         set = function(_, val)
                             self.db.profile.minimap.hide = val
-                            if val then icon:Hide("FQoL") else icon:Show("FQoL") end
+                            if val then icon:Hide("LT4") else icon:Show("LT4") end
                         end,
                     },
                     compartmentIcon = {
@@ -57,9 +57,9 @@ function FQoL:OnInitialize()
                         set = function(_, val)
                             self.db.profile.minimap.showInCompartment = not val
                             if not val then
-                                icon:AddButtonToCompartment("FQoL")
+                                icon:AddButtonToCompartment("LT4")
                             else
-                                icon:RemoveButtonFromCompartment("FQoL")
+                                icon:RemoveButtonFromCompartment("LT4")
                             end
                         end,
                     },
@@ -75,26 +75,26 @@ function FQoL:OnInitialize()
         },
     }
 
-    LibStub("AceConfig-3.0"):RegisterOptionsTable("FQoL", self.options)
-    self.optionsFrame, self.categoryID = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("FQoL", self.title)
+    LibStub("AceConfig-3.0"):RegisterOptionsTable("LT4", self.options)
+    self.optionsFrame, self.categoryID = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("LT4", self.title)
     
     -- Register Minimap Button
-    local FQoL_LDB = LDB:NewDataObject("FQoL", {
+    local LT4_LDB = LDB:NewDataObject("LT4", {
         type = "launcher",
-        text = "FQoL",
-        icon = "Interface\\Addons\\FQoL\\Media\\FQoL",
+        text = "<4",
+        icon = "Interface\\Addons\\LT4\\Media\\LT4",
         OnClick = function() self:OpenOptions() end,
         OnTooltipShow = function(tooltip)
-            tooltip:AddLine("|cFF00AAFF" .. FQoL.title .. "|r")
+            tooltip:AddLine("|cFF00AAFF" .. LT4.title .. "|r")
             tooltip:AddLine("|cFFFFFFFFLeft-Click:|r Open Settings")
         end,
     })
-    icon:Register("FQoL", FQoL_LDB, self.db.profile.minimap)
+    icon:Register("LT4", LT4_LDB, self.db.profile.minimap)
 
-    self:RegisterChatCommand("fqol", "OpenOptions")
+    self:RegisterChatCommand("lt4", "OpenOptions")
 end
 
-function FQoL:OnEnable()
+function LT4:OnEnable()
     local enabledModules = {}
     for name, module in self:IterateModules() do
         if module:IsEnabled() then
@@ -106,7 +106,7 @@ function FQoL:OnEnable()
     self:Print(string.format("|cFF00AAFFv%s Loaded.|r %s", self.version, status))
 end
 
-function FQoL:OpenOptions()
+function LT4:OpenOptions()
     if self.categoryID then
         Settings.OpenToCategory(self.categoryID)
     else
@@ -115,11 +115,11 @@ function FQoL:OpenOptions()
 end
 
 -- Shared Helpers
-function FQoL:GetModuleEnabled(name)
+function LT4:GetModuleEnabled(name)
     return self.db.profile.modules[name]
 end
 
-function FQoL:SetModuleEnabled(name, value)
+function LT4:SetModuleEnabled(name, value)
     self.db.profile.modules[name] = value
     local module = self:GetModule(name, true)
     if module then
@@ -127,7 +127,7 @@ function FQoL:SetModuleEnabled(name, value)
     end
 end
 
-function FQoL:RegisterModuleOptions(name, options, order)
+function LT4:RegisterModuleOptions(name, options, order)
     self.options.args.modules.args[name] = options
     if order then self.options.args.modules.args[name].order = order end
 end

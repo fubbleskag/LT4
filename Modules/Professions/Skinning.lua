@@ -1,5 +1,5 @@
-local FQoL = LibStub("AceAddon-3.0"):GetAddon("FQoL")
-local Module = FQoL:GetModule("Professions")
+local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
+local Module = LT4:GetModule("Professions")
 
 Module.skinningQuestData = {
     { id = 88545, name = "Gloomclaw", zone = "Eversong", mapID = 2395, x = 41.95, y = 80.05 },
@@ -23,27 +23,27 @@ end
 function Module:InitSkinning()
     if not HasSkinning() then return end
 
-    local p = FQoL.db.profile
+    local p = LT4.db.profile
     if p.skinningEnabled == nil then p.skinningEnabled = true end
     if p.skinningTrackerUI == nil then p.skinningTrackerUI = true end
     if p.skinningTrackerCollapsed == nil then p.skinningTrackerCollapsed = false end
     if p.skinningTrackerPosition == nil then p.skinningTrackerPosition = {} end
 
-    local options = FQoL.options.args.modules.args["Professions"].args
+    local options = LT4.options.args.modules.args["Professions"].args
     options.skinningHeader = { type = "header", name = "Skinning", order = 10 }
     options.skinningEnabled = {
         type = "toggle", name = "Enable Skinning Utilities", order = 11,
-        get = function() return FQoL.db.profile.skinningEnabled end,
+        get = function() return LT4.db.profile.skinningEnabled end,
         set = function(_, val) 
-            FQoL.db.profile.skinningEnabled = val 
+            LT4.db.profile.skinningEnabled = val 
             if self.UpdateSkinningTracker then self:UpdateSkinningTracker() end
         end,
     }
     options.skinningTrackerUI = {
         type = "toggle", name = "Show Tracker UI", order = 12,
-        get = function() return FQoL.db.profile.skinningTrackerUI end,
+        get = function() return LT4.db.profile.skinningTrackerUI end,
         set = function(_, val) 
-            FQoL.db.profile.skinningTrackerUI = val 
+            LT4.db.profile.skinningTrackerUI = val 
             if self.UpdateSkinningTracker then self:UpdateSkinningTracker() end
         end,
     }
@@ -55,7 +55,7 @@ function Module:EnableSkinning()
     if not HasSkinning() or self.isWaypointHooked then return end
     hooksecurefunc("SetItemRef", function(link)
         local linkType, addon, action, rareID = strsplit(":", link)
-        if linkType == "addon" and addon == "FQoL" and action == "rare" then
+        if linkType == "addon" and addon == "LT4" and action == "rare" then
             self:SetRareWaypoint(tonumber(rareID))
         end
     end)
@@ -91,7 +91,7 @@ function Module:SetRareWaypoint(rareID)
 end
 
 function Module:HandleSkinningCommand(input)
-    if not FQoL:GetModuleEnabled("Professions") or not FQoL.db.profile.skinningEnabled then
+    if not LT4:GetModuleEnabled("Professions") or not LT4.db.profile.skinningEnabled then
         self:Print("|cFFFF0000Error:|r The Skinning utility is currently disabled.")
         return
     end
@@ -104,13 +104,13 @@ function Module:HandleSkinningCommand(input)
         for _, data in ipairs(Module.skinningQuestData) do
             local status = C_QuestLog.IsQuestFlaggedCompleted(data.id) and "|TInterface\\RaidFrame\\ReadyCheck-Ready:14:14:0:0|t" or "|TInterface\\RaidFrame\\ReadyCheck-NotReady:14:14:0:0|t"
             local name = data.emphasize and ("|cFFFFD100" .. data.name .. "|r") or data.name
-            local coords = string.format(" |Haddon:FQoL:rare:%d|h[|cff8888ff%.0f, %.0f|r]|h", data.id, data.x, data.y)
+            local coords = string.format(" |Haddon:LT4:rare:%d|h[|cff8888ff%.0f, %.0f|r]|h", data.id, data.x, data.y)
             self:Print(string.format("%s %s (%s)%s", status, name, data.zone, coords))
         end
     elseif arg1 == "tracker" then
-        FQoL.db.profile.skinningTrackerUI = not FQoL.db.profile.skinningTrackerUI
+        LT4.db.profile.skinningTrackerUI = not LT4.db.profile.skinningTrackerUI
         self:UpdateSkinningTracker()
-        self:Print("Skinning Tracker UI: " .. (FQoL.db.profile.skinningTrackerUI and "|cFF00FF00Enabled|r" or "|cFFFF0000Disabled|r"))
+        self:Print("Skinning Tracker UI: " .. (LT4.db.profile.skinningTrackerUI and "|cFF00FF00Enabled|r" or "|cFFFF0000Disabled|r"))
     else
         self:Print("Available parameters: |cFFFFD100rares|r, |cFFFFD100tracker|r")
     end

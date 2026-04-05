@@ -1,5 +1,5 @@
-local FQoL = LibStub("AceAddon-3.0"):GetAddon("FQoL")
-local Module = FQoL:NewModule("Professions", "AceEvent-3.0", "AceHook-3.0", "AceConsole-3.0")
+local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
+local Module = LT4:NewModule("Professions", "AceEvent-3.0", "AceHook-3.0", "AceConsole-3.0")
 
 Module.description = "Quality-of-life improvements for professions, including tracker enhancements and utility commands."
 
@@ -45,31 +45,31 @@ function Module:OnInitialize()
                 type = "toggle",
                 name = "Enable Module",
                 order = 1,
-                get = function() return FQoL:GetModuleEnabled(self:GetName()) end,
-                set = function(_, val) FQoL:SetModuleEnabled(self:GetName(), val) end,
+                get = function() return LT4:GetModuleEnabled(self:GetName()) end,
+                set = function(_, val) LT4:SetModuleEnabled(self:GetName(), val) end,
             },
             summaryView = {
                 type = "toggle",
                 name = "Summary View",
                 desc = "Toggle between individual recipe reagents and a total summary of all tracked recipes.",
                 order = 2,
-                get = function() return FQoL.db.profile.professionsSummaryView end,
+                get = function() return LT4.db.profile.professionsSummaryView end,
                 set = function(_, val) 
-                    FQoL.db.profile.professionsSummaryView = val
+                    LT4.db.profile.professionsSummaryView = val
                     self:UpdateTracker()
                 end,
             },
         }
     }
 
-    FQoL:RegisterModuleOptions(self:GetName(), options)
+    LT4:RegisterModuleOptions(self:GetName(), options)
 
-    if FQoL.db.profile.professionsSummaryView == nil then FQoL.db.profile.professionsSummaryView = false end
+    if LT4.db.profile.professionsSummaryView == nil then LT4.db.profile.professionsSummaryView = false end
 
     -- Initialize sub-features if they exist
     if self.InitSkinning then self:InitSkinning() end
 
-    if not FQoL:GetModuleEnabled(self:GetName()) then self:SetEnabledState(false) end
+    if not LT4:GetModuleEnabled(self:GetName()) then self:SetEnabledState(false) end
 end
 
 function Module:OnEnable()
@@ -99,12 +99,12 @@ end
 function Module:CreateToggleButton(header)
     if not header then return end
     if not self.toggleButton then
-        local btn = CreateFrame("Button", "FQoL_ProfessionsToggleButton", header, "UIPanelInfoButton")
+        local btn = CreateFrame("Button", "LT4_ProfessionsToggleButton", header, "UIPanelInfoButton")
         btn:SetSize(16, 16)
         btn:SetScript("OnClick", function()
-            FQoL.db.profile.professionsSummaryView = not FQoL.db.profile.professionsSummaryView
+            LT4.db.profile.professionsSummaryView = not LT4.db.profile.professionsSummaryView
             self:UpdateTracker()
-            LibStub("AceConfigRegistry-3.0"):NotifyChange("FQoL")
+            LibStub("AceConfigRegistry-3.0"):NotifyChange("LT4")
         end)
         btn:SetScript("OnEnter", function(s)
             GameTooltip:SetOwner(s, "ANCHOR_RIGHT")
@@ -144,7 +144,7 @@ function Module:OnTrackerUpdate()
 end
 
 function Module:DisplaySummary()
-    if not FQoL:GetModuleEnabled(self:GetName()) or not FQoL.db.profile.professionsSummaryView then
+    if not LT4:GetModuleEnabled(self:GetName()) or not LT4.db.profile.professionsSummaryView then
         if self.summaryFrame then self.summaryFrame:Hide() end
         local tracker = GetTrackerModule()
         if tracker and tracker.ContentsFrame then tracker.ContentsFrame:Show() end
@@ -159,7 +159,7 @@ function Module:DisplaySummary()
 
     local reagents = GetTrackedReagents()
     if not self.summaryFrame then
-        self.summaryFrame = CreateFrame("Frame", "FQoL_ProfessionsSummary", UIParent)
+        self.summaryFrame = CreateFrame("Frame", "LT4_ProfessionsSummary", UIParent)
         self.summaryFrame:SetSize(250, 10)
         self.summaryFrame.content = self.summaryFrame:CreateFontString(nil, "OVERLAY", "ObjectiveFont")
         self.summaryFrame.content:SetPoint("TOPLEFT", 0, 0)

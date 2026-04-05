@@ -1,4 +1,4 @@
-# Project Context: FQoL
+# Project Context: LT4
 
 A modular quality-of-life suite for World of Warcraft (Retail/Midnight).
 

@@ -1,5 +1,5 @@
-local FQoL = LibStub("AceAddon-3.0"):GetAddon("FQoL")
-local Module = FQoL:NewModule("ElvUISkins", "AceEvent-3.0")
+local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
+local Module = LT4:NewModule("ElvUISkins", "AceEvent-3.0")
 
 Module.description = "Provides ElvUI-style skinning for various third-party addons."
 
@@ -13,7 +13,7 @@ local function GetSkins()
 end
 
 local function SkinPGF()
-    if not FQoL.db.profile.elvuiSkins["PremadeGroupsFilter"] or not GetSkins() then return end
+    if not LT4.db.profile.elvuiSkins["PremadeGroupsFilter"] or not GetSkins() then return end
     
     local dialog = _G.PremadeGroupsFilterDialog
     if dialog and not dialog.IsSkinned then
@@ -83,7 +83,7 @@ local function SkinPGF()
 end
 
 local function SkinBugSack()
-    if not FQoL.db.profile.elvuiSkins["BugSack"] or not GetSkins() then return end
+    if not LT4.db.profile.elvuiSkins["BugSack"] or not GetSkins() then return end
     if not Module.BugSackHooksSet then
         if BugSack and BugSack.OpenSack then hooksecurefunc(BugSack, "OpenSack", SkinBugSack) end
         Module.BugSackHooksSet = true
@@ -114,7 +114,7 @@ local function SkinAuctionatorTabs()
 end
 
 local function SkinAuctionator()
-    if not FQoL.db.profile.elvuiSkins["Auctionator"] or not GetSkins() then return end
+    if not LT4.db.profile.elvuiSkins["Auctionator"] or not GetSkins() then return end
     if not Module.AuctionatorHooksSet then
         if _G.Auctionator and _G.Auctionator.CraftingInfo then
             hooksecurefunc(_G.Auctionator.CraftingInfo, "InitializeProfessionsFrame", SkinAuctionator)
@@ -151,7 +151,7 @@ local function SkinAuctionator()
 end
 
 local function SkinMacroToolkit()
-    if not FQoL.db.profile.elvuiSkins["MacroToolkit"] or not GetSkins() then return end
+    if not LT4.db.profile.elvuiSkins["MacroToolkit"] or not GetSkins() then return end
     local MT = _G.MacroToolkit
     if not MT then return end
     if not Module.MacroToolkitHooksSet then
@@ -176,33 +176,33 @@ function Module:OnInitialize()
     for key, name in pairs(skins) do
         skinOptions[key] = {
             type = "toggle", name = name, order = order,
-            get = function() return FQoL.db.profile.elvuiSkins[key] end,
-            set = function(_, val) FQoL.db.profile.elvuiSkins[key] = val end,
+            get = function() return LT4.db.profile.elvuiSkins[key] end,
+            set = function(_, val) LT4.db.profile.elvuiSkins[key] = val end,
         }
         order = order + 1
     end
 
-    FQoL:RegisterModuleOptions(self:GetName(), {
+    LT4:RegisterModuleOptions(self:GetName(), {
         type = "group", name = "ElvUI Skins", desc = self.description, order = 10,
         args = {
             enabled = {
                 type = "toggle", name = "Enable Module", order = 1,
-                get = function() return FQoL:GetModuleEnabled(self:GetName()) end,
-                set = function(_, val) FQoL:SetModuleEnabled(self:GetName(), val) end,
+                get = function() return LT4:GetModuleEnabled(self:GetName()) end,
+                set = function(_, val) LT4:SetModuleEnabled(self:GetName(), val) end,
             },
             skins = { type = "group", name = "Addon Skins", inline = true, order = 3, args = skinOptions },
         },
     })
-    if not FQoL:GetModuleEnabled(self:GetName()) then self:SetEnabledState(false) end
+    if not LT4:GetModuleEnabled(self:GetName()) then self:SetEnabledState(false) end
 end
 
 function Module:OnEnable()
     if not GetSkins() then return end
     local addonSkins = {
-        { name = "PremadeGroupsFilter", callback = SkinPGF, id = "FQoL_PGFSkin" },
-        { name = "Auctionator", callback = SkinAuctionator, id = "FQoL_AuctionatorSkin" },
-        { name = "BugSack", callback = SkinBugSack, id = "FQoL_BugSackSkin" },
-        { name = "MacroToolkit", callback = SkinMacroToolkit, id = "FQoL_MacroToolkitSkin" },
+        { name = "PremadeGroupsFilter", callback = SkinPGF, id = "LT4_PGFSkin" },
+        { name = "Auctionator", callback = SkinAuctionator, id = "LT4_AuctionatorSkin" },
+        { name = "BugSack", callback = SkinBugSack, id = "LT4_BugSackSkin" },
+        { name = "MacroToolkit", callback = SkinMacroToolkit, id = "LT4_MacroToolkitSkin" },
     }
     for _, data in ipairs(addonSkins) do
         S:AddCallbackForAddon(data.name, data.id, data.callback)

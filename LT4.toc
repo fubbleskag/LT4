@@ -1,11 +1,11 @@
 ## Interface: 120000,120001
-## Title: FQoL
+## Title: <4
 ## Notes: A modular suite of quality-of-life tweaks.
 ## Author: Fubbleskag
 ## Version: 1.0.0
-## SavedVariables: FQoLDB
+## SavedVariables: LT4DB
 ## OptionalDeps: Ace3
-## IconTexture: Interface\AddOns\FQoL\Media\FQoL
+## IconTexture: Interface\AddOns\LT4\Media\LT4
 
 # Libraries
 Libs\LibStub\LibStub.lua
