@@ -1,6 +1,5 @@
 local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
 local LumiBar = LT4:NewModule("LumiBar", "AceEvent-3.0", "AceConsole-3.0", "AceTimer-3.0")
-LumiBar.requiresReload = true -- Required due to micro menu reparenting complexity
 LumiBar.Data = {} -- Will be populated by Data.lua if needed, but we'll refactor Data.lua too
 
 -- Performance: Cache common lookups
@@ -98,15 +97,6 @@ function LumiBar:OnInitialize()
                     showLoadout = true, iconFontSize = 18, infoEnabled = true, infoShowIcon = false,
                     infoIcon = "", infoFontSize = 12, infoOffset = 18, infoUseAccent = true,
                 },
-                MicroMenu = {
-                    iconSpacing = 0, useCustomScale = false, iconSize = 24,
-                    buttons = {
-                        CharacterMicroButton = true, ProfessionMicroButton = true, PlayerSpellsMicroButton = true,
-                        AchievementMicroButton = true, QuestLogMicroButton = true, GuildMicroButton = true,
-                        LFDMicroButton = true, EJMicroButton = true, CollectionsMicroButton = true,
-                        StoreMicroButton = true, HousingMicroButton = true, MainMenuMicroButton = true,
-                    },
-                },
             }
         },
         global = { goldData = {} }
@@ -127,7 +117,7 @@ function LumiBar:OnInitialize()
         self.db.profile.zones = {
             Left = {"System", "Durability"},
             Center = {"SpecSwitch", "Time", "Profession"},
-            Right = {"Hearthstone", "Currency", "MicroMenu"},
+            Right = {"Hearthstone", "Currency"},
         }
         self.db.global.firstRunCompleted = true
     end
@@ -330,7 +320,7 @@ function LumiBar:RefreshModules()
     for mName, module in pairs(self.Modules) do
         if not active[mName] then
             if module.frame then
-                if mName ~= "MicroMenu" then module.frame:Hide() end
+                module.frame:Hide()
                 module.frame:SetParent(nil)
             end
         end

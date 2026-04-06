@@ -45,7 +45,6 @@ Modules\LumiBar\Modules\Currency.lua
 Modules\LumiBar\Modules\DataBar.lua
 Modules\LumiBar\Modules\Durability.lua
 Modules\LumiBar\Modules\Hearthstone.lua
-Modules\LumiBar\Modules\MicroMenu.lua
 Modules\LumiBar\Modules\Profession.lua
 Modules\LumiBar\Modules\SpecSwitch.lua
 Modules\LumiBar\Modules\System.lua
