@@ -88,7 +88,7 @@ function CurrencyModule:UpdateCurrency()
         if self.db.showBagSpace then
             local free, _ = self:GetBagSpace()
             local accent = "|cff" .. Utils:GetAccentColorHex()
-            str = str .. accent .. " (" .. free .. ")|r"
+            str = str .. " " .. accent .. "(" .. free .. ")|r"
         end
     elseif self.db.displayedCurrency == "BAGS" then
         local free, total = self:GetBagSpace()
@@ -119,6 +119,63 @@ function CurrencyModule:Enable(slotFrame)
         self.frame:RegisterEvent("CURRENCY_DISPLAY_UPDATE")
         self.frame:RegisterEvent("PLAYER_ENTERING_WORLD")
         self.frame:SetScript("OnEvent", function() self:UpdateCurrency() end)
+
+        self.frame:SetScript("OnMouseDown", function(_, button)
+            if button == "LeftButton" then
+                ToggleAllBags()
+            elseif button == "RightButton" then
+                ToggleCharacter("TokenFrame")
+            end
+        end)
+
+        self.frame:SetScript("OnEnter", function(f)
+            local realm = GetRealmName()
+            local position = LumiBar.db.profile.bar.position or "BOTTOM"
+            local anchor = (position == "BOTTOM") and "ANCHOR_TOP" or "ANCHOR_BOTTOM"
+            GameTooltip:SetOwner(f, anchor)
+            GameTooltip:ClearLines()
+            GameTooltip:AddLine("Currency", 0, 0.8, 1)
+
+            -- Gold on all characters
+            if LumiBar.db.global.goldData[realm] then
+                GameTooltip:AddLine(" ")
+                GameTooltip:AddLine("Gold on " .. realm .. ":", 1, 1, 1)
+                local totalGold = 0
+                local sortedNames = {}
+                for name in pairs(LumiBar.db.global.goldData[realm]) do table.insert(sortedNames, name) end
+                table.sort(sortedNames)
+
+                for _, name in ipairs(sortedNames) do
+                    local data = LumiBar.db.global.goldData[realm][name]
+                    local classColor = RAID_CLASS_COLORS[data.class]
+                    local nameStr = string.format("|cff%02x%02x%02x%s|r", classColor.r*255, classColor.g*255, classColor.b*255, name)
+                    GameTooltip:AddDoubleLine(nameStr, Utils:FormatMoney(data.gold), 1, 1, 1, 1, 1, 1)
+                    totalGold = totalGold + data.gold
+                end
+                GameTooltip:AddDoubleLine("|cff00ccffTotal:|r", Utils:FormatMoney(totalGold), 1, 1, 1, 1, 1, 1)
+            end
+
+            -- Tracked Currencies
+            local headerAdded = false
+            for i = 1, 10 do
+                local info = C_CurrencyInfo.GetBackpackCurrencyInfo(i)
+                if info then
+                    if not headerAdded then
+                        GameTooltip:AddLine(" ")
+                        GameTooltip:AddLine("Tracked Currencies:", 1, 1, 1)
+                        headerAdded = true
+                    end
+                    local iconStr = string.format("|T%d:12:12:0:0|t ", info.iconFileID)
+                    GameTooltip:AddDoubleLine(iconStr .. info.name, info.quantity, 1, 1, 1, 1, 1, 1)
+                end
+            end
+
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("|cffFFFFFFLeft Click:|r Open Bags", 0, 1, 0)
+            GameTooltip:AddLine("|cffFFFFFFRight Click:|r Open Currencies", 0, 1, 0)
+            GameTooltip:Show()
+        end)
+        self.frame:SetScript("OnLeave", function() GameTooltip:Hide() end)
     end
     
     self.frame:SetParent(slotFrame)
@@ -132,7 +189,6 @@ function CurrencyModule:Refresh(slotFrame)
     if not self.text then return end
     slotFrame = slotFrame or self.frame:GetParent()
     if not slotFrame then return end
-    local align = slotFrame and slotFrame.align or "CENTER"
     
     self.frame:SetHeight(slotFrame:GetHeight())
     
@@ -141,27 +197,4 @@ function CurrencyModule:Refresh(slotFrame)
     
     self.text:ClearAllPoints()
     self.text:SetPoint("CENTER", self.frame, "CENTER", 0, 0)
-    
-    -- Tooltip logic for gold on all chars
-    self.frame:SetScript("OnEnter", function(f)
-        local realm = GetRealmName()
-        local lines = {}
-        local totalGold = 0
-        
-        if LumiBar.db.global.goldData[realm] then
-            for name, data in pairs(LumiBar.db.global.goldData[realm]) do
-                local classColor = RAID_CLASS_COLORS[data.class]
-                local nameStr = string.format("|cff%02x%02x%02x%s|r", classColor.r*255, classColor.g*255, classColor.b*255, name)
-                table.insert(lines, {nameStr, Utils:FormatMoney(data.gold)})
-                totalGold = totalGold + data.gold
-            end
-        end
-        
-        table.insert(lines, "")
-        table.insert(lines, {"Total:", Utils:FormatMoney(totalGold)})
-        
-        Utils:SetTooltip(f, "Gold on " .. realm, lines)
-        local script = f:GetScript("OnEnter")
-        if script then script(f) end
-    end)
 end

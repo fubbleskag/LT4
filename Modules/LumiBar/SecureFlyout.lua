@@ -82,26 +82,42 @@ local function SetupMenu(level, parent, items, direction)
         local btn = GetButton(level, i, frame)
         btn:ClearAllPoints()
         
+        local displayName = item.name or "Unknown"
+        if item.isActive then
+            displayName = "|cff00ff00" .. displayName .. "|r"
+        end
+
         if item.isCategory then
             btn:SetAttribute("type", nil)
             btn:SetScript("OnEnter", function(s)
                 for l = level + 1, #Flyouts do Flyouts[l]:Hide() end
                 LumiBar.SecureFlyout:ShowSubMenu(level + 1, s, item.subItems, direction)
             end)
-            btn.icon:SetTexture(item.icon or 134400)
-            btn.text:SetText(item.name .. "  |cff888888>|r")
+            btn.text:SetText(displayName .. "  |cff888888>|r")
         else
-            btn:SetAttribute("type", item.type == "spell" and "spell" or "item")
             if item.type == "spell" then
+                btn:SetAttribute("type", "spell")
                 btn:SetAttribute("spell", item.id)
-            else
+            elseif item.type == "item" then
+                btn:SetAttribute("type", "item")
                 btn:SetAttribute("item", "item:" .. item.id)
+            elseif item.type == "macro" then
+                btn:SetAttribute("type", "macro")
+                btn:SetAttribute("macrotext", item.macrotext)
             end
             btn:SetScript("OnEnter", function() 
                 for l = level + 1, #Flyouts do Flyouts[l]:Hide() end
             end)
-            btn.icon:SetTexture(item.icon or 134400)
-            btn.text:SetText(item.name or "Unknown")
+            btn.text:SetText(displayName)
+        end
+
+        if item.icon then
+            btn.icon:SetTexture(item.icon)
+            btn.icon:Show()
+            btn.text:SetPoint("LEFT", btn.icon, "RIGHT", 8, 0)
+        else
+            btn.icon:Hide()
+            btn.text:SetPoint("LEFT", btn, "LEFT", 8, 0)
         end
         
         btn:SetSize(btnWidth - (padding * 2), btnHeight)

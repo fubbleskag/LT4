@@ -40,13 +40,27 @@ end
 
 function Spec:UpdateStatus()
     local specIndex = GetSpecialization()
-    local str = "No Spec"
+    local str = ""
     
     if specIndex then
-        local id, name, _, icon = GetSpecializationInfo(specIndex)
+        local specID, name, _, icon = GetSpecializationInfo(specIndex)
         local lootSpec = GetLootSpecialization()
         
-        str = ""
+        local activeLoadoutName = nil
+        if self.db.showLoadout then
+            local configID = C_ClassTalents.GetLastSelectedSavedConfigID(specID)
+            if configID then
+                if C_ClassTalents.GetStarterBuildActive() then
+                    activeLoadoutName = "Starter Build"
+                else
+                    local configInfo = C_Traits.GetConfigInfo(configID)
+                    if configInfo then
+                        activeLoadoutName = (configInfo.name ~= "") and configInfo.name or "Unnamed Loadout"
+                    end
+                end
+            end
+        end
+
         if self.db.showSpec1 then
             str = name
         end
@@ -57,15 +71,10 @@ function Spec:UpdateStatus()
                 str = (str ~= "" and str .. " " or "") .. "(" .. lootName .. ")"
             end
         end
-        
+
         if self.db.showLoadout then
-            local configID = C_ClassTalents.GetActiveConfigID()
-            if configID then
-                local configInfo = C_Traits.GetConfigInfo(configID)
-                if configInfo and configInfo.name ~= "" then
-                    str = (str ~= "" and str .. " - " or "") .. configInfo.name
-                end
-            end
+            local loadoutText = activeLoadoutName or "No Loadout"
+            str = (str ~= "" and str .. " - " or "") .. loadoutText
         end
     end
     
@@ -80,6 +89,75 @@ function Spec:UpdateWidth()
     Utils:UpdateModuleWidth(self, textW + 16, function() self:UpdateWidth() end)
 end
 
+function Spec:GetSpecItems()
+    local items = {}
+    local currentSpec = GetSpecialization()
+    for i = 1, GetNumSpecializations() do
+        local id, name, _, icon = GetSpecializationInfo(i)
+        table.insert(items, {
+            name = name,
+            isActive = (i == currentSpec),
+            type = "macro",
+            macrotext = "/run SetSpecialization(" .. i .. ")",
+        })
+    end
+    return items
+end
+
+function Spec:GetLoadoutItems()
+    local items = {}
+    local specIndex = GetSpecialization()
+    if not specIndex then return items end
+    local specID = GetSpecializationInfo(specIndex)
+    
+    local currentConfigID = C_ClassTalents.GetLastSelectedSavedConfigID(specID)
+    local isStarterActive = C_ClassTalents.GetStarterBuildActive()
+    local configIDs = C_ClassTalents.GetConfigIDsBySpecID(specID)
+    
+    for _, configID in ipairs(configIDs) do
+        local configInfo = C_Traits.GetConfigInfo(configID)
+        if configInfo then
+            table.insert(items, {
+                name = configInfo.name ~= "" and configInfo.name or "Unnamed Loadout",
+                isActive = (configID == currentConfigID and not isStarterActive),
+                type = "macro",
+                macrotext = "/run C_ClassTalents.LoadConfig(" .. configID .. ", true)",
+            })
+        end
+    end
+
+    if C_ClassTalents.GetHasStarterBuild() then
+        table.insert(items, {
+            name = "Starter Build",
+            isActive = isStarterActive,
+            type = "macro",
+            macrotext = "/run C_ClassTalents.SetStarterBuildActive(true)",
+        })
+    end
+    return items
+end
+
+function Spec:GetLootItems()
+    local items = {}
+    local currentLoot = GetLootSpecialization()
+    for i = 1, GetNumSpecializations() do
+        local id, name, _, icon = GetSpecializationInfo(i)
+        table.insert(items, {
+            name = name,
+            isActive = (id == currentLoot),
+            type = "macro",
+            macrotext = "/run SetLootSpecialization(" .. id .. ")",
+        })
+    end
+    table.insert(items, {
+        name = "Current Specialization",
+        isActive = (currentLoot == 0),
+        type = "macro",
+        macrotext = "/run SetLootSpecialization(0)",
+    })
+    return items
+end
+
 function Spec:Enable(slotFrame)
     self.db = LumiBar.db.profile.modules.SpecSwitch
     
@@ -88,20 +166,43 @@ function Spec:Enable(slotFrame)
         self.text = self.frame:CreateFontString(nil, "OVERLAY")
         
         self.frame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+        self.frame:RegisterEvent("ACTIVE_PLAYER_SPECIALIZATION_CHANGED")
+        self.frame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
         self.frame:RegisterEvent("PLAYER_LOOT_SPEC_UPDATED")
+        self.frame:RegisterEvent("PLAYER_TALENT_UPDATE")
         self.frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
+        self.frame:RegisterEvent("ACTIVE_COMBAT_CONFIG_CHANGED")
         self.frame:RegisterEvent("PLAYER_ENTERING_WORLD")
         self.frame:SetScript("OnEvent", function() self:UpdateStatus() end)
         
         self.frame:SetScript("OnMouseDown", function(_, button)
+            if InCombatLockdown() then return end
+            local direction = (LumiBar.db.profile.bar.position == "BOTTOM") and "UP" or "DOWN"
+            
             if button == "LeftButton" then
-                if not InCombatLockdown() then
-                    ToggleTalentFrame()
+                if IsShiftKeyDown() then
+                    LumiBar.SecureFlyout:ShowMenu(self.frame, self:GetLootItems(), direction)
+                else
+                    LumiBar.SecureFlyout:ShowMenu(self.frame, self:GetSpecItems(), direction)
                 end
             elseif button == "RightButton" then
-                -- Simplified cycle: active -> spec1 -> spec2 -> ...
+                LumiBar.SecureFlyout:ShowMenu(self.frame, self:GetLoadoutItems(), direction)
             end
         end)
+
+        self.frame:SetScript("OnEnter", function(f)
+            local position = LumiBar.db.profile.bar.position or "BOTTOM"
+            local anchor = (position == "BOTTOM") and "ANCHOR_TOP" or "ANCHOR_BOTTOM"
+            GameTooltip:SetOwner(f, anchor)
+            GameTooltip:ClearLines()
+            GameTooltip:AddLine("Specialization & Loadout", 0, 0.8, 1)
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("|cffFFFFFFLeft Click:|r Change Specialization", 0, 1, 0)
+            GameTooltip:AddLine("|cffFFFFFFRight Click:|r Change Loadout", 0, 1, 0)
+            GameTooltip:AddLine("|cffFFFFFFShift+Left Click:|r Change Loot Spec", 0, 1, 0)
+            GameTooltip:Show()
+        end)
+        self.frame:SetScript("OnLeave", function() GameTooltip:Hide() end)
     end
     
     self.frame:SetParent(slotFrame)
@@ -123,9 +224,4 @@ function Spec:Refresh(slotFrame)
     
     self.text:ClearAllPoints()
     self.text:SetPoint("CENTER", self.frame, "CENTER", 0, 0)
-    
-    Utils:SetTooltip(self.frame, "Specialization", {
-        "|cffFFFFFFLeft Click:|r Toggle Talents",
-        "|cffFFFFFFRight Click:|r Change Loot Spec"
-    })
 end

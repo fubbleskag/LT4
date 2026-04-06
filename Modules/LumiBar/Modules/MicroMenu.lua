@@ -92,7 +92,6 @@ function MM:Init()
         options.args.buttonToggles.args[btnInfo.id] = {
             name = btnInfo.name,
             type = "toggle",
-            disabled = (btnInfo.id == "MainMenuMicroButton"), -- Always true safety
             get = function(info) return self.db.buttons[btnInfo.id] end,
             set = function(info, value)
                 self.db.buttons[btnInfo.id] = value

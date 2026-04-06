@@ -71,7 +71,7 @@ function LumiBar:OnInitialize()
                 DataBar = {
                     mode = "auto", icon = "", iconFontSize = 18, infoEnabled = true,
                     infoFontSize = 17, infoOffset = 13, infoUseAccent = true, showCompletedXP = false,
-                    showIcon = true, barHeight = 10, barOffset = 0,
+                    showIcon = true, barHeight = 10, barOffset = 0, textDisplay = "PERCENT",
                 },
                 Profession = {
                     useUppercase = true, selectedProf1 = 1, selectedProf2 = 1, iconFontSize = 18,
