@@ -73,27 +73,50 @@ local function SetupMenu(level, parent, items, direction)
     frame.currentParent = parent
     frame:ClearAllPoints()
     
-    local btnWidth, btnHeight = 180, 26
+    local minBtnWidth, btnHeight = 180, 26
     local spacing = 2
     local padding = 4
+    local maxBtnWidth = minBtnWidth
     
+    -- First pass: Set text and measure needed width
+    for i, item in ipairs(items) do
+        local btn = GetButton(level, i, frame)
+        local displayName = item.name or "Unknown"
+        if item.isActive then
+            displayName = "|cff00ff00" .. displayName .. "|r"
+        end
+        
+        if item.isCategory then
+            btn.text:SetText(displayName .. "  |cff888888>|r")
+        else
+            btn.text:SetText(displayName)
+        end
+        
+        -- Apply font before measuring
+        LumiBar.Utils:SetFont(btn.text)
+        
+        local textWidth = btn.text:GetStringWidth()
+        -- Math: Left Padding (4 or 8) + Icon (20) + Text Spacing (8) + Right Padding (4) + Buffer
+        local nonTextWidth = (item.icon and 36 or 12) + (padding * 2)
+        local buffer = 15 -- Extra safety buffer to prevent wrapping
+        local neededWidth = textWidth + nonTextWidth + buffer
+        
+        if neededWidth > maxBtnWidth then
+            maxBtnWidth = neededWidth
+        end
+    end
+
     local count = 0
     for i, item in ipairs(items) do
         local btn = GetButton(level, i, frame)
         btn:ClearAllPoints()
         
-        local displayName = item.name or "Unknown"
-        if item.isActive then
-            displayName = "|cff00ff00" .. displayName .. "|r"
-        end
-
         if item.isCategory then
             btn:SetAttribute("type", nil)
             btn:SetScript("OnEnter", function(s)
                 for l = level + 1, #Flyouts do Flyouts[l]:Hide() end
                 LumiBar.SecureFlyout:ShowSubMenu(level + 1, s, item.subItems, direction)
             end)
-            btn.text:SetText(displayName .. "  |cff888888>|r")
         else
             if item.type == "spell" then
                 btn:SetAttribute("type", "spell")
@@ -108,7 +131,6 @@ local function SetupMenu(level, parent, items, direction)
             btn:SetScript("OnEnter", function() 
                 for l = level + 1, #Flyouts do Flyouts[l]:Hide() end
             end)
-            btn.text:SetText(displayName)
         end
 
         if item.icon then
@@ -120,12 +142,11 @@ local function SetupMenu(level, parent, items, direction)
             btn.text:SetPoint("LEFT", btn, "LEFT", 8, 0)
         end
         
-        btn:SetSize(btnWidth - (padding * 2), btnHeight)
+        btn:SetWidth(maxBtnWidth - (padding * 2))
+        btn:SetHeight(btnHeight)
         btn:SetPoint("TOPLEFT", frame, "TOPLEFT", padding, -padding - (i-1) * (btnHeight + spacing))
         btn:Show()
         count = i
-        -- Optimization: Only set font if actually needed (handled by module refresh usually)
-        LumiBar.Utils:SetFont(btn.text)
     end
     
     for i = count + 1, #buttonPool[level] do
@@ -133,10 +154,17 @@ local function SetupMenu(level, parent, items, direction)
     end
     
     local totalHeight = (count * btnHeight) + ((count - 1) * spacing) + (padding * 2)
-    frame:SetSize(btnWidth, totalHeight)
+    frame:SetSize(maxBtnWidth, totalHeight)
     
     if level > 1 then
-        frame:SetPoint("LEFT", parent, "RIGHT", 2, 0)
+        local parentRight = parent:GetRight() or 0
+        local screenWidth = UIParent:GetRight() or GetScreenWidth()
+        -- If showing on the right would go off-screen, show on the left instead
+        if parentRight + maxBtnWidth + 20 > screenWidth then
+            frame:SetPoint("RIGHT", parent, "LEFT", -2, 0)
+        else
+            frame:SetPoint("LEFT", parent, "RIGHT", 2, 0)
+        end
     else
         if direction == "UP" then
             frame:SetPoint("BOTTOM", parent, "TOP", 0, 8)

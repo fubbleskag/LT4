@@ -213,7 +213,9 @@ function Utils:UpdateModuleWidth(module, width, retryFunc)
     
     local zoneFrame = module.frame:GetParent()
     if zoneFrame and zoneFrame.GetName then
-        local zName = zoneFrame:GetName():gsub("LumiBarZone", "")
-        LumiBar:UpdateZoneLayout(zName)
+        local zName = zoneFrame:GetName():gsub("LT4_LumiBarZone", "")
+        if zName == "Left" or zName == "Center" or zName == "Right" then
+            LumiBar:UpdateZoneLayout(zName)
+        end
     end
 end

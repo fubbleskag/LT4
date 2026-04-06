@@ -89,7 +89,7 @@ local options = {
                     },
                 },
                 fontGroup = {
-                    name = "Font Settings",
+                    name = "Font",
                     type = "group",
                     inline = true,
                     order = 20,
@@ -129,7 +129,7 @@ local options = {
                             order = 3,
                         },
                         color = {
-                            name = "Default Text Color",
+                            name = "Primary Color",
                             type = "color",
                             hasAlpha = true,
                             get = function(info)
@@ -195,7 +195,25 @@ local function UpdateModuleOptions()
     for mName, module in pairs(LumiBar.Modules) do
         -- 1. Add to Module Settings Tab
         if LumiBar.moduleOptions and LumiBar.moduleOptions[mName] then
-            options.args.modules.args[mName] = LumiBar.moduleOptions[mName]
+            local moduleOpts = LumiBar.moduleOptions[mName]
+            
+            -- Inject a wrapper for the 'set' function if it exists, or add one if it doesn't
+            -- This ensures that whenever a module setting is changed, LumiBar:RefreshModules() is called.
+            local originalSet = moduleOpts.set
+            moduleOpts.set = function(info, ...)
+                if originalSet then
+                    originalSet(info, ...)
+                else
+                    -- Default set behavior if the module didn't provide one
+                    local var = info[#info]
+                    if module.db then
+                        module.db[var] = ...
+                    end
+                end
+                LumiBar:RefreshModules()
+            end
+
+            options.args.modules.args[mName] = moduleOpts
         end
         
         -- 2. Add to Zone Assignments
