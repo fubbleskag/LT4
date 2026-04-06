@@ -269,7 +269,7 @@ function LumiBar:UpdateZoneLayout(zName)
     if not self.db or zoneUpdateTimer[zName] then return end
     zoneUpdateTimer[zName] = true
     
-    C_Timer.After(0.01, function()
+    C_Timer.After(0.05, function()
         zoneUpdateTimer[zName] = nil
         if not self.db then return end
         local zoneFrame = self.Zones[zName]

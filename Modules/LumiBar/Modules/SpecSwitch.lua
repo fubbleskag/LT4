@@ -68,7 +68,8 @@ function Spec:UpdateStatus()
         if self.db.showSpec2 and lootSpec > 0 then
             local _, lootName = GetSpecializationInfoByID(lootSpec)
             if lootName then
-                str = (str ~= "" and str .. " " or "") .. "(" .. lootName .. ")"
+                local accent = "|cff" .. Utils:GetAccentColorHex()
+                str = (str ~= "" and str .. " " or "") .. accent .. "(" .. lootName .. ")|r"
             end
         end
 
@@ -104,6 +105,32 @@ function Spec:GetSpecItems()
     return items
 end
 
+function Spec:LoadConfig(configID)
+    if InCombatLockdown() then return end
+    
+    -- Ensure Blizzard ClassTalentUI is loaded
+    if not _G.PlayerSpellsFrame then
+        if _G.PlayerSpellsFrame_LoadUI then
+            _G.PlayerSpellsFrame_LoadUI()
+        else
+            C_AddOns.LoadAddOn("Blizzard_ClassTalentUI")
+        end
+    end
+
+    if _G.PlayerSpellsFrame and _G.PlayerSpellsFrame.TalentsFrame and _G.PlayerSpellsFrame.TalentsFrame.LoadConfigByPredicate then
+        _G.PlayerSpellsFrame.TalentsFrame:LoadConfigByPredicate(function(_, id) 
+            return id == configID 
+        end)
+    else
+        -- Fallback to direct API if UI logic not reachable
+        if configID == (Constants.TraitConsts.STARTER_BUILD_TRAIT_CONFIG_ID or -1) then
+            C_ClassTalents.SetStarterBuildActive(true)
+        else
+            C_ClassTalents.LoadConfig(configID, true)
+        end
+    end
+end
+
 function Spec:GetLoadoutItems()
     local items = {}
     local specIndex = GetSpecialization()
@@ -114,6 +141,8 @@ function Spec:GetLoadoutItems()
     local isStarterActive = C_ClassTalents.GetStarterBuildActive()
     local configIDs = C_ClassTalents.GetConfigIDsBySpecID(specID)
     
+    local path = "LibStub('AceAddon-3.0'):GetAddon('LT4'):GetModule('LumiBar').Modules['SpecSwitch']"
+
     for _, configID in ipairs(configIDs) do
         local configInfo = C_Traits.GetConfigInfo(configID)
         if configInfo then
@@ -121,17 +150,18 @@ function Spec:GetLoadoutItems()
                 name = configInfo.name ~= "" and configInfo.name or "Unnamed Loadout",
                 isActive = (configID == currentConfigID and not isStarterActive),
                 type = "macro",
-                macrotext = "/run C_ClassTalents.LoadConfig(" .. configID .. ", true)",
+                macrotext = "/run " .. path .. ":LoadConfig(" .. configID .. ")",
             })
         end
     end
 
     if C_ClassTalents.GetHasStarterBuild() then
+        local starterID = Constants.TraitConsts.STARTER_BUILD_TRAIT_CONFIG_ID or -1
         table.insert(items, {
             name = "Starter Build",
             isActive = isStarterActive,
             type = "macro",
-            macrotext = "/run C_ClassTalents.SetStarterBuildActive(true)",
+            macrotext = "/run " .. path .. ":LoadConfig(" .. starterID .. ")",
         })
     end
     return items
@@ -173,7 +203,9 @@ function Spec:Enable(slotFrame)
         self.frame:RegisterEvent("TRAIT_CONFIG_UPDATED")
         self.frame:RegisterEvent("ACTIVE_COMBAT_CONFIG_CHANGED")
         self.frame:RegisterEvent("PLAYER_ENTERING_WORLD")
-        self.frame:SetScript("OnEvent", function() self:UpdateStatus() end)
+        self.frame:SetScript("OnEvent", function() 
+            C_Timer.After(0.1, function() self:UpdateStatus() end)
+        end)
         
         self.frame:SetScript("OnMouseDown", function(_, button)
             if InCombatLockdown() then return end
