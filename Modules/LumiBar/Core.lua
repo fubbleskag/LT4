@@ -97,6 +97,22 @@ function LumiBar:OnInitialize()
                     showLoadout = true, iconFontSize = 18, infoEnabled = true, infoShowIcon = false,
                     infoIcon = "", infoFontSize = 12, infoOffset = 18, infoUseAccent = true,
                 },
+                MicroMenu = {
+                    showCharacter = true,
+                    showProfessions = true,
+                    showPlayerSpells = true,
+                    showAchievements = true,
+                    showQuests = true,
+                    showGuild = true,
+                    showLFD = true,
+                    showCollections = true,
+                    showEJ = true,
+                    showStore = true,
+                    showMenu = true,
+                    autoSize = true,
+                    iconSize = 20,
+                    spacing = 2,
+                },
             }
         },
         global = { goldData = {} }

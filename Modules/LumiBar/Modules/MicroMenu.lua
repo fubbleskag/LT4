@@ -1,0 +1,195 @@
+local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
+local LumiBar = LT4:GetModule("LumiBar")
+local Utils = LumiBar.Utils
+
+local MicroMenu = {}
+LumiBar:RegisterModule("MicroMenu", MicroMenu)
+
+-- Performance: Cache common lookups
+local CreateFrame = CreateFrame
+local GameTooltip = GameTooltip
+local ipairs = ipairs
+local pairs = pairs
+local table_insert = table.insert
+local InCombatLockdown = InCombatLockdown
+
+-- Updated buttons to match modern Retail HUD names and Atlases
+local buttons = {
+    { id = "Character",    name = CHARACTER_BUTTON or "Character",           func = function() ToggleCharacter("PaperDollFrame") end, atlas = "UI-HUD-MicroMenu-Character-Up" },
+    { id = "Professions",  name = PROFESSIONS_BUTTON or "Professions",       func = function() ToggleProfessionsBook() end,           atlas = "UI-HUD-MicroMenu-Professions-Up" },
+    { id = "PlayerSpells", name = TALENTS_BUTTON or "Spells & Talents",       func = function() TogglePlayerSpellsFrame() end,         atlas = "UI-HUD-MicroMenu-SpecTalents-Up" },
+    { id = "Achievements", name = ACHIEVEMENT_BUTTON or "Achievements",         func = function() ToggleAchievementFrame() end,          atlas = "UI-HUD-MicroMenu-Achievements-Up" },
+    { id = "Quests",       name = QUESTLOG_BUTTON or "Quests",            func = function() ToggleQuestLog() end,                  atlas = "UI-HUD-MicroMenu-Questlog-Up" },
+    { id = "Guild",        name = GUILD_BUTTON or "Guild",               func = function() ToggleGuildFrame() end,                atlas = "UI-HUD-MicroMenu-GuildCommunities-GuildColor-Up" },
+    { id = "LFD",          name = DUNGEONS_BUTTON or LOOKINGFORGROUP or "Group Finder",            func = function() PVEFrame_ToggleFrame() end,            atlas = "UI-HUD-MicroMenu-Groupfinder-Up" },
+    { id = "Collections",  name = COLLECTIONS or "Collections",                func = function() ToggleCollectionsJournal() end,        atlas = "UI-HUD-MicroMenu-Collections-Up" },
+    { id = "EJ",           name = ADVENTURE_JOURNAL or ENCOUNTER_JOURNAL or "Encounter Journal",          func = function() ToggleEncounterJournal() end,          atlas = "UI-HUD-MicroMenu-AdventureGuide-Up" },
+    { id = "Store",        name = BLIZZARD_STORE or "Store",             func = function() ToggleStoreUI() end,                   atlas = "UI-HUD-MicroMenu-Shop-Up" },
+    { id = "Menu",         name = MAINMENU_BUTTON or "Main Menu",            func = function() ToggleGameMenu() end,                  atlas = "UI-HUD-MicroMenu-GameMenu-Up" },
+}
+
+function MicroMenu:Init()
+    self.db = LumiBar.db.profile.modules.MicroMenu
+
+    local options = {
+        name = "Micro Menu",
+        type = "group",
+        get = function(info) return self.db[info[#info]] end,
+        set = function(info, value) 
+            self.db[info[#info]] = value
+            self:Refresh()
+        end,
+        args = {
+            displayGroup = {
+                name = "Display Elements",
+                type = "group",
+                inline = true,
+                order = 1,
+                args = {
+                    autoSize = {
+                        name = "Auto Size to Bar",
+                        desc = "Match the height of the LumiBar automatically.",
+                        type = "toggle",
+                        order = 1,
+                    },
+                    iconSize = {
+                        name = "Custom Icon Size",
+                        type = "range",
+                        min = 10, max = 100, step = 1,
+                        hidden = function() return self.db.autoSize end,
+                        order = 2,
+                    },
+                    spacing = { name = "Spacing", type = "range", min = -10, max = 20, step = 1, order = 3 },
+                }
+            },
+            buttonsGroup = {
+                name = "Buttons",
+                type = "group",
+                inline = true,
+                order = 2,
+                args = {}
+            }
+        }
+    }
+
+    for i, btn in ipairs(buttons) do
+        options.args.buttonsGroup.args["show"..btn.id] = {
+            name = btn.name or btn.id,
+            type = "toggle",
+            order = i,
+        }
+    end
+
+    LumiBar:RegisterModuleOptions("MicroMenu", options)
+end
+
+function MicroMenu:Enable(slotFrame)
+    self.db = LumiBar.db.profile.modules.MicroMenu
+    if not self.frame then
+        self.frame = CreateFrame("Frame", nil, slotFrame, "BackdropTemplate")
+        self.btns = {}
+        for i, btnData in ipairs(buttons) do
+            local btn = CreateFrame("Button", nil, self.frame)
+            
+            btn.icon = btn:CreateTexture(nil, "ARTWORK")
+            btn.icon:SetAllPoints()
+            btn.icon:SetAtlas(btnData.atlas)
+            
+            -- Special handling for Character Portrait
+            if btnData.id == "Character" then
+                btn.portrait = btn:CreateTexture(nil, "OVERLAY")
+                -- Apply padding to match the built-in padding of other micro menu atlases (roughly 5px per side)
+                local padding = 5
+                btn.portrait:SetPoint("TOPLEFT", btn, "TOPLEFT", padding, -padding)
+                btn.portrait:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", -padding, padding)
+                
+                local function UpdatePortrait()
+                    SetPortraitTexture(btn.portrait, "player")
+                    btn.portrait:SetTexCoord(0.1, 0.9, 0, 1)
+                end
+                
+                btn:RegisterEvent("UNIT_PORTRAIT_UPDATE")
+                btn:RegisterEvent("PLAYER_ENTERING_WORLD")
+                btn:SetScript("OnEvent", function(s, event, unit)
+                    if event == "PLAYER_ENTERING_WORLD" or unit == "player" then
+                        UpdatePortrait()
+                    end
+                end)
+                UpdatePortrait()
+            end
+            
+            -- Add highlight texture
+            btn.highlight = btn:CreateTexture(nil, "HIGHLIGHT")
+            btn.highlight:SetAllPoints()
+            btn.highlight:SetAtlas(btnData.atlas)
+            btn.highlight:SetBlendMode("ADD")
+            btn.highlight:SetAlpha(0.3)
+
+            btn:SetScript("OnClick", function()
+                if not InCombatLockdown() then
+                    btnData.func()
+                end
+            end)
+            
+            btn:SetScript("OnEnter", function(f)
+                local anchor = (LumiBar.db.profile.bar.position == "BOTTOM") and "ANCHOR_TOP" or "ANCHOR_BOTTOM"
+                GameTooltip:SetOwner(f, anchor)
+                GameTooltip:SetText(btnData.name)
+                GameTooltip:Show()
+            end)
+            btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            
+            self.btns[btnData.id] = btn
+        end
+    end
+    
+    self.frame:SetParent(slotFrame)
+    self.frame:SetHeight(slotFrame:GetHeight())
+    self.frame:Show()
+    self:Refresh(slotFrame)
+end
+
+function MicroMenu:Refresh(slotFrame)
+    if not self.frame then return end
+    slotFrame = slotFrame or self.frame:GetParent()
+    if not slotFrame then return end
+    
+    self.frame:SetHeight(slotFrame:GetHeight())
+    Utils:ApplyBackground(self.frame, self.db)
+    
+    local prevBtn = nil
+    local totalWidth = 0
+    local spacing = self.db.spacing or 0
+    
+    local iconHeight
+    if self.db.autoSize then
+        iconHeight = slotFrame:GetHeight()
+    else
+        iconHeight = self.db.iconSize or 20
+    end
+    local iconWidth = iconHeight * 0.8
+    
+    for _, btnData in ipairs(buttons) do
+        local btn = self.btns[btnData.id]
+        if self.db["show"..btnData.id] then
+            btn:Show()
+            btn:SetSize(iconWidth, iconHeight)
+            btn:ClearAllPoints()
+            if not prevBtn then
+                btn:SetPoint("LEFT", self.frame, "LEFT", 0, 0)
+            else
+                btn:SetPoint("LEFT", prevBtn, "RIGHT", spacing, 0)
+            end
+            totalWidth = totalWidth + iconWidth + (prevBtn and spacing or 0)
+            prevBtn = btn
+        else
+            btn:Hide()
+        end
+    end
+    
+    self:UpdateWidth(totalWidth)
+end
+
+function MicroMenu:UpdateWidth(width)
+    Utils:UpdateModuleWidth(self, width, function() self:Refresh() end)
+end
