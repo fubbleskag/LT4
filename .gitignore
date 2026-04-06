@@ -20,6 +20,3 @@ OnPaste*
 
 # Project specific
 TODO.md
-# GEMINI.md
-# (Optional) Ignore any local database files if they aren't meant to be shared
-# LT4DB is usually in SavedVariables, which is outside the addon folder.
