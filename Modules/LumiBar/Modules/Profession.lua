@@ -5,25 +5,13 @@ local Utils = LumiBar.Utils
 local Prof = {}
 LumiBar:RegisterModule("Profession", Prof)
 
-local function GetAvailableProfessions()
-    local profs = { GetProfessions() }
-    local available = { [0] = "None" }
-    for i, pIndex in ipairs(profs) do
-        if pIndex then
-            local name = GetProfessionInfo(pIndex)
-            available[pIndex] = name
-        end
-    end
-    return available
-end
-
 function Prof:Init()
     self.db = LumiBar.db.profile.modules.Profession
     
     -- Set defaults
-    if self.db.prof1Index == nil then self.db.prof1Index = 0 end
-    if self.db.prof2Index == nil then self.db.prof2Index = 0 end
-    if self.db.showBars == nil then self.db.showBars = true end
+    if self.db.showProf1 == nil then self.db.showProf1 = true end
+    if self.db.showProf2 == nil then self.db.showProf2 = true end
+    if self.db.showIcons == nil then self.db.showIcons = true end
 
     local options = {
         name = "Profession",
@@ -31,24 +19,21 @@ function Prof:Init()
         get = function(info) return self.db[info[#info]] end,
         set = function(info, value) 
             self.db[info[#info]] = value
-            self:Refresh()
             self:UpdateStatus()
         end,
         args = {
-            prof1Index = {
-                name = "Profession 1",
-                type = "select",
-                values = function() return GetAvailableProfessions() end,
+            showProf1 = {
+                name = "Show Primary Profession 1",
+                type = "toggle",
                 order = 1,
             },
-            prof2Index = {
-                name = "Profession 2",
-                type = "select",
-                values = function() return GetAvailableProfessions() end,
+            showProf2 = {
+                name = "Show Primary Profession 2",
+                type = "toggle",
                 order = 2,
             },
-            showBars = {
-                name = "Show Progress Bars",
+            showIcons = {
+                name = "Show Icons",
                 type = "toggle",
                 order = 3,
             },
@@ -73,24 +58,18 @@ function Prof:UpdateProfession(index, bar, text)
 
     text:SetText(string.format("%s: %d/%d", name, rank, max))
     text:Show()
+    
+    if self.db.showIcons then
+        bar.icon:SetTexture(icon)
+        bar.icon:Show()
+    else
+        bar.icon:Hide()
+    end
+    
     bar:Show() -- Always show the frame for mouse interaction and anchoring
 
-    if self.db.showBars then
-        bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
-        bar:SetMinMaxValues(0, max)
-        bar:SetValue(rank)
-        bar.bg:Show()
-        
-        -- Use the same color as DataBar XP (Blue)
-        local color = { r = 0, g = 0.4, b = 1 }
-        bar:SetStatusBarColor(color.r, color.g, color.b, 1)
-        bar.bg:SetVertexColor(color.r * 0.2, color.g * 0.2, color.b * 0.2, 0.8)
-    else
-        -- Hide bar visuals by setting alpha to 0 in colors
-        bar:SetStatusBarColor(0, 0, 0, 0)
-        bar.bg:SetVertexColor(0, 0, 0, 0)
-        bar.bg:Hide()
-    end
+    -- Hide bar visuals (text-only module)
+    bar:SetStatusBarColor(0, 0, 0, 0)
     
     -- Store index for click handling
     bar.profIndex = index
@@ -101,8 +80,23 @@ function Prof:UpdateProfession(index, bar, text)
 end
 
 function Prof:UpdateStatus()
-    local has1 = self:UpdateProfession(self.db.prof1Index, self.bar1, self.text1)
-    local has2 = self:UpdateProfession(self.db.prof2Index, self.bar2, self.text2)
+    local p1, p2 = GetProfessions()
+    
+    self.has1 = false
+    if self.db.showProf1 and p1 then
+        self.has1 = self:UpdateProfession(p1, self.bar1, self.text1)
+    else
+        self.bar1:Hide()
+        self.text1:Hide()
+    end
+    
+    self.has2 = false
+    if self.db.showProf2 and p2 then
+        self.has2 = self:UpdateProfession(p2, self.bar2, self.text2)
+    else
+        self.bar2:Hide()
+        self.text2:Hide()
+    end
     
     self:Refresh()
     self:UpdateWidth()
@@ -110,8 +104,26 @@ end
 
 function Prof:UpdateWidth()
     if not self.frame then return end
-    local barW = 150
-    Utils:UpdateModuleWidth(self, barW + 20, nil)
+    
+    local width = 0
+    local padding = 20
+    local spacing = 20
+    
+    local w1 = self.has1 and (self.text1:GetStringWidth() + (self.db.showIcons and 24 or 0)) or 0
+    local w2 = self.has2 and (self.text2:GetStringWidth() + (self.db.showIcons and 24 or 0)) or 0
+    
+    if self.has1 and self.has2 then
+        width = w1 + w2 + spacing + padding
+    elseif self.has1 then
+        width = w1 + padding
+    elseif self.has2 then
+        width = w2 + padding
+    end
+    
+    -- Ensure a minimum width for usability
+    if width > 0 then width = math.max(width, 100) end
+    
+    Utils:UpdateModuleWidth(self, width, function() self:UpdateWidth() end)
 end
 
 function Prof:GetProfessionItems()
@@ -170,10 +182,9 @@ function Prof:Enable(slotFrame)
         
         local function CreateProfBar(id)
             local bar = CreateFrame("StatusBar", nil, self.frame)
-            bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
-            bar.bg = bar:CreateTexture(nil, "BACKGROUND")
-            bar.bg:SetTexture("Interface\\Buttons\\WHITE8X8")
-            bar.bg:SetAllPoints(bar)
+            
+            bar.icon = bar:CreateTexture(nil, "OVERLAY")
+            bar.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
             
             -- Parent text to the bar so it's always on top of the bar's texture
             local text = bar:CreateFontString(nil, "OVERLAY")
@@ -213,27 +224,25 @@ function Prof:Refresh(slotFrame)
     Utils:SetFont(self.text2)
     Utils:ApplyBackground(self.frame, self.db)
     
-    local has1 = self.db.prof1Index and self.db.prof1Index > 0
-    local has2 = self.db.prof2Index and self.db.prof2Index > 0
+    local has1 = self.has1
+    local has2 = self.has2
     
-    local barW = 150
-    local innerBarHeight = 10
+    local innerBarHeight = barHeight - 8
+    
+    -- Update bar sizes based on content
+    local w1 = has1 and (self.text1:GetStringWidth() + (self.db.showIcons and 24 or 0)) or 0
+    local w2 = has2 and (self.text2:GetStringWidth() + (self.db.showIcons and 24 or 0)) or 0
+    
+    self.bar1:SetSize(math.max(w1, 1), innerBarHeight)
+    self.bar2:SetSize(math.max(w2, 1), innerBarHeight)
     
     if has1 and has2 then
-        innerBarHeight = (barHeight / 2) - 4
-        self.bar1:SetSize(barW, innerBarHeight)
-        self.bar2:SetSize(barW, innerBarHeight)
-        
         self.bar1:ClearAllPoints()
-        self.bar1:SetPoint("TOP", self.frame, "TOP", 0, -2)
+        self.bar1:SetPoint("LEFT", self.frame, "LEFT", 10, 0)
         
         self.bar2:ClearAllPoints()
-        self.bar2:SetPoint("BOTTOM", self.frame, "BOTTOM", 0, 2)
+        self.bar2:SetPoint("RIGHT", self.frame, "RIGHT", -10, 0)
     else
-        innerBarHeight = barHeight - 8
-        self.bar1:SetSize(barW, innerBarHeight)
-        self.bar2:SetSize(barW, innerBarHeight)
-        
         self.bar1:ClearAllPoints()
         self.bar1:SetPoint("CENTER", self.frame, "CENTER", 0, 0)
         
@@ -242,8 +251,21 @@ function Prof:Refresh(slotFrame)
     end
     
     self.text1:ClearAllPoints()
-    self.text1:SetPoint("CENTER", self.bar1, "CENTER", 0, 0)
-    
     self.text2:ClearAllPoints()
-    self.text2:SetPoint("CENTER", self.bar2, "CENTER", 0, 0)
+    
+    if self.db.showIcons then
+        local iconSize = innerBarHeight
+        self.bar1.icon:SetSize(iconSize, iconSize)
+        self.bar1.icon:ClearAllPoints()
+        self.bar1.icon:SetPoint("LEFT", self.bar1, "LEFT", 0, 0)
+        self.text1:SetPoint("LEFT", self.bar1.icon, "RIGHT", 4, 0)
+        
+        self.bar2.icon:SetSize(iconSize, iconSize)
+        self.bar2.icon:ClearAllPoints()
+        self.bar2.icon:SetPoint("LEFT", self.bar2, "LEFT", 0, 0)
+        self.text2:SetPoint("LEFT", self.bar2.icon, "RIGHT", 4, 0)
+    else
+        self.text1:SetPoint("CENTER", self.bar1, "CENTER", 0, 0)
+        self.text2:SetPoint("CENTER", self.bar2, "CENTER", 0, 0)
+    end
 end
