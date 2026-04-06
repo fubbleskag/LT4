@@ -99,7 +99,7 @@ function Spec:GetSpecItems()
             name = name,
             isActive = (i == currentSpec),
             type = "macro",
-            macrotext = "/run SetSpecialization(" .. i .. ")",
+            macrotext = "/run C_SpecializationInfo.SetSpecialization(" .. i .. ")",
         })
     end
     return items
@@ -146,22 +146,22 @@ function Spec:GetLoadoutItems()
     for _, configID in ipairs(configIDs) do
         local configInfo = C_Traits.GetConfigInfo(configID)
         if configInfo then
+            local name = configInfo.name ~= "" and configInfo.name or "Unnamed Loadout"
             table.insert(items, {
-                name = configInfo.name ~= "" and configInfo.name or "Unnamed Loadout",
+                name = name,
                 isActive = (configID == currentConfigID and not isStarterActive),
                 type = "macro",
-                macrotext = "/run " .. path .. ":LoadConfig(" .. configID .. ")",
+                macrotext = "/lon " .. name,
             })
         end
     end
 
     if C_ClassTalents.GetHasStarterBuild() then
-        local starterID = Constants.TraitConsts.STARTER_BUILD_TRAIT_CONFIG_ID or -1
         table.insert(items, {
             name = "Starter Build",
             isActive = isStarterActive,
             type = "macro",
-            macrotext = "/run " .. path .. ":LoadConfig(" .. starterID .. ")",
+            macrotext = "/lon Starter Build",
         })
     end
     return items
