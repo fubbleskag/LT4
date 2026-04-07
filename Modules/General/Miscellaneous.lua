@@ -4,7 +4,7 @@ local Module = LT4:NewModule("Miscellaneous", "AceEvent-3.0", "AceHook-3.0")
 Module.description = "A collection of miscellaneous quality-of-life tweaks."
 
 local function AddID(tooltip, id, typeLabel)
-    if not id or not LT4:GetModuleEnabled("Miscellaneous") or not LT4.db.profile.miscellaneous.showIDs then return end
+    if InCombatLockdown() or not id or not LT4:GetModuleEnabled("Miscellaneous") or not LT4.db.profile.miscellaneous.showIDs then return end
     
     local name = tooltip:GetName()
     if not name then return end
