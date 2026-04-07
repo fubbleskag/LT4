@@ -238,13 +238,8 @@ local function SetupMenu(level, parent, items, direction)
             local barWidth = availableWidth * percent
             btn.bar:SetWidth(math_max(barWidth, 1))
             
-            -- Apply Color
-            local r, g, b
-            if item.isActive then
-                r, g, b = LumiBar.Utils:GetAccentColor()
-            else
-                r, g, b = 1, 1, 1 -- White for inactive
-            end
+            -- Apply Color: Both active and inactive bars now use the Accent Color
+            local r, g, b = LumiBar.Utils:GetAccentColor()
             btn.bar:SetVertexColor(r, g, b, 0.6)
             btn.bar:Show()
         else

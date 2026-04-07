@@ -109,10 +109,21 @@ function LT4:OnInitialize()
         type = "launcher",
         text = "<4",
         icon = "Interface\\Addons\\LT4\\Media\\LT4",
-        OnClick = function() self:OpenOptions() end,
+        OnClick = function(_, button)
+            if IsShiftKeyDown() and button == "LeftButton" then
+                local LumiBar = self:GetModule("LumiBar", true)
+                if LumiBar and not InCombatLockdown() then
+                    LumiBar:RefreshConfig()
+                    self:Print("|cff00ccffLumiBar|r refreshed.")
+                end
+            else
+                self:OpenOptions()
+            end
+        end,
         OnTooltipShow = function(tooltip)
             tooltip:AddLine("|cFF00AAFF" .. LT4.title .. "|r")
             tooltip:AddLine("|cFFFFFFFFLeft-Click:|r Open Settings")
+            tooltip:AddLine("|cFFFFFFFFShift + Left-Click:|r Refresh LumiBar")
         end,
     })
     icon:Register("LT4", LT4_LDB, self.db.profile.minimap)
