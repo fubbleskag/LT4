@@ -50,10 +50,12 @@ end
 
 function HS:ScanAvailable()
     -- Only re-scan if needed (could add event throttling here)
-    local allKnown = { Standard = {}, Dungeons = {}, Seasonal = {} }
+    local allKnown = { Standard = {}, Expansions = {}, Seasonal = {} }
     local class = select(2, UnitClass("player"))
     
-    -- 1. Whitelist (Hearthstones/Toys)
+    local expMap = { df = "Dragonflight", tww = "The War Within", sl = "Shadowlands", bfa = "BfA", legion = "Legion", wod = "Warlords", cata = "Cataclysm", wotlk = "WotLK", mop = "Pandaria" }
+
+    -- 1. Whitelist (Hearthstones/Toys/Raids/Mythics)
     for id, info in pairs(Data.HearthstoneData) do
         local isKnown = false
         if info.type == "toy" then isKnown = PlayerHasToy(id)
@@ -63,7 +65,25 @@ function HS:ScanAvailable()
         if isKnown and (not info.class or info.class == class) then
             local key = info.type .. ":" .. id
             local name, icon = GetResourceInfo(key)
-            allKnown.Standard[key] = { name = name or "Unknown Item", icon = icon, type = info.type, id = id }
+            
+            if info.raid or info.mythic then
+                local expName = info.expansion and expMap[info.expansion] or "Other"
+                -- For mythic entries that might not have expansion field but have season field
+                if not info.expansion and info.season then
+                    if info.season:find("^df") then expName = "Dragonflight"
+                    elseif info.season:find("^tww") then expName = "The War Within"
+                    elseif info.season:find("^sl") then expName = "Shadowlands"
+                    elseif info.season:find("^mid") then expName = "Midnight"
+                    elseif info.season == "mop" then expName = "Pandaria"
+                    elseif info.season == "wod" then expName = "Warlords"
+                    end
+                end
+
+                allKnown.Expansions[expName] = allKnown.Expansions[expName] or {}
+                allKnown.Expansions[expName][key] = { name = name or "Unknown Portal", icon = icon, type = info.type, id = id, isRaid = info.raid }
+            else
+                allKnown.Standard[key] = { name = name or "Unknown Item", icon = icon, type = info.type, id = id }
+            end
         end
     end
 
@@ -80,15 +100,17 @@ function HS:ScanAvailable()
         end
     end
 
-    -- 3. Dungeon Portals
+    -- 3. Additional Dungeon Portal sync (ensuring all from Data.DungeonPortals are caught if missed)
     for expName, ids in pairs(Data.DungeonPortals) do
         for _, id in ipairs(ids) do
             if IsSpellKnown(id) then
                 local key = "spell:" .. id
-                local name, icon = GetResourceInfo(key)
-                if name then
-                    allKnown.Dungeons[expName] = allKnown.Dungeons[expName] or {}
-                    allKnown.Dungeons[expName][key] = { name = name, icon = icon, type = "spell", id = id }
+                if not allKnown.Expansions[expName] or not allKnown.Expansions[expName][key] then
+                    local name, icon = GetResourceInfo(key)
+                    if name then
+                        allKnown.Expansions[expName] = allKnown.Expansions[expName] or {}
+                        allKnown.Expansions[expName][key] = { name = name, icon = icon, type = "spell", id = id }
+                    end
                 end
             end
         end
@@ -142,8 +164,8 @@ function HS:Init()
                 order = 10,
                 args = {
                     standard = { name = "Hearthstones & Toys", type = "group", inline = true, order = 1, args = {} },
-                    dungeons = { 
-                        name = "Dungeons", 
+                    expansions = { 
+                        name = "Dungeons and Raids", 
                         type = "group", 
                         inline = true, 
                         order = 2, 
@@ -173,9 +195,19 @@ function HS:Init()
             end,
         }
     end
-    local order = 1
-    for expName, _ in pairs(Data.DungeonPortals) do
-        options.args.visibilityGroup.args.dungeons.args[expName:gsub(" ", "")] = {
+    
+    local eOrder = 1
+    -- Use a sorted list of expansion names for consistent order
+    local sortedExps = {}
+    for expName in pairs(all.Expansions) do table_insert(sortedExps, expName) end
+    table_sort(sortedExps, function(a, b) 
+        -- Custom sort to keep modern exps at top
+        local weights = { ["Midnight"] = 1, ["The War Within"] = 2, ["Dragonflight"] = 3, ["Shadowlands"] = 4, ["BfA"] = 5, ["Legion"] = 6, ["Warlords"] = 7, ["Pandaria"] = 8, ["Cataclysm"] = 9, ["WotLK"] = 10 }
+        return (weights[a] or 99) < (weights[b] or 99)
+    end)
+
+    for _, expName in ipairs(sortedExps) do
+        options.args.visibilityGroup.args.expansions.args[expName:gsub(" ", "")] = {
             name = expName,
             type = "toggle",
             get = function() return self.db.hiddenExpansions[expName] == true end,
@@ -183,9 +215,9 @@ function HS:Init()
                 self.db.hiddenExpansions[expName] = val or nil
                 AceConfigRegistry:NotifyChange("LumiBar")
             end,
-            order = order,
+            order = eOrder,
         }
-        order = order + 1
+        eOrder = eOrder + 1
     end
 
     LumiBar:RegisterModuleOptions("Hearthstone", options)
@@ -280,7 +312,6 @@ function HS:Enable(slotFrame)
             if button == "RightButton" and not InCombatLockdown() then
                 local all = self:ScanAvailable()
                 local menuItems = {}
-                local primaryKey = self.db.primaryHS
                 
                 for key, info in pairs(all.Standard) do
                     if self.db.hiddenPortals[key] == true then
@@ -299,15 +330,15 @@ function HS:Enable(slotFrame)
                     end
                 end
 
-                for expName, portals in pairs(all.Dungeons) do
+                for expName, portals in pairs(all.Expansions) do
                     if self.db.hiddenExpansions[expName] == true then
-                        local dungeonItems = {}
+                        local items = {}
                         for key, info in pairs(portals) do
-                            table_insert(dungeonItems, { key = key, id = info.id, type = info.type, name = info.name, icon = info.icon })
+                            table_insert(items, { key = key, id = info.id, type = info.type, name = info.name, icon = info.icon })
                         end
-                        if #dungeonItems > 0 then
-                            table_sort(dungeonItems, function(a, b) return a.name < b.name end)
-                            table_insert(menuItems, { isCategory = true, name = expName, icon = Data.ExpansionIcons[expName] or 134400, subItems = dungeonItems })
+                        if #items > 0 then
+                            table_sort(items, function(a, b) return a.name < b.name end)
+                            table_insert(menuItems, { isCategory = true, name = expName, icon = Data.ExpansionIcons[expName] or 134400, subItems = items })
                         end
                     end
                 end

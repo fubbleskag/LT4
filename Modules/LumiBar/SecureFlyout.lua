@@ -114,6 +114,7 @@ local function SetupMenu(level, parent, items, direction)
         if item.isCategory then
             btn:SetAttribute("type", nil)
             btn:SetScript("OnEnter", function(s)
+                GameTooltip:Hide()
                 for l = level + 1, #Flyouts do Flyouts[l]:Hide() end
                 LumiBar.SecureFlyout:ShowSubMenu(level + 1, s, item.subItems, direction)
             end)
@@ -128,10 +129,24 @@ local function SetupMenu(level, parent, items, direction)
                 btn:SetAttribute("type", "macro")
                 btn:SetAttribute("macrotext", item.macrotext)
             end
-            btn:SetScript("OnEnter", function() 
+            btn:SetScript("OnEnter", function(s) 
                 for l = level + 1, #Flyouts do Flyouts[l]:Hide() end
+                
+                if item.type == "spell" and item.id then
+                    GameTooltip:SetOwner(s, "ANCHOR_RIGHT")
+                    GameTooltip:SetSpellByID(item.id)
+                    GameTooltip:Show()
+                elseif item.type == "item" and item.id then
+                    GameTooltip:SetOwner(s, "ANCHOR_RIGHT")
+                    GameTooltip:SetItemByID(item.id)
+                    GameTooltip:Show()
+                end
             end)
         end
+        
+        btn:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
 
         if item.icon then
             btn.icon:SetTexture(item.icon)
