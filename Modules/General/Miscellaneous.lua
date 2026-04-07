@@ -65,6 +65,39 @@ function Module:OnInitialize()
                     },
                 },
             },
+            automation = {
+                type = "group",
+                name = "Merchant Automation",
+                inline = true,
+                order = 3,
+                args = {
+                    autoRepair = {
+                        type = "toggle",
+                        name = "Auto Repair",
+                        desc = "Automatically repair your gear when visiting a merchant.",
+                        order = 1,
+                        get = function() return LT4.db.profile.miscellaneous.autoRepair end,
+                        set = function(_, val) LT4.db.profile.miscellaneous.autoRepair = val end,
+                    },
+                    useGuildRepair = {
+                        type = "toggle",
+                        name = "Use Guild Funds",
+                        desc = "Use guild funds for auto-repairs if available.",
+                        order = 2,
+                        disabled = function() return not LT4.db.profile.miscellaneous.autoRepair end,
+                        get = function() return LT4.db.profile.miscellaneous.useGuildRepair end,
+                        set = function(_, val) LT4.db.profile.miscellaneous.useGuildRepair = val end,
+                    },
+                    autoSellJunk = {
+                        type = "toggle",
+                        name = "Auto Sell Junk",
+                        desc = "Automatically sell all grey items when visiting a merchant.",
+                        order = 3,
+                        get = function() return LT4.db.profile.miscellaneous.autoSellJunk end,
+                        set = function(_, val) LT4.db.profile.miscellaneous.autoSellJunk = val end,
+                    },
+                },
+            },
         },
     })
 
@@ -128,7 +161,55 @@ function Module:SetupBetterFishing()
     end)
 end
 
+function Module:MERCHANT_SHOW()
+    if not LT4:GetModuleEnabled("Miscellaneous") then return end
+
+    -- Auto Repair
+    if LT4.db.profile.miscellaneous.autoRepair and CanMerchantRepair() then
+        local repairCost, canRepair = GetRepairAllCost()
+        if canRepair and repairCost > 0 then
+            local useGuild = LT4.db.profile.miscellaneous.useGuildRepair and CanGuildBankRepair()
+            if useGuild then
+                local guildMoney = GetGuildBankMoney()
+                local amount = GetGuildBankWithdrawMoney() -- -1 means unlimited
+                if guildMoney >= repairCost and (amount == -1 or amount >= repairCost) then
+                    RepairAllItems(true)
+                    LT4:Print(string.format("Repaired items using guild funds: %s", GetCoinTextureString(repairCost)))
+                elseif GetMoney() >= repairCost then
+                    RepairAllItems()
+                    LT4:Print(string.format("Repaired items: %s", GetCoinTextureString(repairCost)))
+                end
+            elseif GetMoney() >= repairCost then
+                RepairAllItems()
+                LT4:Print(string.format("Repaired items: %s", GetCoinTextureString(repairCost)))
+            end
+        end
+    end
+
+    -- Auto Sell Junk
+    if LT4.db.profile.miscellaneous.autoSellJunk then
+        local profit = 0
+        for bag = 0, 5 do
+            for slot = 1, C_Container.GetContainerNumSlots(bag) do
+                local info = C_Container.GetContainerItemInfo(bag, slot)
+                if info and info.quality == 0 and not info.hasNoValue and not info.isLocked then
+                    local sellPrice = select(11, C_Item.GetItemInfo(info.hyperlink))
+                    if sellPrice then
+                        profit = profit + (info.stackCount * sellPrice)
+                    end
+                    C_Container.UseContainerItem(bag, slot)
+                end
+            end
+        end
+        if profit > 0 then
+            LT4:Print(string.format("Sold junk for: %s", GetCoinTextureString(profit)))
+        end
+    end
+end
+
 function Module:OnEnable()
+    self:RegisterEvent("MERCHANT_SHOW")
+
     -- TooltipDataProcessor is the modern (Dragonflight+) way to hook all tooltips globally
     -- We'll catch everything that returns an ID via the modern system
     TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip, data)

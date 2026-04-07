@@ -31,6 +31,9 @@ local defaults = {
             showIDs = true,
             betterFishing = true,
             sitFishing = true,
+            autoRepair = true,
+            useGuildRepair = true,
+            autoSellJunk = true,
         },
     },
 }
