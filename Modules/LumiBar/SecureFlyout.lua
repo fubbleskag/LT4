@@ -192,6 +192,10 @@ end
 
 function SecureFlyout:ShowMenu(parent, items, direction)
     if InCombatLockdown() then return end
+    
+    -- Hide tooltip when menu is triggered
+    GameTooltip:Hide()
+
     if self:IsShown() and self.currentParent == parent then
         for l = 1, #Flyouts do Flyouts[l]:Hide() end
         return
