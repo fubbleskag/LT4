@@ -21,6 +21,49 @@ local function AddID(tooltip, id, typeLabel)
     tooltip:Show()
 end
 
+local function IsItemCollected(itemLink)
+    if not itemLink then return false end
+    local itemID = C_Item.GetItemInfoInstant(itemLink)
+    if not itemID then return false end
+
+    -- Mounts
+    local mountID = C_MountJournal.GetMountFromItem(itemID)
+    if mountID then
+        local isCollected = select(11, C_MountJournal.GetMountInfoByID(mountID))
+        if isCollected then return true end
+    end
+
+    -- Pets
+    local speciesID = C_PetJournal.GetPetInfoByItemID(itemID)
+    if speciesID then
+        local numCollected = C_PetJournal.GetNumCollectedInfo(speciesID)
+        if numCollected and numCollected > 0 then return true end
+    end
+
+    -- Toys
+    if PlayerHasToy(itemID) then return true end
+
+    -- Heirlooms
+    if C_Heirloom.IsItemHeirloom(itemID) and C_Heirloom.PlayerHasHeirloom(itemID) then
+        return true
+    end
+
+    -- Recipes and generic "Already Known" check via Tooltip scanning
+    local tooltipData = C_TooltipInfo.GetHyperlink(itemLink)
+    if tooltipData then
+        for _, line in ipairs(tooltipData.lines) do
+            if line.leftText and (line.leftText == ITEM_SPELL_KNOWN or line.leftText:find(ITEM_SPELL_KNOWN)) then
+                return true
+            end
+        end
+    end
+
+    -- Transmog
+    if C_TransmogCollection.PlayerHasTransmog(itemID) then return true end
+
+    return false
+end
+
 function Module:OnInitialize()
     LT4:RegisterModuleOptions(self:GetName(), {
         type = "group",
@@ -96,6 +139,14 @@ function Module:OnInitialize()
                         get = function() return LT4.db.profile.miscellaneous.autoSellJunk end,
                         set = function(_, val) LT4.db.profile.miscellaneous.autoSellJunk = val end,
                     },
+                    collectedIndicator = {
+                        type = "toggle",
+                        name = "Show Collected Indicator",
+                        desc = "Adds a green checkmark to items you already own (mounts, pets, toys, etc) in the merchant window.",
+                        order = 4,
+                        get = function() return LT4.db.profile.miscellaneous.collectedIndicator end,
+                        set = function(_, val) LT4.db.profile.miscellaneous.collectedIndicator = val end,
+                    },
                 },
             },
         },
@@ -161,6 +212,73 @@ function Module:SetupBetterFishing()
     end)
 end
 
+function Module:UpdateMerchantCollectedIndicators()
+    local enabled = LT4:GetModuleEnabled("Miscellaneous") and LT4.db.profile.miscellaneous.collectedIndicator
+    
+    for i = 1, MERCHANT_ITEMS_PER_PAGE do
+        local index = (((MerchantFrame.page - 1) * MERCHANT_ITEMS_PER_PAGE) + i)
+        local itemButton = _G["MerchantItem"..i.."ItemButton"]
+        local slot = _G["MerchantItem"..i]
+        local nameText = _G["MerchantItem"..i.."Name"]
+        
+        if not enabled then
+            -- Cleanup
+            if itemButton then
+                if itemButton.collectedChecked then itemButton.collectedChecked:Hide() end
+                if itemButton.collectedCheckedBG then itemButton.collectedCheckedBG:Hide() end
+            end
+            if nameText and nameText.originalText then
+                nameText:SetText(nameText.originalText)
+                nameText.originalText = nil
+            end
+        else
+            if slot and slot:IsShown() and itemButton then
+                local itemLink = GetMerchantItemLink(index)
+                local isCollected = itemLink and IsItemCollected(itemLink)
+                
+                -- Checkmark Indicator
+                if isCollected then
+                    if not itemButton.collectedChecked then
+                        itemButton.collectedChecked = itemButton:CreateTexture(nil, "OVERLAY", nil, 7)
+                        itemButton.collectedChecked:SetTexture("Interface\\RaidFrame\\ReadyCheck-Ready")
+                        itemButton.collectedChecked:SetSize(34, 34)
+                        itemButton.collectedChecked:SetPoint("CENTER", itemButton, "CENTER")
+                        itemButton.collectedChecked:SetAlpha(0.75)
+                    end
+                    if itemButton.collectedCheckedBG then itemButton.collectedCheckedBG:Hide() end
+                    itemButton.collectedChecked:Show()
+                else
+                    if itemButton.collectedChecked then itemButton.collectedChecked:Hide() end
+                    if itemButton.collectedCheckedBG then itemButton.collectedCheckedBG:Hide() end
+                end
+
+                -- Text Injection
+                if nameText then
+                    local currentText = nameText:GetText()
+                    if isCollected then
+                        if currentText and not currentText:find("|cffff0000%[Known%]|r") then
+                            nameText.originalText = currentText
+                            nameText:SetText("|cffff0000[Known]|r " .. currentText)
+                        end
+                    elseif nameText.originalText then
+                        nameText:SetText(nameText.originalText)
+                        nameText.originalText = nil
+                    end
+                end
+            else
+                if itemButton then
+                    if itemButton.collectedChecked then itemButton.collectedChecked:Hide() end
+                    if itemButton.collectedCheckedBG then itemButton.collectedCheckedBG:Hide() end
+                end
+                if nameText and nameText.originalText then
+                    nameText:SetText(nameText.originalText)
+                    nameText.originalText = nil
+                end
+            end
+        end
+    end
+end
+
 function Module:MERCHANT_SHOW()
     if not LT4:GetModuleEnabled("Miscellaneous") then return end
 
@@ -209,6 +327,7 @@ end
 
 function Module:OnEnable()
     self:RegisterEvent("MERCHANT_SHOW")
+    self:SecureHook("MerchantFrame_UpdateMerchantInfo", "UpdateMerchantCollectedIndicators")
 
     -- TooltipDataProcessor is the modern (Dragonflight+) way to hook all tooltips globally
     -- We'll catch everything that returns an ID via the modern system
@@ -233,6 +352,7 @@ function Module:OnEnable()
 end
 
 function Module:OnDisable()
+    self:UnhookAll()
     -- TooltipDataProcessor.AddTooltipPostCall doesn't have an easy "un-register" for a closure.
     -- However, we handle the enabled check inside AddID().
 end

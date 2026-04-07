@@ -34,6 +34,7 @@ local defaults = {
             autoRepair = true,
             useGuildRepair = true,
             autoSellJunk = true,
+            collectedIndicator = true,
         },
     },
 }
