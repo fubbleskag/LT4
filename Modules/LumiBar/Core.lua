@@ -305,7 +305,13 @@ function LumiBar:UpdateLayout()
     
     C_Timer.After(0.05, function()
         layoutUpdateTimer = false
-        if not self.db then return end
+        if not self.db or InCombatLockdown() then 
+            if InCombatLockdown() then
+                self.needsRefresh = true
+                self:RegisterEvent("PLAYER_REGEN_ENABLED")
+            end
+            return 
+        end
         
         local spacing = 10
         local layout = self.db.profile.layoutV2
