@@ -19,6 +19,9 @@ local defaults = {
         elvuiSkins = {
             ["*"] = true,
         },
+        miscellaneous = {
+            showIDs = true,
+        },
     },
 }
 
