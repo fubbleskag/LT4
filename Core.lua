@@ -7,7 +7,6 @@ local icon = LibStub("LibDBIcon-1.0")
 LT4.moduleOrder = {
     ["LumiBar"]        = 10,
     ["Professions"]    = 20,
-    ["ElvUISkins"]     = 40,
     ["Miscellaneous"]  = 99,
 }
 
@@ -23,9 +22,6 @@ local defaults = {
         },
         modules = {
             ["*"] = false, 
-        },
-        elvuiSkins = {
-            ["*"] = true,
         },
         miscellaneous = {
             showIDs = true,

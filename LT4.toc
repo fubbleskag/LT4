@@ -33,7 +33,6 @@ Core.lua
 
 # Modules
 Modules\General\Miscellaneous.lua
-Modules\General\ElvUISkins.lua
 Modules\Professions\General.lua
 Modules\Professions\Skinning.lua
 Modules\Professions\SkinningTracker.lua
