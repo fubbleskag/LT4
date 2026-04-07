@@ -267,6 +267,13 @@ end
 local zoneUpdateTimer = {}
 function LumiBar:UpdateZoneLayout(zName)
     if not self.db or zoneUpdateTimer[zName] then return end
+    
+    if InCombatLockdown() then
+        self.needsRefresh = true
+        self:RegisterEvent("PLAYER_REGEN_ENABLED")
+        return
+    end
+
     zoneUpdateTimer[zName] = true
     
     C_Timer.After(0.05, function()

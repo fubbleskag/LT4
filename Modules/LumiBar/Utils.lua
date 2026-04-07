@@ -209,6 +209,13 @@ function Utils:UpdateModuleWidth(module, width, retryFunc)
         end
     end
 
+    -- Block all layout changes in combat to prevent protected frame errors
+    if InCombatLockdown() then
+        LumiBar.needsRefresh = true
+        LumiBar:RegisterEvent("PLAYER_REGEN_ENABLED")
+        return
+    end
+
     module.frame:SetWidth(width)
     
     local zoneFrame = module.frame:GetParent()
