@@ -41,12 +41,29 @@ function Module:OnInitialize()
                 order = 1,
             },
             betterFishing = {
-                type = "toggle",
+                type = "group",
                 name = "Better Fishing",
-                desc = "Double-right-click while not in combat to cast your fishing rod.",
-                get = function() return LT4.db.profile.miscellaneous.betterFishing end,
-                set = function(_, val) LT4.db.profile.miscellaneous.betterFishing = val end,
+                inline = true,
                 order = 2,
+                args = {
+                    enabled = {
+                        type = "toggle",
+                        name = "Enable Better Fishing",
+                        desc = "Double-right-click while not in combat to cast your fishing rod.",
+                        order = 1,
+                        get = function() return LT4.db.profile.miscellaneous.betterFishing end,
+                        set = function(_, val) LT4.db.profile.miscellaneous.betterFishing = val end,
+                    },
+                    sit = {
+                        type = "toggle",
+                        name = "Sit while fishing",
+                        desc = "Automatically sit before casting your fishing rod.",
+                        order = 2,
+                        disabled = function() return not LT4.db.profile.miscellaneous.betterFishing end,
+                        get = function() return LT4.db.profile.miscellaneous.sitFishing end,
+                        set = function(_, val) LT4.db.profile.miscellaneous.sitFishing = val end,
+                    },
+                },
             },
         },
     })
@@ -61,7 +78,7 @@ end
 
 function Module:SetupBetterFishing()
     local fishingButton = CreateFrame("Button", "LT4BetterFishingButton", UIParent, "SecureActionButtonTemplate")
-    fishingButton:SetAttribute("type", "spell")
+    fishingButton:SetAttribute("type", "macro")
     fishingButton:RegisterForClicks("AnyDown", "AnyUp")
 
     local lastClickTime = 0
@@ -87,7 +104,11 @@ function Module:SetupBetterFishing()
             local fishingSpellName = spellInfo and spellInfo.name
             
             if fishingSpellName then
-                fishingButton:SetAttribute("spell", fishingSpellName)
+                local macrotext = "/cast " .. fishingSpellName
+                if LT4.db.profile.miscellaneous.sitFishing then
+                    macrotext = "/sit\n" .. macrotext
+                end
+                fishingButton:SetAttribute("macrotext", macrotext)
                 
                 -- Set override for the Up event of this click
                 -- Use the button itself as the owner for the binding

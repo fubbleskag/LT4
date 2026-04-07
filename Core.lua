@@ -30,6 +30,7 @@ local defaults = {
         miscellaneous = {
             showIDs = true,
             betterFishing = true,
+            sitFishing = true,
         },
     },
 }
