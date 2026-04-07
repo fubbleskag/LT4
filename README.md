@@ -11,10 +11,15 @@ Every feature in LT4 is a self-contained module. You can enable or disable exact
 A customizable data bar that provides at-a-glance information. LumiBar supports multiple zones (Left, Center, Right) and includes modules for:
 *   **System:** FPS, Latency, and Memory usage.
 *   **Currency:** Gold and specific expansion currencies.
-*   **Durability:** Equipment status and repair costs.
-*   **Professions:** Quick access and tracking for your crafts.
-*   **Hearthstone:** Easy access to your primary teleport.
+*   **Durability:** Equipment status and repair costs. Includes customizable **Repair Mount** summoning (Left or Right click).
+*   **Professions:** Quick access and tracking for your crafts with visual progress.
+*   **Hearthstone:** Easy access to your primary teleport. Now includes auto-detection for **Mage Portals & Teleports**, plus **Cooldown & Progress Bars** in the flyout menus.
 *   **Volume & Time:** Quick controls and clock display.
+
+### 🛠️ Miscellaneous Tweaks
+A collection of quality-of-life enhancements:
+*   **Tooltip IDs:** Adds Item, Spell, Currency, Achievement, Toy, and Mount IDs to all tooltips globally.
+*   **Better Fishing:** Double-right-click while not in combat to cast your fishing rod. Includes an optional "Sit while fishing" feature.
 
 ### 🌿 Professions & Gathering
 Enhanced tools for the dedicated gatherer, including:
