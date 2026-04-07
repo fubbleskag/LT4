@@ -164,7 +164,20 @@ local function SetupMenu(level, parent, items, direction)
         end)
 
         if item.icon then
-            btn.icon:SetTexture(item.icon)
+            if item.icon == "player" then
+                SetPortraitTexture(btn.icon, "player")
+                btn.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            elseif type(item.icon) == "table" and item.icon.texture then
+                btn.icon:SetTexture(item.icon.texture)
+                if item.icon.coords then
+                    btn.icon:SetTexCoord(unpack(item.icon.coords))
+                else
+                    btn.icon:SetTexCoord(0, 1, 0, 1)
+                end
+            else
+                btn.icon:SetTexture(item.icon)
+                btn.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            end
             btn.icon:Show()
             btn.text:SetPoint("LEFT", btn.icon, "RIGHT", 8, 0)
         else
