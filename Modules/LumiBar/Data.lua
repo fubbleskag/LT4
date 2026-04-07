@@ -159,6 +159,7 @@ Data.HearthstoneData = {
     [245970] = { type = "toy", hearthstone = true }, -- P.O.S.T. Master's Express Hearthstone
     [263489] = { type = "toy", hearthstone = true }, -- Naaru's Enfold
     [235016] = { type = "toy", hearthstone = true }, -- Redeployment Module
+    [257736] = { type = "toy", hearthstone = true }, -- Lightcalled Hearthstone
 
     -- Engineering Items/Toys
     [18984]  = { type = "toy",  hearthstone = false, label = "EVR" }, -- Dimensional Ripper - Everlook

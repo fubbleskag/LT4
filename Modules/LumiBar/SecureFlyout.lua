@@ -122,7 +122,7 @@ local function SetupMenu(level, parent, items, direction)
             if item.type == "spell" then
                 btn:SetAttribute("type", "spell")
                 btn:SetAttribute("spell", item.id)
-            elseif item.type == "item" then
+            elseif item.type == "item" or item.type == "toy" then
                 btn:SetAttribute("type", "item")
                 btn:SetAttribute("item", "item:" .. item.id)
             elseif item.type == "macro" then
@@ -136,7 +136,7 @@ local function SetupMenu(level, parent, items, direction)
                     GameTooltip:SetOwner(s, "ANCHOR_RIGHT")
                     GameTooltip:SetSpellByID(item.id)
                     GameTooltip:Show()
-                elseif item.type == "item" and item.id then
+                elseif (item.type == "item" or item.type == "toy") and item.id then
                     GameTooltip:SetOwner(s, "ANCHOR_RIGHT")
                     GameTooltip:SetItemByID(item.id)
                     GameTooltip:Show()
