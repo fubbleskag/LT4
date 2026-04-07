@@ -132,8 +132,11 @@ function Prof:GetProfessionItems()
     local projs = {prof1, prof2, arch, fish, cook}
     
     local foundProfs = {}
-    for _, p in ipairs(projs) do
-        if p then table.insert(foundProfs, p) end
+    for i = 1, 5 do
+        local p = projs[i]
+        if p then 
+            table.insert(foundProfs, p) 
+        end
     end
 
     for i = #foundProfs, 1, -1 do
