@@ -162,10 +162,22 @@ function LT4:SetupAllOptions()
             set = function(_, val) self:SetModuleEnabled(name, val) end,
         }
 
-        -- Register sidebar sub-category
-        local appName = "LT4_" .. name
-        LibStub("AceConfig-3.0"):RegisterOptionsTable(appName, options)
-        LibStub("AceConfigDialog-3.0"):AddToBlizOptions(appName, name, self.title)
+        -- Register sidebar sub-category ONLY if it has meaningful arguments
+        local hasArgs = false
+        if options and options.args then
+            for _, arg in pairs(options.args) do
+                if arg.type ~= "description" and arg.type ~= "header" then
+                    hasArgs = true
+                    break
+                end
+            end
+        end
+
+        if hasArgs then
+            local appName = "LT4_" .. name
+            LibStub("AceConfig-3.0"):RegisterOptionsTable(appName, options)
+            LibStub("AceConfigDialog-3.0"):AddToBlizOptions(appName, name, self.title)
+        end
     end
 end
 

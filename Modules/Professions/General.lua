@@ -41,20 +41,8 @@ function Module:OnInitialize()
         type = "group",
         name = "Professions",
         args = {
-            summaryView = {
-                type = "toggle",
-                name = "Summary View",
-                desc = "Toggle between individual recipe reagents and a total summary of all tracked recipes.",
-                order = 1,
-                get = function() return LT4.db.profile.professionsSummaryView end,
-                set = function(_, val) 
-                    LT4.db.profile.professionsSummaryView = val
-                    self:UpdateTracker()
-                end,
-            },
         }
     }
-
     self.options = options
     LT4:RegisterModuleOptions(self:GetName(), options)
     if LT4.db.profile.professionsSummaryView == nil then LT4.db.profile.professionsSummaryView = false end
