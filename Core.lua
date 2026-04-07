@@ -1,7 +1,15 @@
-LT4 = LibStub("AceAddon-3.0"):NewAddon("LT4", "AceConsole-3.0", "AceEvent-3.0")
+LT4 = LibStub("AceAddon-3.0"):NewAddon("LT4", "AceConsole-3.0", "AceEvent-3.0", "AceTimer-3.0")
 LT4:SetDefaultModuleState(false)
 local LDB = LibStub("LibDataBroker-1.1")
 local icon = LibStub("LibDBIcon-1.0")
+
+-- Define global module order (Sidebar and Toggle Sync)
+LT4.moduleOrder = {
+    ["LumiBar"]        = 10,
+    ["Professions"]    = 20,
+    ["ElvUISkins"]     = 40,
+    ["Miscellaneous"]  = 99,
+}
 
 -- Get AddOn metadata
 LT4.version = C_AddOns.GetAddOnMetadata("LT4", "Version") or "1.0.0"
@@ -27,6 +35,7 @@ local defaults = {
 
 function LT4:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("LT4DB", defaults, true)
+    self.moduleRegistry = {}
     
     StaticPopupDialogs["LT4_RELOAD_UI"] = {
         text = "|cFF00AAFF" .. self.title .. "|r: A UI reload is required to fully apply these changes. Reload now?",
@@ -107,6 +116,40 @@ function LT4:OnInitialize()
     icon:Register("LT4", LT4_LDB, self.db.profile.minimap)
 
     self:RegisterChatCommand("lt4", "OpenOptions")
+
+    -- Setup module options after they have registered (deferred)
+    self:ScheduleTimer("SetupAllOptions", 0.1)
+end
+
+function LT4:SetupAllOptions()
+    -- 1. Sort the registry by defined order
+    local sorted = {}
+    for name, entry in pairs(self.moduleRegistry) do
+        table.insert(sorted, { name = name, options = entry.options, order = entry.order })
+    end
+    table.sort(sorted, function(a, b) return a.order < b.order end)
+
+    -- 2. Register in sorted order
+    for _, entry in ipairs(sorted) do
+        local name = entry.name
+        local options = entry.options
+        local order = entry.order
+
+        -- Add toggle to main page
+        self.options.args.moduleToggles.args[name] = {
+            type = "toggle",
+            name = "Enable " .. name,
+            desc = "Enable or disable the " .. name .. " module.",
+            order = order,
+            get = function() return self:GetModuleEnabled(name) end,
+            set = function(_, val) self:SetModuleEnabled(name, val) end,
+        }
+
+        -- Register sidebar sub-category
+        local appName = "LT4_" .. name
+        LibStub("AceConfig-3.0"):RegisterOptionsTable(appName, options)
+        LibStub("AceConfigDialog-3.0"):AddToBlizOptions(appName, name, self.title)
+    end
 end
 
 function LT4:OnEnable()
@@ -153,18 +196,9 @@ function LT4:SetModuleEnabled(name, value)
 end
 
 function LT4:RegisterModuleOptions(name, options, order)
-    -- Add toggle to main page
-    self.options.args.moduleToggles.args[name] = {
-        type = "toggle",
-        name = "Enable " .. name,
-        desc = "Enable or disable the " .. name .. " module.",
-        order = order or 100,
-        get = function() return self:GetModuleEnabled(name) end,
-        set = function(_, val) self:SetModuleEnabled(name, val) end,
+    local finalOrder = order or self.moduleOrder[name] or 100
+    self.moduleRegistry[name] = {
+        options = options,
+        order = finalOrder,
     }
-
-    -- Register as sub-category
-    local appName = "LT4_" .. name
-    LibStub("AceConfig-3.0"):RegisterOptionsTable(appName, options)
-    LibStub("AceConfigDialog-3.0"):AddToBlizOptions(appName, name, self.title)
 end
