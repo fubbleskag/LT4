@@ -11,7 +11,6 @@ function Prof:Init()
     -- Set defaults
     if self.db.showProf1 == nil then self.db.showProf1 = true end
     if self.db.showProf2 == nil then self.db.showProf2 = true end
-    if self.db.showIcons == nil then self.db.showIcons = true end
 
     local options = {
         name = "Profession",
@@ -23,19 +22,14 @@ function Prof:Init()
         end,
         args = {
             showProf1 = {
-                name = "Show Primary Profession 1",
+                name = "Profession 1",
                 type = "toggle",
                 order = 1,
             },
             showProf2 = {
-                name = "Show Primary Profession 2",
+                name = "Profession 2",
                 type = "toggle",
                 order = 2,
-            },
-            showIcons = {
-                name = "Show Icons",
-                type = "toggle",
-                order = 3,
             },
         }
     }
@@ -56,15 +50,11 @@ function Prof:UpdateProfession(index, bar, text)
         return false
     end
 
-    text:SetText(string.format("%s: %d/%d", name, rank, max))
+    text:SetText(name)
     text:Show()
     
-    if self.db.showIcons then
-        bar.icon:SetTexture(icon)
-        bar.icon:Show()
-    else
-        bar.icon:Hide()
-    end
+    bar.icon:SetTexture(icon)
+    bar.icon:Show()
     
     bar:Show() -- Always show the frame for mouse interaction and anchoring
 
@@ -109,8 +99,8 @@ function Prof:UpdateWidth()
     local padding = 20
     local spacing = 20
     
-    local w1 = self.has1 and (self.text1:GetStringWidth() + (self.db.showIcons and 24 or 0)) or 0
-    local w2 = self.has2 and (self.text2:GetStringWidth() + (self.db.showIcons and 24 or 0)) or 0
+    local w1 = self.has1 and (self.text1:GetStringWidth() + 24) or 0
+    local w2 = self.has2 and (self.text2:GetStringWidth() + 24) or 0
     
     if self.has1 and self.has2 then
         width = w1 + w2 + spacing + padding
@@ -149,10 +139,12 @@ function Prof:GetProfessionItems()
         end
 
         table.insert(items, {
-            name = string.format("%s (%d/%d)", name, rank, max),
+            name = name,
+            value = string.format("%d / %d", rank, max),
             icon = icon,
             type = "macro",
             macrotext = macro,
+            bar = (max > 0) and (rank / max * 100) or 0,
         })
     end
     return items
@@ -232,9 +224,9 @@ function Prof:Refresh(slotFrame)
     
     local innerBarHeight = barHeight - 8
     
-    -- Update bar sizes based on content
-    local w1 = has1 and (self.text1:GetStringWidth() + (self.db.showIcons and 24 or 0)) or 0
-    local w2 = has2 and (self.text2:GetStringWidth() + (self.db.showIcons and 24 or 0)) or 0
+    -- Update bar sizes based on content (always include icon width)
+    local w1 = has1 and (self.text1:GetStringWidth() + 24) or 0
+    local w2 = has2 and (self.text2:GetStringWidth() + 24) or 0
     
     self.bar1:SetSize(math.max(w1, 1), innerBarHeight)
     self.bar2:SetSize(math.max(w2, 1), innerBarHeight)
@@ -256,19 +248,14 @@ function Prof:Refresh(slotFrame)
     self.text1:ClearAllPoints()
     self.text2:ClearAllPoints()
     
-    if self.db.showIcons then
-        local iconSize = innerBarHeight
-        self.bar1.icon:SetSize(iconSize, iconSize)
-        self.bar1.icon:ClearAllPoints()
-        self.bar1.icon:SetPoint("LEFT", self.bar1, "LEFT", 0, 0)
-        self.text1:SetPoint("LEFT", self.bar1.icon, "RIGHT", 4, 0)
-        
-        self.bar2.icon:SetSize(iconSize, iconSize)
-        self.bar2.icon:ClearAllPoints()
-        self.bar2.icon:SetPoint("LEFT", self.bar2, "LEFT", 0, 0)
-        self.text2:SetPoint("LEFT", self.bar2.icon, "RIGHT", 4, 0)
-    else
-        self.text1:SetPoint("CENTER", self.bar1, "CENTER", 0, 0)
-        self.text2:SetPoint("CENTER", self.bar2, "CENTER", 0, 0)
-    end
+    local iconSize = innerBarHeight
+    self.bar1.icon:SetSize(iconSize, iconSize)
+    self.bar1.icon:ClearAllPoints()
+    self.bar1.icon:SetPoint("LEFT", self.bar1, "LEFT", 0, 0)
+    self.text1:SetPoint("LEFT", self.bar1.icon, "RIGHT", 4, 0)
+    
+    self.bar2.icon:SetSize(iconSize, iconSize)
+    self.bar2.icon:ClearAllPoints()
+    self.bar2.icon:SetPoint("LEFT", self.bar2, "LEFT", 0, 0)
+    self.text2:SetPoint("LEFT", self.bar2.icon, "RIGHT", 4, 0)
 end

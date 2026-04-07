@@ -45,9 +45,19 @@ local function SkinButton(btn)
     
     btn.text = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     btn.text:SetPoint("LEFT", btn.icon, "RIGHT", 8, 0)
-    btn.text:SetPoint("RIGHT", btn, "RIGHT", -4, 0)
+    btn.text:SetPoint("RIGHT", btn, "RIGHT", -40, 0) -- Leave space for value
     btn.text:SetJustifyH("LEFT")
     
+    btn.value = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    btn.value:SetPoint("RIGHT", btn, "RIGHT", -8, 0)
+    btn.value:SetJustifyH("RIGHT")
+    
+    btn.bar = btn:CreateTexture(nil, "OVERLAY")
+    btn.bar:SetTexture("Interface\\Buttons\\WHITE8X8")
+    btn.bar:SetHeight(4)
+    btn.bar:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", 1, 1)
+    btn.bar:Hide()
+
     btn:SetHighlightTexture("Interface\\Buttons\\WHITE8X8")
     local hl = btn:GetHighlightTexture()
     hl:SetVertexColor(1, 1, 1, 0.1)
@@ -88,16 +98,21 @@ local function SetupMenu(level, parent, items, direction)
         
         if item.isCategory then
             btn.text:SetText(displayName .. "  |cff888888>|r")
+            btn.value:SetText("")
         else
             btn.text:SetText(displayName)
+            btn.value:SetText(item.value or "")
         end
         
         -- Apply font before measuring
         LumiBar.Utils:SetFont(btn.text)
+        LumiBar.Utils:SetFont(btn.value)
         
         local textWidth = btn.text:GetStringWidth()
-        -- Math: Left Padding (4 or 8) + Icon (20) + Text Spacing (8) + Right Padding (4) + Buffer
-        local nonTextWidth = (item.icon and 36 or 12) + (padding * 2)
+        local valueWidth = btn.value:GetStringWidth()
+        
+        -- Math: Left Padding (4 or 8) + Icon (20) + Text Spacing (8) + Value Spacing (12) + Right Padding (8) + Buffer
+        local nonTextWidth = (item.icon and 36 or 12) + (item.value and (valueWidth + 12) or 0) + (padding * 2)
         local buffer = 15 -- Extra safety buffer to prevent wrapping
         local neededWidth = textWidth + nonTextWidth + buffer
         
@@ -160,6 +175,47 @@ local function SetupMenu(level, parent, items, direction)
         btn:SetWidth(maxBtnWidth - (padding * 2))
         btn:SetHeight(btnHeight)
         btn:SetPoint("TOPLEFT", frame, "TOPLEFT", padding, -padding - (i-1) * (btnHeight + spacing))
+        
+        if item.bar and type(item.bar) == "number" then
+            local percent = math.min(math.max(item.bar, 0), 100) / 100
+            local btnWidth = maxBtnWidth - (padding * 2)
+            
+            btn.bar:ClearAllPoints()
+            local availableWidth
+            if item.icon then
+                -- Icon is at 4px, width 20px, text spacing 8px = 32px start
+                btn.bar:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", 32, 1)
+                availableWidth = btnWidth - 32 - 1
+                
+                -- Center icon, shift text up
+                btn.icon:SetPoint("LEFT", btn, "LEFT", 4, 0)
+                btn.text:SetPoint("LEFT", btn.icon, "RIGHT", 8, 2)
+            else
+                btn.bar:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", 8, 1)
+                availableWidth = btnWidth - 8 - 1
+                
+                -- Shift text up
+                btn.text:SetPoint("LEFT", btn, "LEFT", 8, 2)
+            end
+
+            local barWidth = availableWidth * percent
+            btn.bar:SetWidth(math.max(barWidth, 1))
+            
+            -- Apply Accent Color
+            local r, g, b = LumiBar.Utils:GetAccentColor()
+            btn.bar:SetVertexColor(r, g, b, 0.8)
+            btn.bar:Show()
+        else
+            btn.bar:Hide()
+            -- Reset positions to centered
+            btn.icon:SetPoint("LEFT", btn, "LEFT", 4, 0)
+            if item.icon then
+                btn.text:SetPoint("LEFT", btn.icon, "RIGHT", 8, 0)
+            else
+                btn.text:SetPoint("LEFT", btn, "LEFT", 8, 0)
+            end
+        end
+
         btn:Show()
         count = i
     end
