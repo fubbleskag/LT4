@@ -145,7 +145,8 @@ function DataBar:ShowTooltip(f)
     local anchor = (position == "BOTTOM") and "ANCHOR_TOP" or "ANCHOR_BOTTOM"
     GameTooltip:SetOwner(f, anchor)
     GameTooltip:ClearLines()
-    GameTooltip:AddLine("DataBar", 0, 0.8, 1)
+    local r, g, b = Utils:GetAccentColor()
+    GameTooltip:AddLine("DataBar", r, g, b)
 
     if mode == "xp" then
         local cur, max, rested = self:GetXP()
@@ -190,7 +191,8 @@ function DataBar:ShowTooltip(f)
         if data then
             if not headerAdded then
                 GameTooltip:AddLine(" ")
-                GameTooltip:AddLine("Midnight Renowns:", 1, 1, 1)
+                local r, g, b = Utils:GetAccentColor()
+                GameTooltip:AddLine("Midnight Renowns:", r, g, b)
                 headerAdded = true
             end
             local cur, max, label = 0, 0, ""

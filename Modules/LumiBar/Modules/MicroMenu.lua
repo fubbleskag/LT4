@@ -274,14 +274,7 @@ function MicroMenu:ShowTooltip(f, btnData)
     local textColor = fontDB.color or { r = 1, g = 1, b = 1 }
     
     -- Highlight (Keybind) Color
-    local highlightHex
-    if self.db.useAccent then
-        highlightHex = Utils:GetAccentColorHex()
-    elseif self.db.customColor then
-        highlightHex = Utils:RGBToHex(self.db.customColor.r, self.db.customColor.g, self.db.customColor.b)
-    else
-        highlightHex = "ffffff"
-    end
+    local highlightHex = Utils:GetAccentColorHex()
 
     local title = btnData.name
     if btnData.binding then
@@ -291,8 +284,7 @@ function MicroMenu:ShowTooltip(f, btnData)
         end
     end
     
-    -- We can't easily change the font of the entire tooltip without skinning it, 
-    -- but we can set the line text and color.
+    -- Use primary text color for the main line
     GameTooltip:AddLine(title, textColor.r, textColor.g, textColor.b)
     
     -- Apply font to the tooltip line if possible (standard tooltips are limited)

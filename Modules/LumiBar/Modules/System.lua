@@ -130,7 +130,8 @@ function SystemModule:Enable(slotFrame)
             local anchor = (LumiBar.db.profile.bar.position == "BOTTOM") and "ANCHOR_TOP" or "ANCHOR_BOTTOM"
             GameTooltip:SetOwner(f, anchor)
             GameTooltip:ClearLines()
-            GameTooltip:AddLine("System Performance", 0, 0.8, 1)
+            local r, g, b = Utils:GetAccentColor()
+            GameTooltip:AddLine("System Performance", r, g, b)
             
             GameTooltip:AddDoubleLine("Framerate:", fps .. " fps", 1, 1, 1, 1, 1, 1)
             GameTooltip:AddLine(" ")

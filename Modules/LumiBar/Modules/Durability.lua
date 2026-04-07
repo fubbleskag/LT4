@@ -129,18 +129,16 @@ function Dur:Enable(slotFrame)
         self.frame:RegisterEvent("PLAYER_ENTERING_WORLD")
         self.frame:SetScript("OnEvent", function() self:UpdateStatus() end)
         
-        self.frame:SetScript("OnEnter", function(f)
+        Utils:SetTooltip(self.frame, "Durability & iLvl", function()
             local avg, equipped = GetAverageItemLevel()
             local clickText = (self.db.clickButton or "Left") == "Right" and "Right-click" or "Left-click"
-            local lines = {
+            return {
                 {"Equipped iLvl:", string_format("%.2f", equipped)},
                 {"Average iLvl:", string_format("%.2f", avg)},
                 "",
                 string_format("|cffFFFFFF%s:|r Summon Repair Mount", clickText)
             }
-            Utils:SetTooltip(f, "Durability & iLvl", lines)
         end)
-        self.frame:SetScript("OnLeave", function() GameTooltip:Hide() end)
     end
     
     self.frame:SetParent(slotFrame)

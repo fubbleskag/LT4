@@ -134,12 +134,14 @@ function CurrencyModule:Enable(slotFrame)
             local anchor = (position == "BOTTOM") and "ANCHOR_TOP" or "ANCHOR_BOTTOM"
             GameTooltip:SetOwner(f, anchor)
             GameTooltip:ClearLines()
-            GameTooltip:AddLine("Currency", 0, 0.8, 1)
+            local r, g, b = Utils:GetAccentColor()
+            GameTooltip:AddLine("Currency", r, g, b)
 
             -- Gold on all characters
             if LumiBar.db.global.goldData[realm] then
                 GameTooltip:AddLine(" ")
-                GameTooltip:AddLine("Gold on " .. realm .. ":", 1, 1, 1)
+                local r, g, b = Utils:GetAccentColor()
+                GameTooltip:AddLine("Gold on " .. realm .. ":", r, g, b)
                 local totalGold = 0
                 local sortedNames = {}
                 for name in pairs(LumiBar.db.global.goldData[realm]) do table.insert(sortedNames, name) end
@@ -162,7 +164,8 @@ function CurrencyModule:Enable(slotFrame)
                 if info then
                     if not headerAdded then
                         GameTooltip:AddLine(" ")
-                        GameTooltip:AddLine("Tracked Currencies:", 1, 1, 1)
+                        local r, g, b = Utils:GetAccentColor()
+                        GameTooltip:AddLine("Tracked Currencies:", r, g, b)
                         headerAdded = true
                     end
                     local iconStr = string.format("|T%d:12:12:0:0|t ", info.iconFileID)

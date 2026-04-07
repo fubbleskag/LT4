@@ -215,15 +215,16 @@ function TimeModule:Refresh(slotFrame)
     self.resting:ClearAllPoints()
     self.resting:SetPoint("LEFT", self.minutes, "RIGHT", 4, 0)
     
-    local sHour, sMinute = GetGameTime()
-    local lines = {
-        {"Server Time:", string.format("%02d:%02d", sHour, sMinute)},
-        {"Local Time:", date("%H:%M")},
-        "",
-        "|cffFFFFFFLeft Click:|r Toggle Calendar",
-        "|cffFFFFFFMiddle Click:|r Reload UI"
-    }
-    Utils:SetTooltip(self.frame, "Time", lines)
+    Utils:SetTooltip(self.frame, "Time", function()
+        local sHour, sMinute = GetGameTime()
+        return {
+            {"Server Time:", string.format("%02d:%02d", sHour, sMinute)},
+            {"Local Time:", date("%H:%M")},
+            "",
+            "|cffFFFFFFLeft Click:|r Toggle Calendar",
+            "|cffFFFFFFMiddle Click:|r Reload UI"
+        }
+    end)
     
     self.frame:SetScript("OnMouseDown", function(_, button)
         if button == "LeftButton" then

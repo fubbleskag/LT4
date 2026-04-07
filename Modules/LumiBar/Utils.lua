@@ -160,11 +160,16 @@ function Utils:SetTooltip(frame, title, lines)
         local anchor = (position == "BOTTOM") and "ANCHOR_TOP" or "ANCHOR_BOTTOM"
         GameTooltip:SetOwner(self, anchor)
         GameTooltip:ClearLines()
-        if title then
-            GameTooltip:AddLine(title, 0, 0.8, 1)
+        
+        local currentTitle = (type(title) == "function") and title(self) or title
+        if currentTitle then
+            local r, g, b = Utils:GetAccentColor()
+            GameTooltip:AddLine(currentTitle, r, g, b)
         end
-        if lines then
-            for _, line in ipairs(lines) do
+        
+        local currentLines = (type(lines) == "function") and lines(self) or lines
+        if currentLines then
+            for _, line in ipairs(currentLines) do
                 if type(line) == "table" then
                     GameTooltip:AddDoubleLine(line[1], line[2], 1, 1, 1, 1, 1, 1)
                 else

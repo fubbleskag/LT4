@@ -300,7 +300,8 @@ function HS:Enable(slotFrame)
             local name, icon, type, id = GetResourceInfo(self.db.primaryHS)
             if not name then return end
             GameTooltip:SetOwner(f, "ANCHOR_TOP")
-            GameTooltip:AddLine(string_format("|T%d:14:14:0:0|t %s", icon or 134400, name), 1, 1, 1)
+            local r, g, b = Utils:GetAccentColor()
+            GameTooltip:AddLine(string_format("|T%d:14:14:0:0|t %s", icon or 134400, name), r, g, b)
             local itemData = id and Data.HearthstoneData[id]
             if itemData and itemData.hearthstone then
                 GameTooltip:AddDoubleLine("Destination:", GetBindLocation() or "Unknown", 1, 0.82, 0, 1, 1, 1)
