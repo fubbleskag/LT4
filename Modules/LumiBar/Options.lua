@@ -20,6 +20,17 @@ local options = {
                     inline = true,
                     order = 10,
                     args = {
+                        moduleLayout = {
+                            name = "Module Layout",
+                            desc = "Open the module layout editor",
+                            type = "execute",
+                            func = function()
+                                if LumiBar.OpenLayoutEditor then
+                                    LumiBar:OpenLayoutEditor()
+                                end
+                            end,
+                            order = 0,
+                        },
                         position = {
                             name = "Position",
                             desc = "Set the bar to the top or bottom of the screen",
@@ -159,26 +170,9 @@ local options = {
                             end,
                             order = 5,
                         },
-                        moduleLayout = {
-                            name = "Module Layout",
-                            desc = "Open the module layout editor",
-                            type = "execute",
-                            func = function()
-                                if LumiBar.OpenLayoutEditor then
-                                    LumiBar:OpenLayoutEditor()
-                                end
-                            end,
-                            order = 10,
-                        },
                     },
                 },
             },
-        },
-        zones = {
-            name = "Zone Layout",
-            type = "group",
-            order = 2,
-            args = {},
         },
         modules = {
             name = "Module Settings",
@@ -189,22 +183,11 @@ local options = {
     },
 }
 
--- Populate Zone Settings
-local zoneNames = { "Left", "Center", "Right" }
-for _, zName in ipairs(zoneNames) do
-    options.args.zones.args[zName] = {
-        name = zName,
-        type = "group",
-        order = (zName == "Left" and 1 or (zName == "Center" and 2 or 3)),
-        args = {},
-    }
-end
-
 -- This function will be called by LumiBar:OnInitialize or similar if needed, 
 -- but here we just populate the table.
 local function UpdateModuleOptions()
     for mName, module in pairs(LumiBar.Modules) do
-        -- 1. Add to Module Settings Tab
+        -- Add to Module Settings Tab
         if LumiBar.moduleOptions and LumiBar.moduleOptions[mName] then
             local moduleOpts = LumiBar.moduleOptions[mName]
             
@@ -226,50 +209,8 @@ local function UpdateModuleOptions()
 
             options.args.modules.args[mName] = moduleOpts
         end
-        
-        -- 2. Add to Zone Assignments
-        for _, zName in ipairs(zoneNames) do
-            options.args.zones.args[zName].args[mName] = {
-                name = mName,
-                type = "toggle",
-                get = function(info)
-                    local list = LumiBar.db.profile.zones[zName]
-                    for _, activeName in ipairs(list) do
-                        if activeName == mName then return true end
-                    end
-                    return false
-                end,
-                set = function(info, value)
-                    local currentZones = LumiBar.db.profile.zones or LumiBar.defaults.profile.zones
-                    local zones = {
-                        Left = CopyTable(currentZones.Left or {}),
-                        Center = CopyTable(currentZones.Center or {}),
-                        Right = CopyTable(currentZones.Right or {}),
-                    }
-                    -- Remove from all zones first
-                    for _, zoneKey in ipairs(zoneNames) do
-                        local list = zones[zoneKey]
-                        for idx = #list, 1, -1 do
-                            if list[idx] == mName then
-                                table.remove(list, idx)
-                            end
-                        end
-                    end
-                    -- Add to target zone if enabling
-                    if value then
-                        table.insert(zones[zName], mName)
-                    end
-                    LumiBar.db.profile.zones = zones
-                    LumiBar:RefreshModules()
-                end,
-            }
-        end
     end
 end
-
--- We need to wait until modules are initialized to fully populate the options.
--- However, AceConfig can handle dynamic tables if we use functions.
--- For now, we'll just register it.
 
 -- Initial population
 function LumiBar:InitOptions()

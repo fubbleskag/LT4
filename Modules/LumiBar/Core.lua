@@ -62,7 +62,6 @@ function LumiBar:OnInitialize()
                     Far = {},
                 },
             },
-            zones = { Left = {}, Center = {}, Right = {} },
             modules = {
                 Time = {
                     localTime = true, twentyFour = true, timeFormat = "HH:MM", showRestingAnimation = true,
@@ -140,10 +139,15 @@ function LumiBar:OnInitialize()
     
     -- First Run Population
     if not self.db.global.firstRunCompleted then
-        self.db.profile.zones = {
-            Left = {"System", "Durability"},
-            Center = {"SpecSwitch", "Time", "Profession"},
-            Right = {"Hearthstone", "Currency"},
+        self.db.profile.layoutV2 = {
+            Left = {
+                Far = {"System", "Durability"},
+                Near = {},
+            },
+            Right = {
+                Near = {"SpecSwitch", "Profession"},
+                Far = {"Hearthstone", "Currency"},
+            },
         }
         self.db.global.firstRunCompleted = true
     end
@@ -286,73 +290,9 @@ function LumiBar:ConstructBar()
     self.bar:Show()
 end
 
--- Optimization: Throttled UpdateZoneLayout
-local zoneUpdateTimer = {}
-function LumiBar:UpdateZoneLayout(zName)
-    if not self.db or zoneUpdateTimer[zName] then return end
-    
-    if InCombatLockdown() then
-        self.needsRefresh = true
-        self:RegisterEvent("PLAYER_REGEN_ENABLED")
-        return
-    end
-
-    zoneUpdateTimer[zName] = true
-    
-    C_Timer.After(0.05, function()
-        zoneUpdateTimer[zName] = nil
-        if not self.db then return end
-        local zoneFrame = self.Zones[zName]
-        local moduleList = self.db.profile.zones[zName]
-        if not zoneFrame or not moduleList then return end
-        
-        local visibleModules = {}
-        for _, mName in ipairs(moduleList) do
-            local module = self.Modules[mName]
-            if module and module.frame and module.frame:IsShown() then
-                table_insert(visibleModules, module.frame)
-            end
-        end
-        
-        local prevFrame, totalWidth, spacing = nil, 0, 10
-        for i, mFrame in ipairs(visibleModules) do
-            local mWidth = mFrame:GetWidth() or 0
-            totalWidth = totalWidth + mWidth + (i > 1 and spacing or 0)
-            mFrame:ClearAllPoints()
-            if zName == "Center" then
-                local count = #visibleModules
-                if count % 2 == 1 then
-                    if i == math_ceil(count / 2) then mFrame:SetPoint("CENTER", zoneFrame, "CENTER", 0, 0) end
-                else
-                    if i == count / 2 then mFrame:SetPoint("RIGHT", zoneFrame, "CENTER", -spacing/2, 0)
-                    elseif i == (count / 2) + 1 then mFrame:SetPoint("LEFT", zoneFrame, "CENTER", spacing/2, 0) end
-                end
-            else
-                if i == 1 then mFrame:SetPoint("LEFT", zoneFrame, "LEFT", 0, 0)
-                else mFrame:SetPoint("LEFT", prevFrame, "RIGHT", spacing, 0) end
-            end
-            prevFrame = mFrame
-        end
-
-        if zName == "Center" and #visibleModules > 0 then
-            local count = #visibleModules
-            if count % 2 == 1 then
-                local mid = math_ceil(count / 2)
-                for i = mid - 1, 1, -1 do visibleModules[i]:SetPoint("RIGHT", visibleModules[i+1], "LEFT", -spacing, 0) end
-                for i = mid + 1, count do visibleModules[i]:SetPoint("LEFT", visibleModules[i-1], "RIGHT", spacing, 0) end
-            else
-                local midL, midR = count / 2, (count / 2) + 1
-                for i = midL - 1, 1, -1 do visibleModules[i]:SetPoint("RIGHT", visibleModules[i+1], "LEFT", -spacing, 0) end
-                for i = midR + 1, count do visibleModules[i]:SetPoint("LEFT", visibleModules[i-1], "RIGHT", spacing, 0) end
-            end
-        end
-        zoneFrame:SetWidth(math_max(totalWidth, 1))
-    end)
-end
-
--- New Layout V2 Logic
+-- Layout Logic
 local layoutUpdateTimer = false
-function LumiBar:UpdateLayoutV2()
+function LumiBar:UpdateLayout()
     if not self.db or layoutUpdateTimer then return end
     
     if InCombatLockdown() then
@@ -440,76 +380,35 @@ end
 function LumiBar:RefreshModules()
     if not self.db then return end
 
-    -- Detect if we should use V2
-    -- For this branch, we'll assume we use V2 if it has ANY modules or if Time is NOT in old zones
-    local useV2 = true -- Force V2 for this task as requested
-    
-    if useV2 then
-        local active = { ["Time"] = "Center" }
-        local layout = self.db.profile.layoutV2
-        for _, mName in ipairs(layout.Left.Far) do active[mName] = "FarLeft" end
-        for _, mName in ipairs(layout.Left.Near) do active[mName] = "NearLeft" end
-        for _, mName in ipairs(layout.Right.Near) do active[mName] = "NearRight" end
-        for _, mName in ipairs(layout.Right.Far) do active[mName] = "FarRight" end
+    local active = { ["Time"] = "Center" }
+    local layout = self.db.profile.layoutV2
+    for _, mName in ipairs(layout.Left.Far) do active[mName] = "FarLeft" end
+    for _, mName in ipairs(layout.Left.Near) do active[mName] = "NearLeft" end
+    for _, mName in ipairs(layout.Right.Near) do active[mName] = "NearRight" end
+    for _, mName in ipairs(layout.Right.Far) do active[mName] = "FarRight" end
 
-        for mName, module in pairs(self.Modules) do
-            if not active[mName] then
-                if module.Disable then pcall(module.Disable, module) end
-                if module.frame then
-                    module.frame:Hide()
-                    module.frame:SetParent(nil)
-                end
+    for mName, module in pairs(self.Modules) do
+        if not active[mName] then
+            if module.Disable then pcall(module.Disable, module) end
+            if module.frame then
+                module.frame:Hide()
+                module.frame:SetParent(nil)
             end
-        end
-
-        for mName, zName in pairs(active) do
-            local module = self.Modules[mName]
-            local frame = self.Zones[zName]
-            if module then
-                if not module.frame or not module.frame:IsShown() then
-                    if module.Enable then pcall(module.Enable, module, frame) end
-                else
-                    if module.Refresh then pcall(module.Refresh, module, frame) end
-                    local update = module.UpdateStatus or module.UpdateCurrency or module.UpdateCounts
-                    if update then pcall(update, module) end
-                end
-            end
-        end
-        self:UpdateLayoutV2()
-    else
-        -- Old logic (kept for compatibility during branch swapping if needed, 
-        -- but here we are forcing V2)
-        local active = {}
-        for zoneName, list in pairs(self.db.profile.zones) do
-            for _, mName in ipairs(list) do active[mName] = zoneName end
-        end
-
-        for mName, module in pairs(self.Modules) do
-            if not active[mName] then
-                if module.Disable then pcall(module.Disable, module) end
-                if module.frame then
-                    module.frame:Hide()
-                    module.frame:SetParent(nil)
-                end
-            end
-        end
-
-        for zoneName, _ in pairs(self.db.profile.zones) do
-            local list = self.db.profile.zones[zoneName]
-            local frame = self.Zones[zoneName]
-            for _, mName in ipairs(list) do
-                local module = self.Modules[mName]
-                if module then
-                    if not module.frame or not module.frame:IsShown() then
-                        if module.Enable then pcall(module.Enable, module, frame) end
-                    else
-                        if module.Refresh then pcall(module.Refresh, module, frame) end
-                        local update = module.UpdateStatus or module.UpdateCurrency or module.UpdateCounts
-                        if update then pcall(update, module) end
-                    end
-                end
-            end
-            self:UpdateZoneLayout(zoneName)
         end
     end
+
+    for mName, zName in pairs(active) do
+        local module = self.Modules[mName]
+        local frame = self.Zones[zName]
+        if module then
+            if not module.frame or not module.frame:IsShown() then
+                if module.Enable then pcall(module.Enable, module, frame) end
+            else
+                if module.Refresh then pcall(module.Refresh, module, frame) end
+                local update = module.UpdateStatus or module.UpdateCurrency or module.UpdateCounts
+                if update then pcall(update, module) end
+            end
+        end
+    end
+    self:UpdateLayout()
 end
