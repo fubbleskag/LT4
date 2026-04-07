@@ -224,9 +224,21 @@ function HS:GetCooldown(type, id)
     end
     if start and duration > 0 then
         local cd = duration - (GetTime() - start)
-        if cd > 0 then return cd end
+        if cd > 0 then return cd, duration end
     end
-    return 0
+    return 0, 0
+end
+
+function HS:AddCooldownData(item)
+    if not item or item.isCategory then return item end
+    local cd, total = self:GetCooldown(item.type, item.id)
+    if cd > 0 and total > 0 then
+        item.bar = (cd / total) * 100
+        -- Also add time text to value
+        if cd > 60 then item.value = string_format("%dm", math.ceil(cd / 60))
+        else item.value = string_format("%ds", math.ceil(cd)) end
+    end
+    return item
 end
 
 function HS:UpdateStatus()
@@ -306,14 +318,14 @@ function HS:Enable(slotFrame)
                 
                 for key, info in pairs(all.Standard) do
                     if self.db.hiddenPortals[key] == true then
-                        table_insert(menuItems, { key = key, id = info.id, type = info.type, name = info.name, icon = info.icon })
+                        table_insert(menuItems, self:AddCooldownData({ key = key, id = info.id, type = info.type, name = info.name, icon = info.icon }))
                     end
                 end
                 
                 if self.db.showSeasonPortals then
                     local seasonalItems = {}
                     for key, info in pairs(all.Seasonal) do
-                        table_insert(seasonalItems, { key = key, id = info.id, type = info.type, name = info.name, icon = info.icon })
+                        table_insert(seasonalItems, self:AddCooldownData({ key = key, id = info.id, type = info.type, name = info.name, icon = info.icon }))
                     end
                     if #seasonalItems > 0 then
                         table_sort(seasonalItems, function(a, b) return a.name < b.name end)
@@ -324,7 +336,7 @@ function HS:Enable(slotFrame)
                 -- Mage Teleports & Portals
                 local mageTeleports = {}
                 for key, info in pairs(all.MageTeleports) do
-                    table_insert(mageTeleports, { key = key, id = info.id, type = info.type, name = info.name:gsub("Teleport: ", ""), icon = info.icon })
+                    table_insert(mageTeleports, self:AddCooldownData({ key = key, id = info.id, type = info.type, name = info.name:gsub("Teleport: ", ""), icon = info.icon }))
                 end
                 if #mageTeleports > 0 then
                     table_sort(mageTeleports, function(a, b) return a.name < b.name end)
@@ -333,7 +345,7 @@ function HS:Enable(slotFrame)
 
                 local magePortals = {}
                 for key, info in pairs(all.MagePortals) do
-                    table_insert(magePortals, { key = key, id = info.id, type = info.type, name = info.name:gsub("Portal: ", ""), icon = info.icon })
+                    table_insert(magePortals, self:AddCooldownData({ key = key, id = info.id, type = info.type, name = info.name:gsub("Portal: ", ""), icon = info.icon }))
                 end
                 if #magePortals > 0 then
                     table_sort(magePortals, function(a, b) return a.name < b.name end)
@@ -344,7 +356,7 @@ function HS:Enable(slotFrame)
                     if self.db.hiddenExpansions[expName] == true then
                         local items = {}
                         for key, info in pairs(portals) do
-                            table_insert(items, { key = key, id = info.id, type = info.type, name = info.name, icon = info.icon })
+                            table_insert(items, self:AddCooldownData({ key = key, id = info.id, type = info.type, name = info.name, icon = info.icon }))
                         end
                         if #items > 0 then
                             table_sort(items, function(a, b) return a.name < b.name end)
