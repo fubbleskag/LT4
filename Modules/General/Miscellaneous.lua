@@ -23,19 +23,30 @@ end
 
 local function IsItemCollected(itemLink)
     if not itemLink then return false end
+    
+    -- Handle Battle Pet links directly
+    if itemLink:find("battlepet:") then
+        local speciesID = tonumber(itemLink:match("battlepet:(%d+)"))
+        if speciesID and speciesID > 0 then
+            local numCollected = C_PetJournal.GetNumCollectedInfo(speciesID)
+            return numCollected and numCollected > 0
+        end
+        return false
+    end
+
     local itemID = C_Item.GetItemInfoInstant(itemLink)
     if not itemID then return false end
 
     -- Mounts
     local mountID = C_MountJournal.GetMountFromItem(itemID)
-    if mountID then
+    if type(mountID) == "number" and mountID > 0 then
         local isCollected = select(11, C_MountJournal.GetMountInfoByID(mountID))
         if isCollected then return true end
     end
 
     -- Pets
     local speciesID = C_PetJournal.GetPetInfoByItemID(itemID)
-    if speciesID then
+    if type(speciesID) == "number" and speciesID > 0 then
         local numCollected = C_PetJournal.GetNumCollectedInfo(speciesID)
         if numCollected and numCollected > 0 then return true end
     end
