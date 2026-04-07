@@ -16,6 +16,8 @@ Data.ExpansionIcons = {
     ["WotLK"] = 236415,
     ["Pandaria"] = 646378,
     ["SEASON"] = 463447,
+    ["MagePortals"] = 135861, -- Spell_Arcane_PortalStormwind
+    ["MageTeleports"] = 135748, -- Spell_Arcane_TeleportStormwind
 }
 
 -- Mapping of Portal Spell IDs to clean Dungeon Names
@@ -160,6 +162,65 @@ Data.HearthstoneData = {
     [263489] = { type = "toy", hearthstone = true }, -- Naaru's Enfold
     [235016] = { type = "toy", hearthstone = true }, -- Redeployment Module
     [257736] = { type = "toy", hearthstone = true }, -- Lightcalled Hearthstone
+
+    -- Mage Teleports
+    [3561]    = { type = "spell", teleport = true }, -- Stormwind
+    [3567]    = { type = "spell", teleport = true }, -- Orgrimmar
+    [3562]    = { type = "spell", teleport = true }, -- Ironforge
+    [3563]    = { type = "spell", teleport = true }, -- Undercity
+    [3565]    = { type = "spell", teleport = true }, -- Darnassus
+    [3566]    = { type = "spell", teleport = true }, -- Thunder Bluff
+    [32271]   = { type = "spell", teleport = true }, -- Exodar
+    [32272]   = { type = "spell", teleport = true }, -- Silvermoon
+    [33690]   = { type = "spell", teleport = true }, -- Shattrath (Alliance)
+    [35715]   = { type = "spell", teleport = true }, -- Shattrath (Horde)
+    [49359]   = { type = "spell", teleport = true }, -- Theramore
+    [49358]   = { type = "spell", teleport = true }, -- Stonard
+    [53140]   = { type = "spell", teleport = true }, -- Dalaran - Northrend
+    [88342]   = { type = "spell", teleport = true }, -- Tol Barad (Alliance)
+    [88344]   = { type = "spell", teleport = true }, -- Tol Barad (Horde)
+    [120145]  = { type = "spell", teleport = true }, -- Ancient Teleport: Dalaran
+    [132621]  = { type = "spell", teleport = true }, -- Vale of Eternal Blossoms (Alliance)
+    [132627]  = { type = "spell", teleport = true }, -- Vale of Eternal Blossoms (Horde)
+    [176242]  = { type = "spell", teleport = true }, -- Warspear
+    [176248]  = { type = "spell", teleport = true }, -- Stormshield
+    [193759]  = { type = "spell", teleport = true }, -- Hall of the Guardian
+    [224869]  = { type = "spell", teleport = true }, -- Dalaran - Broken Isles
+    [281403]  = { type = "spell", teleport = true }, -- Boralus
+    [281404]  = { type = "spell", teleport = true }, -- Dazar'alor
+    [344587]  = { type = "spell", teleport = true }, -- Oribos
+    [395277]  = { type = "spell", teleport = true }, -- Valdrakken
+    [446540]  = { type = "spell", teleport = true }, -- Dornogal
+    [1259190] = { type = "spell", teleport = true }, -- Silvermoon City (Midnight)
+
+    -- Mage Portals
+    [10059]   = { type = "spell", portal = true }, -- Stormwind
+    [11417]   = { type = "spell", portal = true }, -- Orgrimmar
+    [11416]   = { type = "spell", portal = true }, -- Ironforge
+    [11418]   = { type = "spell", portal = true }, -- Undercity
+    [11419]   = { type = "spell", portal = true }, -- Darnassus
+    [11420]   = { type = "spell", portal = true }, -- Thunder Bluff
+    [32266]   = { type = "spell", portal = true }, -- Exodar
+    [32267]   = { type = "spell", portal = true }, -- Silvermoon
+    [33691]   = { type = "spell", portal = true }, -- Shattrath (Alliance)
+    [35717]   = { type = "spell", portal = true }, -- Shattrath (Horde)
+    [49360]   = { type = "spell", portal = true }, -- Theramore
+    [49361]   = { type = "spell", portal = true }, -- Stonard
+    [53142]   = { type = "spell", portal = true }, -- Dalaran - Northrend
+    [88345]   = { type = "spell", portal = true }, -- Tol Barad (Alliance)
+    [88346]   = { type = "spell", portal = true }, -- Tol Barad (Horde)
+    [120146]  = { type = "spell", portal = true }, -- Ancient Portal: Dalaran
+    [132620]  = { type = "spell", portal = true }, -- Vale of Eternal Blossoms (Alliance)
+    [132626]  = { type = "spell", portal = true }, -- Vale of Eternal Blossoms (Horde)
+    [176244]  = { type = "spell", portal = true }, -- Warspear
+    [176246]  = { type = "spell", portal = true }, -- Stormshield
+    [224871]  = { type = "spell", portal = true }, -- Dalaran - Broken Isles
+    [281400]  = { type = "spell", portal = true }, -- Boralus
+    [281402]  = { type = "spell", portal = true }, -- Dazar'alor
+    [344597]  = { type = "spell", portal = true }, -- Oribos
+    [395289]  = { type = "spell", portal = true }, -- Valdrakken
+    [446534]  = { type = "spell", portal = true }, -- Dornogal
+    [1259194] = { type = "spell", portal = true }, -- Silvermoon City (Midnight)
 
     -- Engineering Items/Toys
     [18984]  = { type = "toy",  hearthstone = false, label = "EVR" }, -- Dimensional Ripper - Everlook
@@ -306,14 +367,6 @@ Data.HearthstoneData = {
     [167075]  = { type = "item",  hearthstone = false, label = "MECH" }, -- Ultrasafe Transporter: Mechagon
     [211788]  = { type = "toy",   hearthstone = false, label = "GIL" }, -- Tess's Peacebloom
     [324547]  = { type = "spell", hearthstone = false, label = "NECR" }, -- Hearth Kidneystone
-}
-
--- Mages
-Data.MageSpells = {
-    -- Teleports
-    3561, 3567, 3562, 3563, 3565, 3566, 32271, 32272, 33690, 35715, 49359, 49358, 53140, 88342, 88344, 120145, 132621, 132627, 176242, 176248, 193759, 224869, 281403, 281404, 344587, 395277, 446540, 1259190,
-    -- Portals
-    10059, 11417, 11416, 11418, 11419, 11420, 32266, 32267, 33691, 35717, 49360, 49361, 53142, 88345, 88346, 120146, 132620, 132626, 176244, 176246, 224871, 281400, 281402, 344597, 395289, 446534, 1259194
 }
 
 -- Expansion Groups (Categorized for UI Menus)

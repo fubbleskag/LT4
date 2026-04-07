@@ -50,12 +50,12 @@ end
 
 function HS:ScanAvailable()
     -- Only re-scan if needed (could add event throttling here)
-    local allKnown = { Standard = {}, Expansions = {}, Seasonal = {} }
+    local allKnown = { Standard = {}, Expansions = {}, Seasonal = {}, MagePortals = {}, MageTeleports = {} }
     local class = select(2, UnitClass("player"))
     
     local expMap = { df = "Dragonflight", tww = "The War Within", sl = "Shadowlands", bfa = "BfA", legion = "Legion", wod = "Warlords", cata = "Cataclysm", wotlk = "WotLK", mop = "Pandaria" }
 
-    -- 1. Whitelist (Hearthstones/Toys/Raids/Mythics)
+    -- 1. Whitelist (Hearthstones/Toys/Raids/Mythics/Mage Spells)
     for id, info in pairs(Data.HearthstoneData) do
         local isKnown = false
         if info.type == "toy" then isKnown = PlayerHasToy(id)
@@ -66,7 +66,11 @@ function HS:ScanAvailable()
             local key = info.type .. ":" .. id
             local name, icon = GetResourceInfo(key)
             
-            if info.raid or info.mythic then
+            if info.portal and class == "MAGE" then
+                allKnown.MagePortals[key] = { name = name or "Unknown Portal", icon = icon, type = info.type, id = id }
+            elseif info.teleport and class == "MAGE" then
+                allKnown.MageTeleports[key] = { name = name or "Unknown Teleport", icon = icon, type = info.type, id = id }
+            elseif info.raid or info.mythic then
                 local expName = info.expansion and expMap[info.expansion] or "Other"
                 -- For mythic entries that might not have expansion field but have season field
                 if not info.expansion and info.season then
@@ -83,19 +87,6 @@ function HS:ScanAvailable()
                 allKnown.Expansions[expName][key] = { name = name or "Unknown Portal", icon = icon, type = info.type, id = id, isRaid = info.raid }
             else
                 allKnown.Standard[key] = { name = name or "Unknown Item", icon = icon, type = info.type, id = id }
-            end
-        end
-    end
-
-    -- 2. Mage Spells
-    if class == "MAGE" then
-        for _, id in ipairs(Data.MageSpells) do
-            if IsSpellKnown(id) then
-                local key = "spell:" .. id
-                local name, icon = GetResourceInfo(key)
-                if name then
-                    allKnown.Standard[key] = { name = name, icon = icon, type = "spell", id = id }
-                end
             end
         end
     end
@@ -328,6 +319,25 @@ function HS:Enable(slotFrame)
                         table_sort(seasonalItems, function(a, b) return a.name < b.name end)
                         table_insert(menuItems, { isCategory = true, name = "|cff00ff00Current Season|r", icon = Data.ExpansionIcons["SEASON"], subItems = seasonalItems })
                     end
+                end
+
+                -- Mage Teleports & Portals
+                local mageTeleports = {}
+                for key, info in pairs(all.MageTeleports) do
+                    table_insert(mageTeleports, { key = key, id = info.id, type = info.type, name = info.name:gsub("Teleport: ", ""), icon = info.icon })
+                end
+                if #mageTeleports > 0 then
+                    table_sort(mageTeleports, function(a, b) return a.name < b.name end)
+                    table_insert(menuItems, { isCategory = true, name = "Mage Teleports", icon = Data.ExpansionIcons["MageTeleports"], subItems = mageTeleports })
+                end
+
+                local magePortals = {}
+                for key, info in pairs(all.MagePortals) do
+                    table_insert(magePortals, { key = key, id = info.id, type = info.type, name = info.name:gsub("Portal: ", ""), icon = info.icon })
+                end
+                if #magePortals > 0 then
+                    table_sort(magePortals, function(a, b) return a.name < b.name end)
+                    table_insert(menuItems, { isCategory = true, name = "Mage Portals", icon = Data.ExpansionIcons["MagePortals"], subItems = magePortals })
                 end
 
                 for expName, portals in pairs(all.Expansions) do
