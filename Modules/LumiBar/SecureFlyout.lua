@@ -6,7 +6,10 @@ local UIParent = UIParent
 local CreateFrame = CreateFrame
 local InCombatLockdown = InCombatLockdown
 local IsMouseButtonDown = IsMouseButtonDown
-local ipairs = ipairs
+local ipairs, type, unpack, math_min, math_max = ipairs, type, unpack, math.min, math.max
+local GetScreenWidth = GetScreenWidth
+local SetPortraitTexture = SetPortraitTexture
+local GameTooltip = GameTooltip
 
 -- Flyout Frames Pool
 local Flyouts = {}
@@ -91,6 +94,17 @@ local function SetupMenu(level, parent, items, direction)
     -- First pass: Set text and measure needed width
     for i, item in ipairs(items) do
         local btn = GetButton(level, i, frame)
+        
+        -- Clear attributes for reuse
+        btn:SetAttribute("type", nil)
+        btn:SetAttribute("*type1", nil)
+        btn:SetAttribute("*type2", nil)
+        btn:SetAttribute("macrotext", nil)
+        btn:SetAttribute("*macrotext1", nil)
+        btn:SetAttribute("*macrotext2", nil)
+        btn:SetAttribute("spell", nil)
+        btn:SetAttribute("item", nil)
+
         local displayName = item.name or "Unknown"
         if item.isActive then
             displayName = "|cff00ff00" .. displayName .. "|r"
@@ -127,7 +141,6 @@ local function SetupMenu(level, parent, items, direction)
         btn:ClearAllPoints()
         
         if item.isCategory then
-            btn:SetAttribute("type", nil)
             btn:SetScript("OnEnter", function(s)
                 GameTooltip:Hide()
                 for l = level + 1, #Flyouts do Flyouts[l]:Hide() end
@@ -141,8 +154,19 @@ local function SetupMenu(level, parent, items, direction)
                 btn:SetAttribute("type", "item")
                 btn:SetAttribute("item", "item:" .. item.id)
             elseif item.type == "macro" then
-                btn:SetAttribute("type", "macro")
-                btn:SetAttribute("macrotext", item.macrotext)
+                if item.leftMacrotext or item.rightMacrotext then
+                    if item.leftMacrotext then
+                        btn:SetAttribute("*type1", "macro")
+                        btn:SetAttribute("*macrotext1", item.leftMacrotext)
+                    end
+                    if item.rightMacrotext then
+                        btn:SetAttribute("*type2", "macro")
+                        btn:SetAttribute("*macrotext2", item.rightMacrotext)
+                    end
+                else
+                    btn:SetAttribute("type", "macro")
+                    btn:SetAttribute("macrotext", item.macrotext)
+                end
             end
             btn:SetScript("OnEnter", function(s) 
                 for l = level + 1, #Flyouts do Flyouts[l]:Hide() end
@@ -190,7 +214,7 @@ local function SetupMenu(level, parent, items, direction)
         btn:SetPoint("TOPLEFT", frame, "TOPLEFT", padding, -padding - (i-1) * (btnHeight + spacing))
         
         if item.bar and type(item.bar) == "number" then
-            local percent = math.min(math.max(item.bar, 0), 100) / 100
+            local percent = math_min(math_max(item.bar, 0), 100) / 100
             local btnWidth = maxBtnWidth - (padding * 2)
             
             btn.bar:ClearAllPoints()
@@ -212,11 +236,16 @@ local function SetupMenu(level, parent, items, direction)
             end
 
             local barWidth = availableWidth * percent
-            btn.bar:SetWidth(math.max(barWidth, 1))
+            btn.bar:SetWidth(math_max(barWidth, 1))
             
-            -- Apply Accent Color
-            local r, g, b = LumiBar.Utils:GetAccentColor()
-            btn.bar:SetVertexColor(r, g, b, 0.8)
+            -- Apply Color
+            local r, g, b
+            if item.isActive then
+                r, g, b = LumiBar.Utils:GetAccentColor()
+            else
+                r, g, b = 1, 1, 1 -- White for inactive
+            end
+            btn.bar:SetVertexColor(r, g, b, 0.6)
             btn.bar:Show()
         else
             btn.bar:Hide()
