@@ -90,7 +90,7 @@ function LumiBar:OnInitialize()
                 Durability = {
                     icon = "", iconColor = false, iconFontSize = 18, repairMount = 460, textColor = true,
                     textColorFadeFromNormal = true, showIcon = true, showPerc = true, showItemLevel = true,
-                    itemLevelShort = true, animateLow = true, animateThreshold = 20,
+                    itemLevelShort = true, animateLow = true, animateThreshold = 20, clickButton = "Left",
                 },
                 SpecSwitch = {
                     useUppercase = true, showIcons = true, showSpec1 = true, showSpec2 = false,

@@ -27,9 +27,16 @@ function Dur:Init()
             self:UpdateStatus()
         end,
         args = {
+            clickButton = {
+                name = "Click Action Button",
+                desc = "Which mouse button triggers the repair mount summoning.",
+                type = "select",
+                values = { ["Left"] = "Left Click", ["Right"] = "Right Click" },
+                order = 1,
+            },
             repairMount = {
                 name = "Preferred Repair Mount",
-                desc = "The mount to summon on Right-click (Only known mounts shown).",
+                desc = "The mount to summon (Only known mounts shown).",
                 type = "select",
                 values = function()
                     local known = {}
@@ -45,18 +52,18 @@ function Dur:Init()
                     end
                     return known
                 end,
-                order = 1,
+                order = 2,
             },
             showItemLevel = {
                 name = "Show Item Level",
                 type = "toggle",
-                order = 2,
+                order = 3,
             },
             itemLevelShort = {
                 name = "Short Item Level",
                 desc = "Hide decimals for item level.",
                 type = "toggle",
-                order = 3,
+                order = 4,
             },
         }
     }
@@ -124,25 +131,16 @@ function Dur:Enable(slotFrame)
         
         self.frame:SetScript("OnEnter", function(f)
             local avg, equipped = GetAverageItemLevel()
+            local clickText = (self.db.clickButton or "Left") == "Right" and "Right-click" or "Left-click"
             local lines = {
                 {"Equipped iLvl:", string_format("%.2f", equipped)},
                 {"Average iLvl:", string_format("%.2f", avg)},
                 "",
-                "|cffFFFFFFRight-click:|r Summon Repair Mount"
+                string_format("|cffFFFFFF%s:|r Summon Repair Mount", clickText)
             }
             Utils:SetTooltip(f, "Durability & iLvl", lines)
         end)
         self.frame:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    end
-    
-    -- Secure right-click for mount
-    self.frame:SetAttribute("type2", "spell")
-    local mountID = self.db.repairMount
-    if mountID and mountID > 0 then
-        local mountName = C_MountJournal.GetMountInfoByID(mountID)
-        if mountName then
-            self.frame:SetAttribute("spell2", mountName)
-        end
     end
     
     self.frame:SetParent(slotFrame)
@@ -179,12 +177,23 @@ function Dur:Refresh(slotFrame)
     self.ilvlText:ClearAllPoints()
     self.ilvlText:SetPoint("LEFT", self.durText, "RIGHT", spacing, 0)
     
-    -- Re-bind mount in case it changed
+    -- Re-bind mount based on clickButton setting
     local mountID = self.db.repairMount
+    local buttonSuffix = (self.db.clickButton or "Left") == "Right" and "2" or "1"
+    local otherSuffix = buttonSuffix == "2" and "1" or "2"
+
+    self.frame:SetAttribute("type"..buttonSuffix, "spell")
+    self.frame:SetAttribute("type"..otherSuffix, nil)
+    self.frame:SetAttribute("spell"..otherSuffix, nil)
+
     if mountID and mountID > 0 then
         local mountName = C_MountJournal.GetMountInfoByID(mountID)
         if mountName then
-            self.frame:SetAttribute("spell2", mountName)
+            self.frame:SetAttribute("spell"..buttonSuffix, mountName)
+        else
+            self.frame:SetAttribute("spell"..buttonSuffix, nil)
         end
+    else
+        self.frame:SetAttribute("spell"..buttonSuffix, nil)
     end
 end
