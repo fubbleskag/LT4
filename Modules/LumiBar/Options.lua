@@ -159,6 +159,17 @@ local options = {
                             end,
                             order = 5,
                         },
+                        moduleLayout = {
+                            name = "Module Layout",
+                            desc = "Open the module layout editor",
+                            type = "execute",
+                            func = function()
+                                if LumiBar.OpenLayoutEditor then
+                                    LumiBar:OpenLayoutEditor()
+                                end
+                            end,
+                            order = 10,
+                        },
                     },
                 },
             },

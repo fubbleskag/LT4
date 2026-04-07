@@ -42,6 +42,7 @@ Modules\Professions\SkinningTracker.lua
 Modules\LumiBar\Core.lua
 Modules\LumiBar\Data.lua
 Modules\LumiBar\Utils.lua
+Modules\LumiBar\Editor.lua
 Modules\LumiBar\SecureFlyout.lua
 Modules\LumiBar\Options.lua
 Modules\LumiBar\Modules\Currency.lua

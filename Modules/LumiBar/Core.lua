@@ -52,6 +52,16 @@ function LumiBar:OnInitialize()
                 accentColor = { r = 0, g = 0.8, b = 1, a = 1 },
             },
             minimap = { hide = false },
+            layoutV2 = {
+                Left = {
+                    Far = {},
+                    Near = {},
+                },
+                Right = {
+                    Near = {},
+                    Far = {},
+                },
+            },
             zones = { Left = {}, Center = {}, Right = {} },
             modules = {
                 Time = {
@@ -254,14 +264,24 @@ function LumiBar:ConstructBar()
     LumiBar.Utils:ApplyBackground(self.bar)
 
     if not self.Zones then self.Zones = {} end
-    for _, zName in ipairs({"Left", "Center", "Right"}) do
+    local zoneNames = {"FarLeft", "NearLeft", "Center", "NearRight", "FarRight"}
+    for _, zName in ipairs(zoneNames) do
         if not self.Zones[zName] then self.Zones[zName] = CreateFrame("Frame", "LT4_LumiBarZone"..zName, self.bar) end
         local zone = self.Zones[zName]
         zone:SetHeight(barHeight)
         zone:ClearAllPoints()
-        if zName == "Left" then zone:SetPoint("LEFT", self.bar, "LEFT", 10, 0)
-        elseif zName == "Right" then zone:SetPoint("RIGHT", self.bar, "RIGHT", -10, 0)
-        else zone:SetPoint("CENTER", self.bar, "CENTER", 0, 0) end
+        
+        if zName == "FarLeft" then
+            zone:SetPoint("LEFT", self.bar, "LEFT", 10, 0)
+        elseif zName == "FarRight" then
+            zone:SetPoint("RIGHT", self.bar, "RIGHT", -10, 0)
+        elseif zName == "Center" then
+            zone:SetPoint("CENTER", self.bar, "CENTER", 0, 0)
+        elseif zName == "NearLeft" then
+            -- Will be anchored relative to Center in UpdateLayoutV2
+        elseif zName == "NearRight" then
+            -- Will be anchored relative to Center in UpdateLayoutV2
+        end
     end
     self.bar:Show()
 end
@@ -330,33 +350,121 @@ function LumiBar:UpdateZoneLayout(zName)
     end)
 end
 
+-- New Layout V2 Logic
+local layoutUpdateTimer = false
+function LumiBar:UpdateLayoutV2()
+    if not self.db or layoutUpdateTimer then return end
+    
+    if InCombatLockdown() then
+        self.needsRefresh = true
+        self:RegisterEvent("PLAYER_REGEN_ENABLED")
+        return
+    end
+
+    layoutUpdateTimer = true
+    
+    C_Timer.After(0.05, function()
+        layoutUpdateTimer = false
+        if not self.db then return end
+        
+        local spacing = 10
+        local layout = self.db.profile.layoutV2
+        
+        -- 1. Handle Center (Time)
+        local centerZone = self.Zones["Center"]
+        local timeModule = self.Modules["Time"]
+        if timeModule and timeModule.frame then
+            timeModule.frame:ClearAllPoints()
+            timeModule.frame:SetPoint("CENTER", centerZone, "CENTER", 0, 0)
+            centerZone:SetWidth(timeModule.frame:GetWidth() or 50)
+        end
+        
+        -- 2. Position Near Zones relative to Center
+        local nearLeftZone = self.Zones["NearLeft"]
+        nearLeftZone:ClearAllPoints()
+        nearLeftZone:SetPoint("RIGHT", centerZone, "LEFT", -spacing, 0)
+        
+        local nearRightZone = self.Zones["NearRight"]
+        nearRightZone:ClearAllPoints()
+        nearRightZone:SetPoint("LEFT", centerZone, "RIGHT", spacing, 0)
+
+        -- 3. Layout modules in each zone
+        local zoneMapping = {
+            FarLeft = { list = layout.Left.Far, align = "LEFT", float = "RIGHT" },
+            NearLeft = { list = layout.Left.Near, align = "RIGHT", float = "LEFT" },
+            NearRight = { list = layout.Right.Near, align = "LEFT", float = "RIGHT" },
+            FarRight = { list = layout.Right.Far, align = "RIGHT", float = "LEFT" },
+        }
+
+        for zName, data in pairs(zoneMapping) do
+            local zoneFrame = self.Zones[zName]
+            local visibleFrames = {}
+            for _, mName in ipairs(data.list) do
+                local module = self.Modules[mName]
+                if module and module.frame and module.frame:IsShown() then
+                    table_insert(visibleFrames, module.frame)
+                end
+            end
+            
+            local totalWidth = 0
+            local prevFrame = nil
+            
+            if data.align == "LEFT" then
+                for i, mFrame in ipairs(visibleFrames) do
+                    mFrame:ClearAllPoints()
+                    if i == 1 then
+                        mFrame:SetPoint("LEFT", zoneFrame, "LEFT", 0, 0)
+                    else
+                        mFrame:SetPoint("LEFT", prevFrame, "RIGHT", spacing, 0)
+                    end
+                    totalWidth = totalWidth + (mFrame:GetWidth() or 0) + (i > 1 and spacing or 0)
+                    prevFrame = mFrame
+                end
+            else -- RIGHT align
+                for i, mFrame in ipairs(visibleFrames) do
+                    mFrame:ClearAllPoints()
+                    if i == 1 then
+                        mFrame:SetPoint("RIGHT", zoneFrame, "RIGHT", 0, 0)
+                    else
+                        mFrame:SetPoint("RIGHT", prevFrame, "LEFT", -spacing, 0)
+                    end
+                    totalWidth = totalWidth + (mFrame:GetWidth() or 0) + (i > 1 and spacing or 0)
+                    prevFrame = mFrame
+                end
+            end
+            zoneFrame:SetWidth(math_max(totalWidth, 1))
+        end
+    end)
+end
+
 function LumiBar:RefreshModules()
     if not self.db then return end
-    local active = {}
-    for zoneName, list in pairs(self.db.profile.zones) do
-        for _, mName in ipairs(list) do active[mName] = zoneName end
-    end
 
-    for mName, module in pairs(self.Modules) do
-        if not active[mName] then
-            if module.Disable then pcall(module.Disable, module) end
-        end
-    end
+    -- Detect if we should use V2
+    -- For this branch, we'll assume we use V2 if it has ANY modules or if Time is NOT in old zones
+    local useV2 = true -- Force V2 for this task as requested
+    
+    if useV2 then
+        local active = { ["Time"] = "Center" }
+        local layout = self.db.profile.layoutV2
+        for _, mName in ipairs(layout.Left.Far) do active[mName] = "FarLeft" end
+        for _, mName in ipairs(layout.Left.Near) do active[mName] = "NearLeft" end
+        for _, mName in ipairs(layout.Right.Near) do active[mName] = "NearRight" end
+        for _, mName in ipairs(layout.Right.Far) do active[mName] = "FarRight" end
 
-    for mName, module in pairs(self.Modules) do
-        if not active[mName] then
-            if module.frame then
-                module.frame:Hide()
-                module.frame:SetParent(nil)
+        for mName, module in pairs(self.Modules) do
+            if not active[mName] then
+                if module.Disable then pcall(module.Disable, module) end
+                if module.frame then
+                    module.frame:Hide()
+                    module.frame:SetParent(nil)
+                end
             end
         end
-    end
 
-    for zoneName, _ in pairs(self.db.profile.zones) do
-        local list = self.db.profile.zones[zoneName]
-        local frame = self.Zones[zoneName]
-        for _, mName in ipairs(list) do
+        for mName, zName in pairs(active) do
             local module = self.Modules[mName]
+            local frame = self.Zones[zName]
             if module then
                 if not module.frame or not module.frame:IsShown() then
                     if module.Enable then pcall(module.Enable, module, frame) end
@@ -367,6 +475,41 @@ function LumiBar:RefreshModules()
                 end
             end
         end
-        self:UpdateZoneLayout(zoneName)
+        self:UpdateLayoutV2()
+    else
+        -- Old logic (kept for compatibility during branch swapping if needed, 
+        -- but here we are forcing V2)
+        local active = {}
+        for zoneName, list in pairs(self.db.profile.zones) do
+            for _, mName in ipairs(list) do active[mName] = zoneName end
+        end
+
+        for mName, module in pairs(self.Modules) do
+            if not active[mName] then
+                if module.Disable then pcall(module.Disable, module) end
+                if module.frame then
+                    module.frame:Hide()
+                    module.frame:SetParent(nil)
+                end
+            end
+        end
+
+        for zoneName, _ in pairs(self.db.profile.zones) do
+            local list = self.db.profile.zones[zoneName]
+            local frame = self.Zones[zoneName]
+            for _, mName in ipairs(list) do
+                local module = self.Modules[mName]
+                if module then
+                    if not module.frame or not module.frame:IsShown() then
+                        if module.Enable then pcall(module.Enable, module, frame) end
+                    else
+                        if module.Refresh then pcall(module.Refresh, module, frame) end
+                        local update = module.UpdateStatus or module.UpdateCurrency or module.UpdateCounts
+                        if update then pcall(update, module) end
+                    end
+                end
+            end
+            self:UpdateZoneLayout(zoneName)
+        end
     end
 end
