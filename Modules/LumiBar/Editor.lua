@@ -1,6 +1,15 @@
 local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
 local LumiBar = LT4:GetModule("LumiBar")
 
+-- Lua functions
+local _G = _G
+local ipairs, pairs, unpack = ipairs, pairs, unpack
+local math_floor, math_max = math.floor, math.max
+local table_insert, table_remove = table.insert, table.remove
+local wipe = wipe
+
+-- GOBALS: UIParent, CreateFrame, hooksecurefunc, InCombatLockdown, C_Timer
+
 -- Drag and Drop Globals
 local activeZones = {}
 local availablePool = nil
@@ -18,7 +27,7 @@ local function UpdateDBFromEditor()
         local zone = activeZones[zoneName]
         if zone and zone.modules then
             for _, btn in ipairs(zone.modules) do
-                table.insert(targetTable, btn.mName)
+                table_insert(targetTable, btn.mName)
             end
         end
     end
@@ -82,14 +91,14 @@ local function OnDragStop(self)
         if oldList then
             for i, btn in ipairs(oldList) do
                 if btn == self then
-                    table.remove(oldList, i)
+                    table_remove(oldList, i)
                     break
                 end
             end
         end
 
         if newList then
-            table.insert(newList, self)
+            table_insert(newList, self)
             self.parentList = newList
         else
             self.parentList = nil
@@ -126,8 +135,8 @@ function LumiBar:OpenLayoutEditor()
         f:SetBackdropColor(0, 0, 0, 0.95)
         f:SetBackdropBorderColor(0, 0.8, 1, 1)
 
-        local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
-        close:SetPoint("TOPRIGHT", f, "TOPRIGHT")
+        f.CloseButton = CreateFrame("Button", nil, f, "UIPanelCloseButton")
+        f.CloseButton:SetPoint("TOPRIGHT", f, "TOPRIGHT")
 
         f.title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         f.title:SetPoint("TOPLEFT", f, "TOPLEFT", 15, -15)
@@ -249,7 +258,7 @@ function LumiBar:RefreshEditor()
                     btn.mName = mName
                     self.ModuleButtons[mName] = btn
                 end
-                table.insert(zone.modules, btn)
+                table_insert(zone.modules, btn)
                 btn.parentList = zone.modules
                 activeMap[mName] = true
             end
@@ -303,7 +312,7 @@ function LumiBar:RefreshEditor()
             btn:SetParent(availablePool)
             btn:ClearAllPoints()
             local col = poolIdx % 6
-            local row = math.floor(poolIdx / 6)
+            local row = math_floor(poolIdx / 6)
             btn:SetPoint("TOPLEFT", availablePool, "TOPLEFT", 15 + col*142, -15 - row*30)
             btn:Show()
             poolIdx = poolIdx + 1
