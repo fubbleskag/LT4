@@ -66,7 +66,8 @@ function Module:OnDisable()
 end
 
 function Module:ThrottledUpdate()
-    -- Placeholder for any high-frequency updates if needed (e.g., dynamic positioning)
+    -- Ensure elements stay positioned correctly
+    self:PositionElements()
 end
 
 function Module:UpdateAllIcons()
@@ -89,14 +90,16 @@ function Module:UpdateMinimap()
 
     -- Hide Blizzard art (borders, etc.)
     local borderElements = {
-        MinimapBorder,
         MinimapBackdrop,
-        Minimap.Background,
-        MinimapNorthTag,
-        MinimapZoomIn,
-        MinimapZoomOut,
-        MinimapCompassTexture,
+        MinimapCluster.BorderTop,
+        TimeManagerClockButton,
         GameTimeFrame,
+        -- MinimapBorder,
+        -- Minimap.Background,
+        -- MinimapNorthTag,
+        -- MinimapZoomIn,
+        -- MinimapZoomOut,
+        -- MinimapCompassTexture,
     }
     for _, frame in pairs(borderElements) do
         if frame then
@@ -105,10 +108,8 @@ function Module:UpdateMinimap()
         end
     end
 
-    if MinimapCluster and MinimapCluster.BorderTop then
-        MinimapCluster.BorderTop:Hide()
-        MinimapCluster.BorderTop:SetAlpha(0)
-    end
+    -- Position elements
+    self:PositionElements()
 
     -- Enable mouse wheel zoom
     Minimap:EnableMouseWheel(true)
@@ -119,6 +120,60 @@ function Module:UpdateMinimap()
             Minimap_ZoomOut()
         end
     end)
+end
+
+function Module:PositionElements()
+    local frames = {
+        -- Mail Icon
+        { 
+            frame = MiniMapMailIcon, 
+            point = "TOPLEFT", 
+            x = 4, y = -4 
+        },
+        -- Addon Compartment
+        { 
+            frame = AddonCompartmentFrame or (MinimapCluster and MinimapCluster.AddonCompartment), 
+            point = "TOPRIGHT", 
+            x = -4, y = -4 
+        },
+        -- Instance Difficulty
+        { 
+            frame = (MinimapCluster and MinimapCluster.InstanceDifficulty) or (MinimapCluster and MinimapCluster.IndicatorFrame), 
+            point = "BOTTOMRIGHT", 
+            x = -4, y = 4 
+        },
+        -- LFG Eye (Queue Status)
+        { 
+            frame = QueueStatusButton, 
+            point = "BOTTOMLEFT", 
+            x = 4, y = 4 
+        },
+    }
+
+    for _, data in ipairs(frames) do
+        local frame = data.frame
+        if frame then
+            if not frame.lt4HooksApplied then
+                frame:SetParent(Minimap)
+                -- Force the position and prevent Blizzard from overriding it
+                hooksecurefunc(frame, "SetPoint", function(f)
+                    if f.lt4IsPositioning then return end
+                    f.lt4IsPositioning = true
+                    f:ClearAllPoints()
+                    f:SetPoint(data.point, Minimap, data.point, data.x, data.y)
+                    f.lt4IsPositioning = nil
+                end)
+                frame.lt4HooksApplied = true
+            end
+            
+            -- Manual update in case hooks aren't firing or for initial load
+            frame.lt4IsPositioning = true
+            frame:ClearAllPoints()
+            frame:SetPoint(data.point, Minimap, data.point, data.x, data.y)
+            frame:Show()
+            frame.lt4IsPositioning = nil
+        end
+    end
 end
 
 function Module:SkinAddonIcons()
