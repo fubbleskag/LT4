@@ -5,6 +5,7 @@ local icon = LibStub("LibDBIcon-1.0")
 
 -- Define global module order (Sidebar and Toggle Sync)
 LT4.moduleOrder = {
+    ["SquareMinimap"]   = 5,
     ["LumiBar"]        = 10,
     ["Professions"]    = 20,
     ["Miscellaneous"]  = 99,
