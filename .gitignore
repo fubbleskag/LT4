@@ -16,7 +16,6 @@ Thumbs.db
 *.swp
 *.tmp
 *.log
-OnPaste*
 
 # Project specific
 TODO.md
