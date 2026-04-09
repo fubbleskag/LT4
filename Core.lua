@@ -16,6 +16,9 @@ LT4.version = C_AddOns.GetAddOnMetadata("LT4", "Version") or "1.0.0"
 LT4.title = C_AddOns.GetAddOnMetadata("LT4", "Title") or "LT4"
 
 local defaults = {
+    global = {
+        altCharacters = {},
+    },
     profile = {
         minimap = {
             hide = false,
@@ -32,6 +35,8 @@ local defaults = {
             useGuildRepair = true,
             autoSellJunk = true,
             collectedIndicator = true,
+            mailAlts = true,
+            mailAltSort = "login",
         },
     },
 }

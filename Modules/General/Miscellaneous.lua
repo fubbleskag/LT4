@@ -98,7 +98,7 @@ function Module:OnInitialize()
                 type = "group",
                 name = "Better Fishing",
                 inline = true,
-                order = 2,
+                order = 3,
                 args = {
                     enabled = {
                         type = "toggle",
@@ -119,11 +119,28 @@ function Module:OnInitialize()
                     },
                 },
             },
+            mailAlts = {
+                type = "toggle",
+                name = "Mail Alt List",
+                desc = "Shows a clickable list of your alts beside the Send Mail frame for quick addressing.",
+                get = function() return LT4.db.profile.miscellaneous.mailAlts end,
+                set = function(_, val)
+                    LT4.db.profile.miscellaneous.mailAlts = val
+                    if self.mailAltFrame then
+                        if val then
+                            self:UpdateMailAltVisibility()
+                        else
+                            self.mailAltFrame:Hide()
+                        end
+                    end
+                end,
+                order = 2,
+            },
             automation = {
                 type = "group",
                 name = "Merchant Automation",
                 inline = true,
-                order = 3,
+                order = 4,
                 args = {
                     autoRepair = {
                         type = "toggle",
@@ -336,9 +353,203 @@ function Module:MERCHANT_SHOW()
     end
 end
 
+function Module:RegisterCurrentAlt()
+    local name = UnitName("player")
+    local realm = GetNormalizedRealmName()
+    if not name or not realm then return end
+    local key = name .. "-" .. realm
+    local classFilename = select(2, UnitClass("player"))
+    LT4.db.global.altCharacters[key] = {
+        name = name,
+        realm = realm,
+        class = classFilename,
+        lastLogin = time(),
+    }
+end
+
+function Module:GetSortedAlts()
+    local currentName = UnitName("player")
+    local currentRealm = GetNormalizedRealmName()
+    local currentKey = currentName and currentRealm and (currentName .. "-" .. currentRealm) or ""
+
+    local alts = {}
+    for key, data in pairs(LT4.db.global.altCharacters) do
+        if key ~= currentKey then
+            data.key = key
+            table.insert(alts, data)
+        end
+    end
+
+    local sortMode = LT4.db.profile.miscellaneous.mailAltSort
+    if sortMode == "alpha" then
+        table.sort(alts, function(a, b) return a.name < b.name end)
+    else
+        table.sort(alts, function(a, b) return (a.lastLogin or 0) > (b.lastLogin or 0) end)
+    end
+    return alts
+end
+
+function Module:GetSortLabel()
+    if LT4.db.profile.miscellaneous.mailAltSort == "alpha" then
+        return "Alts (A-Z)"
+    else
+        return "Alts (Recent)"
+    end
+end
+
+function Module:CreateMailAltFrame()
+    if self.mailAltFrame then return end
+
+    local frame = CreateFrame("Frame", "LT4MailAltFrame", SendMailFrame, "BackdropTemplate")
+    frame:SetSize(130, 200)
+    frame:SetPoint("TOPLEFT", SendMailFrame, "TOPRIGHT", 2, -1)
+    frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 14,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 },
+    })
+    frame:SetBackdropColor(0, 0, 0, 0.8)
+    frame:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+
+    local sortBtn = CreateFrame("Button", nil, frame)
+    sortBtn:SetPoint("TOP", 0, -6)
+    sortBtn:SetSize(114, 16)
+    sortBtn:SetNormalFontObject("GameFontNormalSmall")
+    sortBtn:SetHighlightFontObject("GameFontHighlightSmall")
+    sortBtn:SetText(self:GetSortLabel())
+    sortBtn:GetFontString():SetTextColor(1, 0.82, 0)
+    sortBtn:SetScript("OnClick", function()
+        if LT4.db.profile.miscellaneous.mailAltSort == "alpha" then
+            LT4.db.profile.miscellaneous.mailAltSort = "login"
+        else
+            LT4.db.profile.miscellaneous.mailAltSort = "alpha"
+        end
+        sortBtn:SetText(self:GetSortLabel())
+        self:RefreshMailAltButtons()
+    end)
+    sortBtn:SetScript("OnEnter", function(s)
+        GameTooltip:SetOwner(s, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Click to toggle sort order")
+        GameTooltip:Show()
+    end)
+    sortBtn:SetScript("OnLeave", GameTooltip_Hide)
+    frame.sortBtn = sortBtn
+
+    local scrollChild = CreateFrame("Frame", nil, frame)
+    scrollChild:SetPoint("TOPLEFT", 8, -24)
+    scrollChild:SetPoint("BOTTOMRIGHT", -8, 6)
+
+    frame.scrollChild = scrollChild
+    frame.buttons = {}
+    self.mailAltFrame = frame
+    frame:Hide()
+end
+
+function Module:RefreshMailAltButtons()
+    if not self.mailAltFrame then return end
+    local parent = self.mailAltFrame.scrollChild
+
+    for _, btn in ipairs(self.mailAltFrame.buttons) do
+        btn:Hide()
+    end
+
+    local alts = self:GetSortedAlts()
+    local currentRealm = GetNormalizedRealmName()
+    local BUTTON_HEIGHT = 18
+    local yOffset = 0
+
+    for i, data in ipairs(alts) do
+        local btn = self.mailAltFrame.buttons[i]
+        if not btn then
+            btn = CreateFrame("Button", nil, parent)
+            btn:SetHeight(BUTTON_HEIGHT)
+            btn:SetPoint("TOPLEFT", 0, -yOffset)
+            btn:SetPoint("TOPRIGHT", 0, -yOffset)
+            btn:SetNormalFontObject("GameFontNormalSmall")
+            btn:SetHighlightFontObject("GameFontHighlightSmall")
+            btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+
+            local highlight = btn:CreateTexture(nil, "HIGHLIGHT")
+            highlight:SetAllPoints()
+            highlight:SetColorTexture(1, 1, 1, 0.1)
+
+            self.mailAltFrame.buttons[i] = btn
+        end
+
+        btn:SetPoint("TOPLEFT", 0, -yOffset)
+        btn:SetPoint("TOPRIGHT", 0, -yOffset)
+
+        local classColor = RAID_CLASS_COLORS[data.class]
+        local colorCode = classColor and classColor.colorStr or "ffffffff"
+        btn:SetText("|c" .. colorCode .. data.name .. "|r")
+
+        local recipient = data.name
+        if data.realm ~= currentRealm then
+            recipient = data.name .. "-" .. data.realm
+        end
+
+        local altKey = data.key
+        btn:SetScript("OnClick", function(_, button)
+            if button == "RightButton" then
+                LT4.db.global.altCharacters[altKey] = nil
+                self:RefreshMailAltButtons()
+            else
+                SendMailNameEditBox:SetText(recipient)
+                SendMailNameEditBox:SetCursorPosition(0)
+            end
+        end)
+
+        btn:SetScript("OnEnter", function(s)
+            GameTooltip:SetOwner(s, "ANCHOR_RIGHT")
+            GameTooltip:AddLine(recipient)
+            GameTooltip:AddLine("Right-click to remove", 0.5, 0.5, 0.5)
+            GameTooltip:Show()
+        end)
+        btn:SetScript("OnLeave", GameTooltip_Hide)
+
+        btn:Show()
+        yOffset = yOffset + BUTTON_HEIGHT
+    end
+
+    -- Resize frame to fit content
+    local contentHeight = yOffset + 30
+    local minHeight = 50
+    self.mailAltFrame:SetHeight(math.max(minHeight, contentHeight))
+end
+
+function Module:UpdateMailAltVisibility()
+    if not self.mailAltFrame then return end
+    local enabled = LT4:GetModuleEnabled("Miscellaneous") and LT4.db.profile.miscellaneous.mailAlts
+
+    if enabled and MailFrame:IsShown() and SendMailFrame:IsVisible() then
+        self:RefreshMailAltButtons()
+        self.mailAltFrame:Show()
+    else
+        self.mailAltFrame:Hide()
+    end
+end
+
+function Module:MAIL_SHOW()
+    self:CreateMailAltFrame()
+    self:UpdateMailAltVisibility()
+end
+
+function Module:MAIL_CLOSED()
+    if self.mailAltFrame then
+        self.mailAltFrame:Hide()
+    end
+end
+
 function Module:OnEnable()
+    self:RegisterCurrentAlt()
     self:RegisterEvent("MERCHANT_SHOW")
+    self:RegisterEvent("MAIL_SHOW")
+    self:RegisterEvent("MAIL_CLOSED")
     self:SecureHook("MerchantFrame_UpdateMerchantInfo", "UpdateMerchantCollectedIndicators")
+
+    -- Update alt list visibility when switching between Inbox/Send Mail tabs
+    self:SecureHook("SendMailFrame_Update", "UpdateMailAltVisibility")
 
     -- TooltipDataProcessor is the modern (Dragonflight+) way to hook all tooltips globally
     -- We'll catch everything that returns an ID via the modern system
