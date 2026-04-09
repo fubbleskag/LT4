@@ -7,6 +7,9 @@ local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 local HS = {}
 LumiBar:RegisterModule("Hearthstone", HS)
 
+-- Cached scan result, invalidated by events
+local cachedScan = nil
+
 -- Performance: Cache common lookups
 local GetItemInfo = GetItemInfo
 local GetItemIcon = GetItemIcon
@@ -48,8 +51,12 @@ local function GetResourceInfo(key)
     return name, icon, type, id
 end
 
+function HS:InvalidateCache()
+    cachedScan = nil
+end
+
 function HS:ScanAvailable()
-    -- Only re-scan if needed (could add event throttling here)
+    if cachedScan then return cachedScan end
     local allKnown = { Standard = {}, Expansions = {}, Seasonal = {}, MagePortals = {}, MageTeleports = {} }
     local class = select(2, UnitClass("player"))
     
@@ -118,6 +125,7 @@ function HS:ScanAvailable()
         end
     end
 
+    cachedScan = allKnown
     return allKnown
 end
 
@@ -375,6 +383,16 @@ function HS:Enable(slotFrame)
             end
         end)
     end
+    -- Register events to invalidate cached scan
+    if not self.eventsRegistered then
+        self.frame:RegisterEvent("SPELLS_CHANGED")
+        self.frame:RegisterEvent("NEW_TOY_ADDED")
+        self.frame:RegisterEvent("BAG_UPDATE_DELAYED")
+        self.frame:SetScript("OnEvent", function() self:InvalidateCache() end)
+        self.eventsRegistered = true
+    end
+
+    self:InvalidateCache()
     self:UpdateSecureAttributes()
     self.frame:SetParent(slotFrame)
     self.frame:SetHeight(slotFrame:GetHeight())
@@ -406,5 +424,13 @@ function HS:Refresh(slotFrame)
     else
         self.icon:SetPoint("CENTER", self.frame, "CENTER", -(textW + 4)/2, 0)
         self.text:SetPoint("LEFT", self.icon, "RIGHT", 4, 0)
+    end
+end
+
+function HS:Disable()
+    cachedScan = nil
+    if self.frame then
+        self.frame:UnregisterAllEvents()
+        self.eventsRegistered = false
     end
 end
