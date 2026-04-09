@@ -67,14 +67,10 @@ function LT4:OnInitialize()
                 inline = true,
                 order = 1,
                 args = {
-                    version = {
-                        type = "description",
-                        name = "|cFF00AAFFVersion:|r " .. self.version,
-                        order = 0,
-                    },
                     minimapIcon = {
                         type = "toggle",
                         name = "Hide Minimap Icon",
+                        width = "full",
                         order = 1,
                         get = function() return self.db.profile.minimap.hide end,
                         set = function(_, val)
@@ -85,6 +81,7 @@ function LT4:OnInitialize()
                     compartmentIcon = {
                         type = "toggle",
                         name = "Hide in Addon Compartment",
+                        width = "full",
                         order = 2,
                         get = function() return not self.db.profile.minimap.showInCompartment end,
                         set = function(_, val)
@@ -160,6 +157,7 @@ function LT4:SetupAllOptions()
             type = "toggle",
             name = "Enable " .. name,
             desc = "Enable or disable the " .. name .. " module.",
+            width = "full",
             order = order,
             get = function() return self:GetModuleEnabled(name) end,
             set = function(_, val) self:SetModuleEnabled(name, val) end,

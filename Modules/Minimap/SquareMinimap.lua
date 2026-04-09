@@ -23,20 +23,8 @@ function Module:OnInitialize()
         args = {
             description = {
                 type = "description",
-                name = self.description,
+                name = self.description .. "\n\nSettings for this module can be found under Miscellaneous.",
                 order = 0,
-            },
-            iconSize = {
-                type = "range",
-                name = "Icon Size",
-                desc = "Adjust the size of the minimap addon icons.",
-                min = 16, max = 64, step = 1,
-                order = 1,
-                get = function() return LT4.db.profile.minimap.iconSize or 20 end,
-                set = function(_, val)
-                    LT4.db.profile.minimap.iconSize = val
-                    self:UpdateAllIcons()
-                end,
             },
         },
     })

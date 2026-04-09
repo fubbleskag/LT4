@@ -86,23 +86,15 @@ function Module:OnInitialize()
                 name = self.description,
                 order = 0,
             },
-            showIDs = {
-                type = "toggle",
-                name = "Show IDs in Tooltips",
-                desc = "Adds Item, Spell, Currency, and Achievement IDs to all tooltips globally.",
-                get = function() return LT4.db.profile.miscellaneous.showIDs end,
-                set = function(_, val) LT4.db.profile.miscellaneous.showIDs = val end,
-                order = 1,
-            },
             betterFishing = {
                 type = "group",
                 name = "Better Fishing",
                 inline = true,
-                order = 3,
+                order = 1,
                 args = {
                     enabled = {
                         type = "toggle",
-                        name = "Enable Better Fishing",
+                        name = "Enable",
                         desc = "Double-right-click while not in combat to cast your fishing rod.",
                         order = 1,
                         get = function() return LT4.db.profile.miscellaneous.betterFishing end,
@@ -110,7 +102,7 @@ function Module:OnInitialize()
                     },
                     sit = {
                         type = "toggle",
-                        name = "Sit while fishing",
+                        name = "Sit to fish",
                         desc = "Automatically sit before casting your fishing rod.",
                         order = 2,
                         disabled = function() return not LT4.db.profile.miscellaneous.betterFishing end,
@@ -119,36 +111,11 @@ function Module:OnInitialize()
                     },
                 },
             },
-            mailAlts = {
-                type = "toggle",
-                name = "Mail Alt List",
-                desc = "Shows a clickable list of your alts beside the Send Mail frame for quick addressing.",
-                get = function() return LT4.db.profile.miscellaneous.mailAlts end,
-                set = function(_, val)
-                    LT4.db.profile.miscellaneous.mailAlts = val
-                    if self.mailAltFrame then
-                        if val then
-                            self:UpdateMailAltVisibility()
-                        else
-                            self.mailAltFrame:Hide()
-                        end
-                    end
-                end,
-                order = 2,
-            },
-            autoConfirmDelete = {
-                type = "toggle",
-                name = "Auto-fill DELETE Confirmation",
-                desc = "Automatically fills in \"DELETE\" when the item deletion confirmation dialog appears.",
-                get = function() return LT4.db.profile.miscellaneous.autoConfirmDelete end,
-                set = function(_, val) LT4.db.profile.miscellaneous.autoConfirmDelete = val end,
-                order = 2.5,
-            },
             automation = {
                 type = "group",
                 name = "Merchant Automation",
                 inline = true,
-                order = 4,
+                order = 2,
                 args = {
                     autoRepair = {
                         type = "toggle",
@@ -171,6 +138,7 @@ function Module:OnInitialize()
                         type = "toggle",
                         name = "Auto Sell Junk",
                         desc = "Automatically sell all grey items when visiting a merchant.",
+                        width = "full",
                         order = 3,
                         get = function() return LT4.db.profile.miscellaneous.autoSellJunk end,
                         set = function(_, val) LT4.db.profile.miscellaneous.autoSellJunk = val end,
@@ -179,9 +147,76 @@ function Module:OnInitialize()
                         type = "toggle",
                         name = "Show Collected Indicator",
                         desc = "Adds a green checkmark to items you already own (mounts, pets, toys, etc) in the merchant window.",
+                        width = "full",
                         order = 4,
                         get = function() return LT4.db.profile.miscellaneous.collectedIndicator end,
                         set = function(_, val) LT4.db.profile.miscellaneous.collectedIndicator = val end,
+                    },
+                },
+            },
+            squareMinimap = {
+                type = "group",
+                name = "Square Minimap",
+                inline = true,
+                order = 3,
+                args = {
+                    iconSize = {
+                        type = "range",
+                        name = "Icon Size",
+                        desc = "Adjust the size of the minimap addon icons.",
+                        min = 16, max = 64, step = 1,
+                        order = 1,
+                        disabled = function() return not LT4:GetModuleEnabled("SquareMinimap") end,
+                        get = function() return LT4.db.profile.minimap.iconSize or 20 end,
+                        set = function(_, val)
+                            LT4.db.profile.minimap.iconSize = val
+                            local sm = LT4:GetModule("SquareMinimap", true)
+                            if sm and sm:IsEnabled() then sm:UpdateAllIcons() end
+                        end,
+                    },
+                },
+            },
+            other = {
+                type = "group",
+                name = "Other",
+                inline = true,
+                order = 99,
+                args = {
+                    showIDs = {
+                        type = "toggle",
+                        name = "Add IDs to Tooltips",
+                        desc = "Adds Item, Spell, Currency, and Achievement IDs to all tooltips globally.",
+                        width = "full",
+                        order = 1,
+                        get = function() return LT4.db.profile.miscellaneous.showIDs end,
+                        set = function(_, val) LT4.db.profile.miscellaneous.showIDs = val end,
+                    },
+                    mailAlts = {
+                        type = "toggle",
+                        name = "Show alt list in Mail Send",
+                        desc = "Shows a clickable list of your alts beside the Send Mail frame for quick addressing.",
+                        width = "full",
+                        order = 2,
+                        get = function() return LT4.db.profile.miscellaneous.mailAlts end,
+                        set = function(_, val)
+                            LT4.db.profile.miscellaneous.mailAlts = val
+                            if self.mailAltFrame then
+                                if val then
+                                    self:UpdateMailAltVisibility()
+                                else
+                                    self.mailAltFrame:Hide()
+                                end
+                            end
+                        end,
+                    },
+                    autoConfirmDelete = {
+                        type = "toggle",
+                        name = "Auto-fill DELETE Confirmation",
+                        desc = "Automatically fills in \"DELETE\" when the item deletion confirmation dialog appears.",
+                        width = "full",
+                        order = 3,
+                        get = function() return LT4.db.profile.miscellaneous.autoConfirmDelete end,
+                        set = function(_, val) LT4.db.profile.miscellaneous.autoConfirmDelete = val end,
                     },
                 },
             },
