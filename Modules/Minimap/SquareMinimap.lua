@@ -283,6 +283,14 @@ function Module:UpdateMinimap()
         QueueStatusButton:SetAlpha(0)
     end
 
+    -- Style zone text: smaller, centered
+    local zoneText = MinimapZoneText
+    if zoneText then
+        local font, _, flags = zoneText:GetFont()
+        zoneText:SetFont(font, 10, flags)
+        zoneText:SetJustifyH("CENTER")
+    end
+
     -- Fill the container width (remain square)
     self:ResizeToFillContainer()
 
