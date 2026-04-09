@@ -64,7 +64,7 @@ function TimeModule:Init()
     LumiBar:RegisterModuleOptions("Time", options)
 end
 
-function TimeModule:GetTime()
+function TimeModule:GetTimeString()
     local hour, minute = tonumber(date("%H")), tonumber(date("%M"))
 
     local h = hour
@@ -73,15 +73,11 @@ function TimeModule:GetTime()
         elseif h > 12 then h = h - 12 end
     end
 
-    local hStr, mStr
     if self.db.timeFormat == "24" then
-        hStr = string.format("%02d", h)
+        return string.format("%02d:%02d", h, minute)
     else
-        hStr = string.format("%d", h)
+        return string.format("%d:%02d", h, minute)
     end
-    mStr = string.format("%02d", minute)
-
-    return hStr, mStr
 end
 
 function TimeModule:Enable(slotFrame)
@@ -90,18 +86,13 @@ function TimeModule:Enable(slotFrame)
     if not self.frame then
         self.frame = CreateFrame("Frame", nil, slotFrame, "BackdropTemplate")
 
-        self.hour = self.frame:CreateFontString(nil, "OVERLAY")
-        self.colon = self.frame:CreateFontString(nil, "OVERLAY")
-        self.minutes = self.frame:CreateFontString(nil, "OVERLAY")
+        self.text = self.frame:CreateFontString(nil, "OVERLAY")
 
         self.timeSinceLastUpdate = 0
         self.frame:SetScript("OnUpdate", function(f, elapsed)
             self.timeSinceLastUpdate = self.timeSinceLastUpdate + elapsed
             if self.timeSinceLastUpdate >= 1 then
-                local h, m = self:GetTime()
-                self.hour:SetText(h)
-                self.minutes:SetText(m)
-
+                self.text:SetText(self:GetTimeString())
                 self:UpdateWidth()
                 self.timeSinceLastUpdate = 0
             end
@@ -116,22 +107,16 @@ function TimeModule:Enable(slotFrame)
 end
 
 function TimeModule:UpdateStatus()
-    local h, m = self:GetTime()
-    if self.hour then self.hour:SetText(h) end
-    if self.minutes then self.minutes:SetText(m) end
+    if self.text then self.text:SetText(self:GetTimeString()) end
 end
 
 function TimeModule:UpdateWidth()
-    if not self.hour then return end
-    local hW = self.hour:GetStringWidth()
-    local cW = self.colon:GetStringWidth()
-    local mW = self.minutes:GetStringWidth()
-
-    Utils:UpdateModuleWidth(self, hW + cW + mW + 16, function() self:UpdateWidth() end)
+    if not self.text then return end
+    Utils:UpdateModuleWidth(self, self.text:GetStringWidth() + 12, function() self:UpdateWidth() end)
 end
 
 function TimeModule:Refresh(slotFrame)
-    if not self.hour then return end
+    if not self.text then return end
     slotFrame = slotFrame or self.frame:GetParent()
     if not slotFrame then return end
     local align = slotFrame.align or "CENTER"
@@ -140,35 +125,21 @@ function TimeModule:Refresh(slotFrame)
 
     local size = self.db.overrideFontSize and self.db.fontSize or nil
     local color = self.db.colorType == "ACCENT" and "ACCENT" or nil
-    Utils:SetFont(self.hour, size, nil, color)
-    Utils:SetFont(self.colon, size, nil, color)
-    Utils:SetFont(self.minutes, size, nil, color)
+    Utils:SetFont(self.text, size, nil, color)
 
     if self.db.overrideFontFace and self.db.fontFace then
         local face = LSM:Fetch("font", self.db.fontFace) or STANDARD_TEXT_FONT
-        for _, fs in ipairs({ self.hour, self.colon, self.minutes }) do
-            local _, curSize, curFlags = fs:GetFont()
-            fs:SetFont(face, curSize, curFlags)
-        end
+        local _, curSize, curFlags = self.text:GetFont()
+        self.text:SetFont(face, curSize, curFlags)
     end
 
-    self.colon:SetText(":")
+    self.text:SetText(self:GetTimeString())
     Utils:ApplyBackground(self.frame, self.db)
 
-    -- Calculate and Set Width
-    local hW = self.hour:GetStringWidth()
-    local cW = self.colon:GetStringWidth()
-    local mW = self.minutes:GetStringWidth()
-    self.frame:SetWidth(hW + cW + mW + 12)
+    self.frame:SetWidth(self.text:GetStringWidth() + 12)
 
-    self.colon:ClearAllPoints()
-    self.colon:SetPoint(align, self.frame, align, 0, self.db.textOffset or 0)
-
-    self.hour:ClearAllPoints()
-    self.hour:SetPoint("RIGHT", self.colon, "LEFT", -2, 0)
-
-    self.minutes:ClearAllPoints()
-    self.minutes:SetPoint("LEFT", self.colon, "RIGHT", 2, 0)
+    self.text:ClearAllPoints()
+    self.text:SetPoint(align, self.frame, align, 0, self.db.textOffset or 0)
 
     Utils:SetTooltip(self.frame, "Time", function()
         local sHour, sMinute = GetGameTime()
