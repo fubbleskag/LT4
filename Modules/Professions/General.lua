@@ -98,8 +98,10 @@ end
 function Module:CreateToggleButton(header)
     if not header then return end
     if not self.toggleButton then
-        local btn = CreateFrame("Button", "LT4_ProfessionsToggleButton", header, "UIPanelInfoButton")
+        local btn = CreateFrame("Button", "LT4_ProfessionsToggleButton", header)
         btn:SetSize(16, 16)
+        btn:SetNormalAtlas("poi-workorders")
+        btn:SetHighlightAtlas("poi-workorders")
         btn:SetScript("OnClick", function()
             LT4.db.profile.professionsSummaryView = not LT4.db.profile.professionsSummaryView
             self:UpdateTracker()
