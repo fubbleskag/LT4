@@ -1,5 +1,6 @@
 local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
 local LumiBar = LT4:GetModule("LumiBar")
+local LSM = LibStub("LibSharedMedia-3.0")
 local Utils = LumiBar.Utils
 
 local TimeModule = {}
@@ -7,57 +8,56 @@ LumiBar:RegisterModule("Time", TimeModule)
 
 function TimeModule:Init()
     self.db = LumiBar.db.profile.modules.Time
-    
+
     local options = {
         name = "Time",
         type = "group",
         get = function(info) return self.db[info[#info]] end,
-        set = function(info, value) 
+        set = function(info, value)
             self.db[info[#info]] = value
             self:Refresh()
         end,
         args = {
-            localTime = {
-                name = "Local Time",
-                desc = "Display local time instead of server time.",
-                type = "toggle",
-                order = 1,
-            },
-            twentyFour = {
-                name = "24 Hour Format",
-                desc = "Display time in 24-hour format.",
-                type = "toggle",
-                order = 2,
-            },
             timeFormat = {
                 name = "Time Format",
+                desc = "Choose between 12-hour and 24-hour format.",
                 type = "select",
-                values = { ["HH:MM"] = "HH:MM", ["H:MM"] = "H:MM", ["HH:M"] = "HH:M" },
+                values = { ["12"] = "12 Hour", ["24"] = "24 Hour" },
+                order = 1,
+            },
+            colorType = {
+                name = "Color",
+                desc = "Color used for the time display.",
+                type = "select",
+                values = { ["PRIMARY"] = "Primary", ["ACCENT"] = "Accent" },
+                order = 2,
+            },
+            overrideFontFace = {
+                name = "Override Font Face",
+                desc = "Use a custom font face instead of the LumiBar default.",
+                type = "toggle",
                 order = 3,
             },
-            showRestingAnimation = {
-                name = "Resting Animation",
-                desc = "Show a resting icon when in a rested area.",
-                type = "toggle",
+            fontFace = {
+                name = "Font Face",
+                type = "select",
+                dialogControl = LSM and "LSM30_Font" or nil,
+                values = LSM and LSM:HashTable("font") or { ["Arial Narrow"] = "Arial Narrow" },
+                disabled = function() return not self.db.overrideFontFace end,
                 order = 4,
             },
-            useAccent = {
-                name = "Use Accent Color",
-                desc = "Use the accent color for the colon.",
+            overrideFontSize = {
+                name = "Override Font Size",
+                desc = "Use a custom font size instead of the LumiBar default.",
                 type = "toggle",
                 order = 5,
             },
-            infoEnabled = {
-                name = "Enable Info Text",
-                desc = "Display additional info (like date) above/below the time.",
-                type = "toggle",
-                order = 6,
-            },
-            infoOffset = {
-                name = "Info Y Offset",
+            fontSize = {
+                name = "Font Size",
                 type = "range",
-                min = -50, max = 50, step = 1,
-                order = 7,
+                min = 6, max = 32, step = 1,
+                disabled = function() return not self.db.overrideFontSize end,
+                order = 6,
             },
         }
     }
@@ -65,78 +65,35 @@ function TimeModule:Init()
 end
 
 function TimeModule:GetTime()
-    local hour, minute
-    if self.db.localTime then
-        hour, minute = tonumber(date("%H")), tonumber(date("%M"))
-    else
-        hour, minute = GetGameTime()
-    end
-    
+    local hour, minute = tonumber(date("%H")), tonumber(date("%M"))
+
     local h = hour
-    if not self.db.twentyFour then
+    if self.db.timeFormat ~= "24" then
         if h == 0 then h = 12
         elseif h > 12 then h = h - 12 end
     end
-    
-    local hStr, mStr
-    if self.db.timeFormat == "HH:MM" then
-        hStr = string.format("%02d", h)
-        mStr = string.format("%02d", minute)
-    elseif self.db.timeFormat == "H:MM" then
-        hStr = string.format("%d", h)
-        mStr = string.format("%02d", minute)
-    elseif self.db.timeFormat == "HH:M" then
-        hStr = string.format("%02d", h)
-        mStr = string.format("%d", minute)
-    else
-        hStr = string.format("%d", h)
-        mStr = string.format("%d", minute)
-    end
-    
-    return hStr, mStr
-end
 
-function TimeModule:UpdateInfoText()
-    if not self.db.infoEnabled or not self.colon then
-        if self.infoText then self.infoText:Hide() end
-        return
-    end
-    
-    if not self.infoText then
-        self.infoText = self.frame:CreateFontString(nil, "OVERLAY")
-    end
-    
-    Utils:SetFont(self.infoText, self.db.infoFontSize or 10, "OUTLINE", self.db.infoUseAccent and "ACCENT" or nil)
-    
-    local dateTime = date("*t")
-    self.infoText:SetText(string.format("%02d/%02d", dateTime.day, dateTime.month))
-    
-    self.infoText:ClearAllPoints()
-    local yOffset = self.db.infoOffset or 15
-    if LumiBar.db.profile.bar.position == "TOP" then
-        self.infoText:SetPoint("TOP", self.colon, "BOTTOM", 0, -yOffset)
+    local hStr, mStr
+    if self.db.timeFormat == "24" then
+        hStr = string.format("%02d", h)
     else
-        self.infoText:SetPoint("BOTTOM", self.colon, "TOP", 0, yOffset)
+        hStr = string.format("%d", h)
     end
-    
-    self.infoText:Show()
+    mStr = string.format("%02d", minute)
+
+    return hStr, mStr
 end
 
 function TimeModule:Enable(slotFrame)
     self.db = LumiBar.db.profile.modules.Time
-    
+
     if not self.frame then
         self.frame = CreateFrame("Frame", nil, slotFrame, "BackdropTemplate")
-        
+
         self.hour = self.frame:CreateFontString(nil, "OVERLAY")
         self.colon = self.frame:CreateFontString(nil, "OVERLAY")
         self.minutes = self.frame:CreateFontString(nil, "OVERLAY")
-        
-        self.resting = self.frame:CreateTexture(nil, "OVERLAY")
-        self.resting:SetTexture("Interface\\CharacterFrame\\UI-StateIcon")
-        self.resting:SetTexCoord(0, 0.5, 0, 0.421875)
-        self.resting:SetSize(16, 16)
-        
+
         self.timeSinceLastUpdate = 0
         self.frame:SetScript("OnUpdate", function(f, elapsed)
             self.timeSinceLastUpdate = self.timeSinceLastUpdate + elapsed
@@ -144,24 +101,17 @@ function TimeModule:Enable(slotFrame)
                 local h, m = self:GetTime()
                 self.hour:SetText(h)
                 self.minutes:SetText(m)
-                
-                if self.db.showRestingAnimation and IsResting() then
-                    self.resting:Show()
-                else
-                    self.resting:Hide()
-                end
-                
-                self:UpdateInfoText()
+
                 self:UpdateWidth()
                 self.timeSinceLastUpdate = 0
             end
         end)
     end
-    
+
     self.frame:SetParent(slotFrame)
     self.frame:SetHeight(slotFrame:GetHeight())
     self.frame:Show()
-    self:Refresh(slotFrame) -- Refresh sets fonts
+    self:Refresh(slotFrame)
     self:UpdateStatus()
 end
 
@@ -176,9 +126,8 @@ function TimeModule:UpdateWidth()
     local hW = self.hour:GetStringWidth()
     local cW = self.colon:GetStringWidth()
     local mW = self.minutes:GetStringWidth()
-    local rW = (self.db.showRestingAnimation and IsResting()) and 20 or 0
-    
-    Utils:UpdateModuleWidth(self, hW + cW + mW + rW + 16, function() self:UpdateWidth() end)
+
+    Utils:UpdateModuleWidth(self, hW + cW + mW + 16, function() self:UpdateWidth() end)
 end
 
 function TimeModule:Refresh(slotFrame)
@@ -186,35 +135,41 @@ function TimeModule:Refresh(slotFrame)
     slotFrame = slotFrame or self.frame:GetParent()
     if not slotFrame then return end
     local align = slotFrame.align or "CENTER"
-    
+
     self.frame:SetHeight(slotFrame:GetHeight())
-    
-    Utils:SetFont(self.hour)
-    Utils:SetFont(self.colon, nil, nil, self.db.useAccent and "ACCENT" or nil)
-    Utils:SetFont(self.minutes)
-    
+
+    local size = self.db.overrideFontSize and self.db.fontSize or nil
+    local color = self.db.colorType == "ACCENT" and "ACCENT" or nil
+    Utils:SetFont(self.hour, size, nil, color)
+    Utils:SetFont(self.colon, size, nil, color)
+    Utils:SetFont(self.minutes, size, nil, color)
+
+    if self.db.overrideFontFace and self.db.fontFace then
+        local face = LSM:Fetch("font", self.db.fontFace) or STANDARD_TEXT_FONT
+        for _, fs in ipairs({ self.hour, self.colon, self.minutes }) do
+            local _, curSize, curFlags = fs:GetFont()
+            fs:SetFont(face, curSize, curFlags)
+        end
+    end
+
     self.colon:SetText(":")
     Utils:ApplyBackground(self.frame, self.db)
-    
+
     -- Calculate and Set Width
     local hW = self.hour:GetStringWidth()
     local cW = self.colon:GetStringWidth()
     local mW = self.minutes:GetStringWidth()
-    local rW = (self.db.showRestingAnimation and IsResting()) and 20 or 0
-    self.frame:SetWidth(hW + cW + mW + rW + 12)
-    
+    self.frame:SetWidth(hW + cW + mW + 12)
+
     self.colon:ClearAllPoints()
     self.colon:SetPoint(align, self.frame, align, 0, self.db.textOffset or 0)
-    
+
     self.hour:ClearAllPoints()
     self.hour:SetPoint("RIGHT", self.colon, "LEFT", -2, 0)
-    
+
     self.minutes:ClearAllPoints()
     self.minutes:SetPoint("LEFT", self.colon, "RIGHT", 2, 0)
-    
-    self.resting:ClearAllPoints()
-    self.resting:SetPoint("LEFT", self.minutes, "RIGHT", 4, 0)
-    
+
     Utils:SetTooltip(self.frame, "Time", function()
         local sHour, sMinute = GetGameTime()
         return {
@@ -225,7 +180,7 @@ function TimeModule:Refresh(slotFrame)
             "|cffFFFFFFMiddle Click:|r Reload UI"
         }
     end)
-    
+
     self.frame:SetScript("OnMouseDown", function(_, button)
         if button == "LeftButton" then
             if ToggleCalendar then ToggleCalendar() end

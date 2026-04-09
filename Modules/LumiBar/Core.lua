@@ -64,10 +64,11 @@ function LumiBar:OnInitialize()
             },
             modules = {
                 Time = {
-                    localTime = true, twentyFour = true, timeFormat = "HH:MM", showRestingAnimation = true,
-                    textOffset = 1, useAccent = true, flashColon = true, flashOnInvite = true,
-                    infoEnabled = true, infoFontSize = 16, infoOffset = 24, infoUseAccent = true,
-                    infoTextDisplayed = { mail = true, date = true, ampm = false },
+                    timeFormat = "12",
+                    colorType = "PRIMARY",
+                    overrideFontFace = false, fontFace = "Arial Narrow",
+                    overrideFontSize = false, fontSize = 12,
+                    textOffset = 1, flashColon = true, flashOnInvite = true,
                 },
                 System = {
                     showFPS = true,
