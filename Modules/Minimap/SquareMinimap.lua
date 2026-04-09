@@ -66,7 +66,8 @@ function Module:OnDisable()
 end
 
 function Module:ThrottledUpdate()
-    -- Ensure elements stay positioned correctly
+    -- Ensure minimap fills container and elements stay positioned
+    self:ResizeToFillContainer()
     self:PositionElements()
 
     -- Update Zone Text Alpha (Hover only)
@@ -103,10 +104,11 @@ function Module:UpdateMinimap()
     -- Hide Blizzard art (borders, etc.)
     local borderElements = {
         MinimapBackdrop,
-        MinimapCluster.BorderTop,
         TimeManagerClockButton,
         GameTimeFrame,
+        MinimapCluster.BorderTop,
         MinimapCluster.InstanceDifficulty,
+	MinimapCluster.Tracking,
     }
 
     for _, frame in pairs(borderElements) do
@@ -116,8 +118,19 @@ function Module:UpdateMinimap()
         end
     end
 
+    -- Fill the container width (remain square)
+    self:ResizeToFillContainer()
+
     -- Position elements
     self:PositionElements()
+
+    -- Hook container size changes
+    if not self.clusterSizeHooked then
+        hooksecurefunc(MinimapCluster, "SetSize", function()
+            self:ResizeToFillContainer()
+        end)
+        self.clusterSizeHooked = true
+    end
 
     -- Enable mouse wheel zoom
     Minimap:EnableMouseWheel(true)
@@ -128,6 +141,17 @@ function Module:UpdateMinimap()
             Minimap_ZoomOut()
         end
     end)
+end
+
+function Module:ResizeToFillContainer()
+    -- Explicit SetSize is required — the Minimap widget's internal rendering
+    -- viewport only updates from SetSize, not from anchor-driven resizing.
+    -- Divide by parent scale to account for EditMode size %.
+    local parentScale = Minimap:GetParent():GetScale()
+    local size = MinimapCluster:GetWidth() / parentScale
+    Minimap:ClearAllPoints()
+    Minimap:SetPoint("TOPLEFT", MinimapCluster, "TOPLEFT", 0, 0)
+    Minimap:SetSize(size, size)
 end
 
 function Module:PositionElements()
