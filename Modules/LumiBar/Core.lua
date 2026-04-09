@@ -282,12 +282,11 @@ function LumiBar:ConstructBar()
             zone:SetPoint("RIGHT", self.bar, "RIGHT", -10, 0)
         elseif zName == "Center" then
             zone:SetPoint("CENTER", self.bar, "CENTER", 0, 0)
-        elseif zName == "NearLeft" then
-            -- Will be anchored relative to Center in UpdateLayoutV2
-        elseif zName == "NearRight" then
-            -- Will be anchored relative to Center in UpdateLayoutV2
         end
     end
+    -- Anchor Near zones to Center (must be after all zones are created; UpdateLayout will re-anchor these with proper spacing)
+    self.Zones["NearLeft"]:SetPoint("RIGHT", self.Zones["Center"], "LEFT", -10, 0)
+    self.Zones["NearRight"]:SetPoint("LEFT", self.Zones["Center"], "RIGHT", 10, 0)
     self.bar:Show()
 end
 
