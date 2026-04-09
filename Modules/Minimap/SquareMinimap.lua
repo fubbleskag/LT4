@@ -91,16 +91,33 @@ function Module:ThrottledUpdate()
     self:ResizeToFillContainer()
     self:PositionElements()
 
-    -- Update Zone Text Alpha (Hover only)
-    local zoneText = MinimapZoneText or (MinimapCluster and MinimapCluster.ZoneTextButton)
-    if zoneText then
-        if not zoneText.lt4MouseEnabled then
-            zoneText:EnableMouse(true)
-            zoneText.lt4MouseEnabled = true
+    -- Hover-only elements: zone text, tracking, addon compartment
+    local hoverFrames = {
+        MinimapZoneText or (MinimapCluster and MinimapCluster.ZoneTextButton),
+        MinimapCluster and MinimapCluster.Tracking and MinimapCluster.Tracking.Button,
+        AddonCompartmentFrame or (MinimapCluster and MinimapCluster.AddonCompartment),
+    }
+
+    local isOver = MouseIsOver(Minimap)
+    -- Also count hovering any of the hover frames themselves
+    if not isOver then
+        for _, f in ipairs(hoverFrames) do
+            if f and MouseIsOver(f) then
+                isOver = true
+                break
+            end
         end
-        if not zoneText:IsShown() then zoneText:Show() end
-        local isOver = MouseIsOver(Minimap) or MouseIsOver(zoneText)
-        zoneText:SetAlpha(isOver and 1 or 0)
+    end
+
+    for _, f in ipairs(hoverFrames) do
+        if f then
+            if not f.lt4MouseEnabled then
+                f:EnableMouse(true)
+                f.lt4MouseEnabled = true
+            end
+            if not f:IsShown() then f:Show() end
+            f:SetAlpha(isOver and 1 or 0)
+        end
     end
 end
 
