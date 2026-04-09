@@ -134,7 +134,8 @@ function Module:CreateMinimapButtons()
             name = "LT4_Mail",
             key = "mail",
             defaultPos = 135,
-            icon = "Interface\\Icons\\INV_Letter_15",
+            icon = "Interface\\HUD\\UIMinimap2x",
+            atlas = "UI-HUD-Minimap-Mail-Up",
             label = "Mail",
             onClick = function() end, -- Indicator only
             onTooltip = function(tooltip)
@@ -150,7 +151,8 @@ function Module:CreateMinimapButtons()
             name = "LT4_Queue",
             key = "queue",
             defaultPos = 225,
-            icon = "Interface\\Icons\\INV_Misc_Eye_02",
+            icon = "Interface\\HUD\\UIGroupFinderFlipbook",
+            atlas = "groupfinder-eye-frame",
             label = "Queue Status",
             onClick = function(_, btn)
                 if QueueStatusButton and QueueStatusButton.Click then
@@ -188,6 +190,14 @@ function Module:CreateMinimapButtons()
             name = def.name,
             dataObject = dataObj,
         }
+
+        -- Apply atlas override if specified
+        if def.atlas then
+            local btn = LDI.objects[def.name]
+            if btn and btn.icon then
+                btn.icon:SetAtlas(def.atlas)
+            end
+        end
     end
 
     -- Set initial visibility for conditional buttons
