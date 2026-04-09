@@ -128,14 +128,13 @@ end
 function Module:CreateMinimapButtons()
     local buttons = LT4.db.profile.minimap.buttons
 
-    -- Default positions (degrees around minimap): TL≈135, BL≈225
     local defs = {
         {
             name = "LT4_Mail",
             key = "mail",
-            defaultPos = 135,
-            icon = "Interface\\HUD\\UIMinimap2x",
-            atlas = "UI-HUD-Minimap-Mail-Up",
+            defaultPos = 230,
+            icon = "Interface\\Cursor\\Crosshair\\UIMailCrosshair2x",
+            atlas = "crosshair_mail_96",
             label = "Mail",
             onClick = function() end, -- Indicator only
             onTooltip = function(tooltip)
@@ -150,7 +149,7 @@ function Module:CreateMinimapButtons()
         {
             name = "LT4_Queue",
             key = "queue",
-            defaultPos = 225,
+            defaultPos = 220,
             icon = "Interface\\HUD\\UIGroupFinderFlipbook",
             atlas = "groupfinder-eye-frame",
             label = "Queue Status",
