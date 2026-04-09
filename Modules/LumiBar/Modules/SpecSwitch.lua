@@ -249,15 +249,5 @@ function Spec:Enable(slotFrame)
 end
 
 function Spec:Refresh(slotFrame)
-    if not self.text then return end
-    slotFrame = slotFrame or self.frame:GetParent()
-    if not slotFrame then return end
-    
-    self.frame:SetHeight(slotFrame:GetHeight())
-    
-    Utils:SetFont(self.text)
-    Utils:ApplyBackground(self.frame, self.db)
-    
-    self.text:ClearAllPoints()
-    self.text:SetPoint("CENTER", self.frame, "CENTER", 0, 0)
+    Utils:RefreshBase(self, slotFrame)
 end

@@ -161,17 +161,6 @@ function SystemModule:UpdateWidth()
 end
 
 function SystemModule:Refresh(slotFrame)
-    if not self.text then return end
-    slotFrame = slotFrame or self.frame:GetParent()
-    if not slotFrame then return end
-    
-    self.frame:SetHeight(slotFrame:GetHeight())
-    Utils:SetFont(self.text)
-    Utils:ApplyBackground(self.frame, self.db)
-    
-    local align = slotFrame.align or "CENTER"
-    self.text:ClearAllPoints()
-    self.text:SetPoint(align, self.frame, align, 0, 0)
-    
+    if not Utils:RefreshBase(self, slotFrame) then return end
     self:UpdateStatus()
 end

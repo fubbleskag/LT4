@@ -184,6 +184,28 @@ function Utils:SetTooltip(frame, title, lines)
     end)
 end
 
+-- Common Refresh Preamble
+--- Handles the shared boilerplate at the start of most module Refresh() calls.
+-- Sets frame height, applies font to self.text, applies background, and aligns text.
+-- @param module The module table (must have .frame, .text, .db).
+-- @param slotFrame (Optional) The parent slot frame.
+-- @return slotFrame, align — or nil if the refresh should abort.
+function Utils:RefreshBase(module, slotFrame)
+    if not module.text then return nil end
+    slotFrame = slotFrame or module.frame:GetParent()
+    if not slotFrame then return nil end
+    local align = slotFrame.align or "CENTER"
+
+    module.frame:SetHeight(slotFrame:GetHeight())
+    self:SetFont(module.text)
+    self:ApplyBackground(module.frame, module.db)
+
+    module.text:ClearAllPoints()
+    module.text:SetPoint(align, module.frame, align, 0, 0)
+
+    return slotFrame, align
+end
+
 -- Shorten string
 function Utils:ShortenString(str, limit)
     if not str then return "" end

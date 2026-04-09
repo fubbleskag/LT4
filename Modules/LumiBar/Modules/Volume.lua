@@ -129,19 +129,8 @@ function Volume:Enable(slotFrame)
 end
 
 function Volume:Refresh(slotFrame)
-    if not self.text then return end
-    slotFrame = slotFrame or self.frame:GetParent()
-    if not slotFrame then return end
-    local align = slotFrame.align or "CENTER"
-    
-    self.frame:SetHeight(slotFrame:GetHeight())
-    
-    Utils:SetFont(self.text)
-    Utils:ApplyBackground(self.frame, self.db)
-    
-    self.text:ClearAllPoints()
-    self.text:SetPoint(align, self.frame, align, 0, 0)
-    
+    if not Utils:RefreshBase(self, slotFrame) then return end
+
     Utils:SetTooltip(self.frame, "Volume Control", {
         "|cffFFFFFFScroll:|r Adjust Volume",
         "|cffFFFFFFLeft Click:|r Toggle Mute",
