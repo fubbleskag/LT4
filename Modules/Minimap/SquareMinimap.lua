@@ -402,7 +402,7 @@ end
 function Module:SkinAddonIcons()
     if LDI then
         local size = LT4.db.profile.minimap.iconSize or 20
-        LDI:SetButtonRadius(size / 2)
+        LDI:SetButtonRadius(size / 2 + 1)
 
         for _, button in pairs(LDI.objects) do
             self:SkinButton(button)
