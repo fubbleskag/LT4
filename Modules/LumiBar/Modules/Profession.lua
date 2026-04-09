@@ -51,68 +51,107 @@ function Prof:UpdateProfession(index, bar, text)
     end
 
     text:SetText(name)
+    text:SetAlpha(1)
     text:Show()
-    
+
     bar.icon:SetTexture(icon)
+    bar.icon:SetAlpha(1)
     bar.icon:Show()
-    
+
     bar:Show() -- Always show the frame for mouse interaction and anchoring
 
     -- Hide bar visuals (text-only module)
     bar:SetStatusBarColor(0, 0, 0, 0)
-    
+
     -- Store index for click handling
     bar.profIndex = index
     bar.profID = id
     bar.profName = name
-    
+
     return true
+end
+
+function Prof:SetPlaceholder(bar, text)
+    text:SetText("Not Learned")
+    text:SetAlpha(0)
+    text:Show()
+
+    bar.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+    bar.icon:SetAlpha(0)
+    bar.icon:Show()
+
+    bar:Show()
+    bar:SetStatusBarColor(0, 0, 0, 0)
+
+    bar.profIndex = nil
+    bar.profID = nil
+    bar.profName = nil
 end
 
 function Prof:UpdateStatus()
     local p1, p2 = GetProfessions()
-    
+
     self.has1 = false
-    if self.db.showProf1 and p1 then
-        self.has1 = self:UpdateProfession(p1, self.bar1, self.text1)
+    self.show1 = false
+    if self.db.showProf1 then
+        if p1 then
+            self.has1 = self:UpdateProfession(p1, self.bar1, self.text1)
+            self.show1 = self.has1
+        else
+            self:SetPlaceholder(self.bar1, self.text1)
+            self.show1 = true
+        end
     else
         self.bar1:Hide()
         self.text1:Hide()
     end
-    
+
     self.has2 = false
-    if self.db.showProf2 and p2 then
-        self.has2 = self:UpdateProfession(p2, self.bar2, self.text2)
+    self.show2 = false
+    if self.db.showProf2 then
+        if p2 then
+            self.has2 = self:UpdateProfession(p2, self.bar2, self.text2)
+            self.show2 = self.has2
+        else
+            self:SetPlaceholder(self.bar2, self.text2)
+            self.show2 = true
+        end
     else
         self.bar2:Hide()
         self.text2:Hide()
     end
-    
+
+    if self.show1 or self.show2 then
+        self.frame:Show()
+    else
+        self.frame:Hide()
+    end
+
     self:Refresh()
     self:UpdateWidth()
 end
 
 function Prof:UpdateWidth()
     if not self.frame then return end
-    
+
     local width = 0
     local padding = 20
     local spacing = 20
-    
-    local w1 = self.has1 and (self.text1:GetStringWidth() + 24) or 0
-    local w2 = self.has2 and (self.text2:GetStringWidth() + 24) or 0
-    
-    if self.has1 and self.has2 then
+
+    local w1 = self.show1 and (self.text1:GetStringWidth() + 24) or 0
+    local w2 = self.show2 and (self.text2:GetStringWidth() + 24) or 0
+
+    if self.show1 and self.show2 then
         width = w1 + w2 + spacing + padding
-    elseif self.has1 then
+    elseif self.show1 then
         width = w1 + padding
-    elseif self.has2 then
+    elseif self.show2 then
         width = w2 + padding
     end
-    
+
     -- Ensure a minimum width for usability
     if width > 0 then width = math.max(width, 100) end
-    
+
     Utils:UpdateModuleWidth(self, width, function() self:UpdateWidth() end)
 end
 
@@ -217,30 +256,38 @@ function Prof:Refresh(slotFrame)
     
     Utils:SetFont(self.text1)
     Utils:SetFont(self.text2)
+    if self.show1 and not self.has1 then
+        self.text1:SetAlpha(0)
+        self.bar1.icon:SetAlpha(0)
+    end
+    if self.show2 and not self.has2 then
+        self.text2:SetAlpha(0)
+        self.bar2.icon:SetAlpha(0)
+    end
     Utils:ApplyBackground(self.frame, self.db)
     
-    local has1 = self.has1
-    local has2 = self.has2
-    
+    local show1 = self.show1
+    local show2 = self.show2
+
     local innerBarHeight = barHeight - 8
-    
+
     -- Update bar sizes based on content (always include icon width)
-    local w1 = has1 and (self.text1:GetStringWidth() + 24) or 0
-    local w2 = has2 and (self.text2:GetStringWidth() + 24) or 0
-    
+    local w1 = show1 and (self.text1:GetStringWidth() + 24) or 0
+    local w2 = show2 and (self.text2:GetStringWidth() + 24) or 0
+
     self.bar1:SetSize(math.max(w1, 1), innerBarHeight)
     self.bar2:SetSize(math.max(w2, 1), innerBarHeight)
-    
-    if has1 and has2 then
+
+    if show1 and show2 then
         self.bar1:ClearAllPoints()
         self.bar1:SetPoint("LEFT", self.frame, "LEFT", 10, 0)
-        
+
         self.bar2:ClearAllPoints()
         self.bar2:SetPoint("RIGHT", self.frame, "RIGHT", -10, 0)
     else
         self.bar1:ClearAllPoints()
         self.bar1:SetPoint("CENTER", self.frame, "CENTER", 0, 0)
-        
+
         self.bar2:ClearAllPoints()
         self.bar2:SetPoint("CENTER", self.frame, "CENTER", 0, 0)
     end
