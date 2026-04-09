@@ -174,8 +174,19 @@ local options = {
 }
 
 local function UpdateModuleOptions()
+    local sortedNames = {}
+    for mName in pairs(LumiBar.Modules) do
+        table.insert(sortedNames, mName)
+    end
+    table.sort(sortedNames, function(a, b)
+        if a == "General" then return true end
+        if b == "General" then return false end
+        return a < b
+    end)
+
     local moduleOrder = 10
-    for mName, module in pairs(LumiBar.Modules) do
+    for _, mName in ipairs(sortedNames) do
+        local module = LumiBar.Modules[mName]
         if LumiBar.moduleOptions and LumiBar.moduleOptions[mName] then
             local moduleOpts = LumiBar.moduleOptions[mName]
 

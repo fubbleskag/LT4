@@ -96,7 +96,7 @@ function LumiBar:OnInitialize()
                     barHeight = 2, barOffset = -4, barSpacing = 4,
                 },
                 Currency = {
-                    icon = "", iconFontSize = 18, displayedCurrency = "GOLD",
+                    icon = "", iconFontSize = 18,
                     enabledCurrencies = { [3383]=true, [3347]=true, [3345]=true, [3343]=true, [3341]=true, [3316]=true, [3028]=true },
                     showIcon = true, showSmall = true, showBagSpace = true, useGoldColors = true,
                 },

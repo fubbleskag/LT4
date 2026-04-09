@@ -149,36 +149,33 @@ function HS:Init()
                 order = 1,
             },
             cooldownEnabled = { name = "Show Cooldown", type = "toggle", width = "full", order = 2 },
-            visibilityGroup = {
+            additionalPortalsHeader = {
                 name = "Additional Portals",
+                type = "header",
+                order = 10,
+            },
+            standard = { name = "Hearthstones & Toys", type = "group", inline = true, order = 11, args = {} },
+            expansions = {
+                name = "Dungeons and Raids",
                 type = "group",
                 inline = true,
-                order = 10,
+                order = 12,
                 args = {
-                    standard = { name = "Hearthstones & Toys", type = "group", inline = true, order = 1, args = {} },
-                    expansions = { 
-                        name = "Dungeons and Raids", 
-                        type = "group", 
-                        inline = true, 
-                        order = 2, 
-                        args = {
-                            showSeasonPortals = {
-                                name = "|cff00ff00Current Season|r",
-                                type = "toggle",
-                                width = "full",
-                                order = 0,
-                            },
-                            sep = { name = "", type = "description", order = 0.5 },
-                        } 
+                    showSeasonPortals = {
+                        name = "|cff00ff00Current Season|r",
+                        type = "toggle",
+                        width = "full",
+                        order = 0,
                     },
+                    sep = { name = "", type = "description", order = 0.5 },
                 }
-            }
+            },
         }
     }
 
     local all = self:ScanAvailable()
     for key, info in pairs(all.Standard) do
-        options.args.visibilityGroup.args.standard.args[key:gsub(":", "_")] = {
+        options.args.standard.args[key:gsub(":", "_")] = {
             name = info.name,
             type = "toggle",
             width = "full",
@@ -201,7 +198,7 @@ function HS:Init()
     end)
 
     for _, expName in ipairs(sortedExps) do
-        options.args.visibilityGroup.args.expansions.args[expName:gsub(" ", "")] = {
+        options.args.expansions.args[expName:gsub(" ", "")] = {
             name = expName,
             type = "toggle",
             width = "full",

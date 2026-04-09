@@ -22,27 +22,19 @@ function CurrencyModule:Init()
             self:UpdateCurrency()
         end,
         args = {
-            displayedCurrency = {
-                name = "Displayed Currency",
-                desc = "Select what to show on the bar.",
-                type = "select",
-                width = "full",
-                values = { ["GOLD"] = "Gold", ["BAGS"] = "Bags Space" },
-                order = 1,
-            },
             showBagSpace = {
                 name = "Show Bag Space",
                 desc = "Show free bag slots next to gold.",
                 type = "toggle",
                 width = "full",
-                order = 2,
+                order = 1,
             },
             useGoldColors = {
                 name = "Use Gold Colors",
                 desc = "Use colored gold/silver/copper icons.",
                 type = "toggle",
                 width = "full",
-                order = 3,
+                order = 2,
             },
         }
     }
@@ -79,24 +71,18 @@ function CurrencyModule:UpdateGoldData()
 end
 
 function CurrencyModule:UpdateCurrency()
-    local str = ""
-    if self.db.displayedCurrency == "GOLD" then
-        local gold = GetMoney()
-        if self.db.useGoldColors then
-            str = Utils:FormatMoney(gold)
-        else
-            str = Utils:FormatNumber(gold / 10000) .. "g"
-        end
-        
-        if self.db.showBagSpace then
-            local free, _ = self:GetBagSpace()
-            local accent = "|cff" .. Utils:GetAccentColorHex()
-            str = str .. " " .. accent .. "(" .. free .. ")|r"
-        end
-    elseif self.db.displayedCurrency == "BAGS" then
-        local free, total = self:GetBagSpace()
+    local gold = GetMoney()
+    local str
+    if self.db.useGoldColors then
+        str = Utils:FormatMoney(gold)
+    else
+        str = Utils:FormatNumber(gold / 10000) .. "g"
+    end
+
+    if self.db.showBagSpace then
+        local free, _ = self:GetBagSpace()
         local accent = "|cff" .. Utils:GetAccentColorHex()
-        str = string.format("%sBags:|r %d/%d", accent, free, total)
+        str = str .. " " .. accent .. "(" .. free .. ")|r"
     end
     
     self.text:SetText(str)
