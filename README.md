@@ -1,71 +1,60 @@
 # <4 (LT4)
 
-**LT4** is a modular quality-of-life suite for World of Warcraft (Retail/Midnight), designed to provide a cohesive and lightweight set of tweaks and enhancements. Built on the Ace3 framework, it offers a central hub for managing various UI and gameplay improvements.
+**LT4** is a modular quality-of-life suite for World of Warcraft (Retail — Midnight 12.0.x). Built on the Ace3 framework, it provides a central hub for managing various UI and gameplay improvements.
 
-## Core Features
+## Modules
 
-### 🛠️ Modular Architecture
-Every feature in LT4 is a self-contained module. You can enable or disable exactly what you need through the main settings panel, keeping your UI clean and efficient.
+### Square Minimap
+Transforms the circular minimap into a square design. Skins LibDBIcon addon buttons for a consistent flat look. Repositions built-in minimap elements (mail, tracking, queue status, zone text) to the corners. Zone text appears on hover only.
 
-### 📊 LumiBar (Information Bar)
-A customizable data bar that provides at-a-glance information. LumiBar supports multiple zones (Left, Center, Right) and includes modules for:
-*   **System:** FPS, Latency, and Memory usage.
-*   **Currency:** Gold and specific expansion currencies.
-*   **Durability:** Equipment status and repair costs. Includes customizable **Repair Mount** summoning (Left or Right click).
-*   **Professions:** Quick access and tracking for your crafts with visual progress.
-*   **Hearthstone:** Easy access to your primary teleport. Now includes auto-detection for **Mage Portals & Teleports**, plus **Cooldown & Progress Bars** in the flyout menus.
-*   **Volume & Time:** Quick controls and clock display.
+### LumiBar (Information Bar)
+A full-width data bar anchored to the top or bottom of the screen. Modules are arranged via a drag-and-drop layout editor with five zones (Far Left, Near Left, Center, Near Right, Far Right).
 
-### 🛠️ Miscellaneous Tweaks
-A collection of quality-of-life enhancements:
-*   **Tooltip IDs:** Adds Item, Spell, Currency, Achievement, Toy, and Mount IDs to all tooltips globally.
-*   **Better Fishing:** Double-right-click while not in combat to cast your fishing rod. Includes an optional "Sit while fishing" feature.
+**Sub-modules:**
+- **Time** — Clock display (12/24h), flashing colon, date, mail indicator, resting animation.
+- **System** — FPS, latency, CPU, and memory usage.
+- **Currency** — Gold display with colored denominations, expansion currencies, bag space.
+- **Durability** — Equipment durability %, item level, color-coded warnings, repair mount summoning.
+- **Hearthstone** — Primary hearthstone with flyout for portals/teleports (auto-detects Mage spells), cooldown bars.
+- **Profession** — Quick-access profession icons with skill progress bars.
+- **Spec Switch** — Talent specialization and loadout switching.
+- **Volume** — Master volume quick-control.
+- **DataBar** — XP/reputation/honor progress bar with multiple display modes.
+- **MicroMenu** — Compact row of game menu icons (character, spells, collections, etc.).
 
-### 🌿 Professions & Gathering
-Enhanced tools for the dedicated gatherer, including:
-*   **Skinning Tracker:** Visual feedback and progress for skinning activities.
-*   **General Tweaks:** Automation and UI improvements for various profession windows.
+### Miscellaneous
+- **Tooltip IDs** — Adds Item, Spell, Currency, Achievement, Toy, and Mount IDs to all tooltips.
+- **Better Fishing** — Double-right-click to cast your fishing rod. Optional sit-while-fishing.
+- **Auto Repair** — Automatically repair gear at merchants (supports guild funds).
+- **Auto Sell Junk** — Sells grey items automatically at merchants.
+- **Collected Indicator** — Shows a checkmark and `[Known]` tag on already-collected items at merchants.
 
-### 🎨 ElvUI Integration
-Seamlessly blends your favorite addons with the ElvUI aesthetic. Includes custom skinning callbacks for popular addons to ensure a consistent look across your entire interface.
+### Professions
+- **Recipe Tracker Summary** — Toggleable consolidated view of tracked recipe reagents with inventory counts.
+- **Skinning Rares Tracker** — Draggable UI panel tracking daily renowned beast completion status with clickable waypoints (supports TomTom). Chat command: `/skinning rares`.
 
 ---
 
 ## Installation
 
-### Method 1: Manual (Recommended for most users)
-1.  **Download:** Click the green **Code** button at the top of this page and select **Download ZIP**.
-2.  **Locate AddOns Folder:** Open your World of Warcraft installation directory, typically:  
-    `C:\Program Files (x86)\World of Warcraft\_retail_\Interface\AddOns`
-3.  **Extract:** Open the ZIP file and move the `LT4-main` folder into the `AddOns` directory.
-4.  **Rename:** Rename the folder from `LT4-main` to exactly **`LT4`**.
-5.  **Restart:** Start the game or type `/reload` in chat if you are already logged in.
+### Manual
+1. Download the ZIP from the green **Code** button above.
+2. Extract and move the folder into your AddOns directory:
+   `World of Warcraft\_retail_\Interface\AddOns\`
+3. Rename the folder from `LT4-main` to **`LT4`**.
+4. `/reload` or restart the game.
 
-### Method 2: Git (Best for developers)
-If you have Git installed, you can clone the repository directly into your AddOns folder to make updates effortless.
-1.  Open a terminal (PowerShell or CMD) in your `AddOns` directory.
-2.  Run the following command:
-    ```powershell
-    git clone https://github.com/fubbleskag/LT4.git
-    ```
-
----
+### Git
+```
+cd "World of Warcraft\_retail_\Interface\AddOns"
+git clone https://github.com/fubbleskag/LT4.git
+```
 
 ## Updating
 
-### Manual Update
-1.  Delete the existing `LT4` folder from your `AddOns` directory.
-2.  Follow the **Manual Installation** steps above with the latest ZIP file.  
-    *(Note: Your settings are stored in the WTF folder and will not be lost.)*
-
-### Git Update
-1.  Open a terminal in your `AddOns/LT4` folder.
-2.  Run the following command:
-    ```powershell
-    git pull
-    ```
-
----
+- **Manual:** Delete the `LT4` folder and re-download. Settings are stored in the WTF folder and will persist.
+- **Git:** Run `git pull` from the `LT4` folder.
 
 ## Configuration
-Access the settings by typing `/lt4` in chat or by clicking the **<4** icon on your minimap/addon compartment.
+
+Type `/lt4` in chat or click the **<4** minimap icon / addon compartment button. Individual modules can be enabled or disabled from the main settings page, with per-module settings in sidebar sub-categories.
