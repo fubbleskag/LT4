@@ -33,6 +33,14 @@ function LumiBar:OnInitialize()
 
     -- Default Settings
     local defaults = {
+        char = {
+            modules = {
+                Hearthstone = {
+                    showIcon = true, iconFontSize = 18, cooldownEnabled = true, cooldownFontSize = 18,
+                    primaryHS = "item:6948", hiddenPortals = {}, hiddenExpansions = {}, showSeasonPortals = true,
+                },
+            },
+        },
         profile = {
             bar = {
                 position = "BOTTOM",
@@ -93,10 +101,6 @@ function LumiBar:OnInitialize()
                     showIcon = true, showSmall = true, showBagSpace = true, useGoldColors = true,
                 },
                 Volume = { showIcon = true, useUppercase = true, textColor = "GREEN", icon = "", iconColor = false, iconFontSize = 18 },
-                Hearthstone = {
-                    showIcon = true, iconFontSize = 18, cooldownEnabled = true, cooldownFontSize = 18,
-                    primaryHS = "item:6948", hiddenPortals = {}, hiddenExpansions = {}, showSeasonPortals = true,
-                },
                 Durability = {
                     icon = "", iconColor = false, iconFontSize = 18, repairMount = 460, textColor = true,
                     textColorFadeFromNormal = true, showIcon = true, showPerc = true, showItemLevel = true,
@@ -130,6 +134,11 @@ function LumiBar:OnInitialize()
 
     -- Optimization: Inject base defaults efficiently
     for _, mData in pairs(defaults.profile.modules) do
+        for k, v in pairs(moduleDefaultsBase) do
+            if mData[k] == nil then mData[k] = v end
+        end
+    end
+    for _, mData in pairs(defaults.char.modules) do
         for k, v in pairs(moduleDefaultsBase) do
             if mData[k] == nil then mData[k] = v end
         end

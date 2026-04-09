@@ -122,7 +122,7 @@ function HS:ScanAvailable()
 end
 
 function HS:Init()
-    self.db = LumiBar.db.profile.modules.Hearthstone
+    self.db = LumiBar.db.char.modules.Hearthstone
     self.db.hiddenPortals = self.db.hiddenPortals or {}
     self.db.hiddenExpansions = self.db.hiddenExpansions or {}
     
@@ -282,7 +282,7 @@ function HS:UpdateSecureAttributes()
 end
 
 function HS:Enable(slotFrame)
-    self.db = LumiBar.db.profile.modules.Hearthstone
+    self.db = LumiBar.db.char.modules.Hearthstone
     if not self.frame then
         self.frame = CreateFrame("Button", "LumiBarHearthstoneBtn", slotFrame, "SecureActionButtonTemplate, BackdropTemplate")
         self.frame:RegisterForClicks("AnyUp", "AnyDown")
