@@ -1,5 +1,7 @@
 local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
 local Module = LT4:NewModule("SquareMinimap", "AceEvent-3.0", "AceHook-3.0", "AceTimer-3.0")
+local LDB = LibStub("LibDataBroker-1.1")
+local LDI = LibStub("LibDBIcon-1.0")
 
 Module.description = "Transforms the circular minimap into a sleek, square design and skins addon icons for a consistent flat look."
 Module.requiresReload = true -- Changing the mask is best handled via reload for stability
@@ -31,7 +33,7 @@ function Module:OnInitialize()
                 min = 16, max = 64, step = 1,
                 order = 1,
                 get = function() return LT4.db.profile.minimap.iconSize or 20 end,
-                set = function(_, val) 
+                set = function(_, val)
                     LT4.db.profile.minimap.iconSize = val
                     self:UpdateAllIcons()
                 end,
@@ -49,14 +51,33 @@ function Module:OnEnable()
     if LT4.db.profile.minimap.iconSize == nil then
         LT4.db.profile.minimap.iconSize = 20
     end
+    if not LT4.db.profile.minimap.buttons then
+        LT4.db.profile.minimap.buttons = {}
+    end
 
     self:UpdateMinimap()
+    self:CreateMinimapButtons()
     self:SkinAddonIcons()
-    
+
     -- Register events for new icons
     self:RegisterEvent("ADDON_LOADED", "SkinAddonIcons")
     self:ScheduleRepeatingTimer("SkinAddonIcons", 5)
-    
+
+    -- Mail events
+    self:RegisterEvent("UPDATE_PENDING_MAIL", "UpdateMailButton")
+
+    -- Queue events
+    self:RegisterEvent("LFG_UPDATE", "UpdateQueueButton")
+    self:RegisterEvent("LFG_QUEUE_STATUS_UPDATE", "UpdateQueueButton")
+    self:RegisterEvent("LFG_COMPLETION_REWARD", "UpdateQueueButton")
+    self:RegisterEvent("LFG_PROPOSAL_DONE", "UpdateQueueButton")
+    self:RegisterEvent("LFG_PROPOSAL_FAILED", "UpdateQueueButton")
+    self:RegisterEvent("LFG_PROPOSAL_SUCCEEDED", "UpdateQueueButton")
+    self:RegisterEvent("UPDATE_BATTLEFIELD_STATUS", "UpdateQueueButton")
+    self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateQueueButton")
+    -- Periodic fallback for queue status (catches edge cases)
+    self:ScheduleRepeatingTimer("UpdateQueueButton", 3)
+
     -- Throttled updates (0.05s) as per project mandates
     self:ScheduleRepeatingTimer("ThrottledUpdate", 0.05)
 end
@@ -66,7 +87,7 @@ function Module:OnDisable()
 end
 
 function Module:ThrottledUpdate()
-    -- Ensure minimap fills container and elements stay positioned
+    -- Ensure minimap fills container and corner elements stay positioned
     self:ResizeToFillContainer()
     self:PositionElements()
 
@@ -83,45 +104,172 @@ function Module:ThrottledUpdate()
     end
 end
 
-function Module:UpdateAllIcons()
-    -- LibDBIcon support
-    local LDI = LibStub("LibDBIcon-1.0", true)
-    if LDI then
-        -- Set radius to half of icon size to make them flush with the outside edge
-        local size = LT4.db.profile.minimap.iconSize or 20
-        LDI:SetButtonRadius(size / 2)
+--------------------------------------------------------------------------------
+-- Minimap Button Replacements (Mail & Queue as LibDBIcon draggable buttons)
+--------------------------------------------------------------------------------
 
-        for _, button in pairs(LDI.objects) do
-            self:SkinButton(button, true)
+function Module:CreateMinimapButtons()
+    local buttons = LT4.db.profile.minimap.buttons
+
+    -- Default positions (degrees around minimap): TL≈135, BL≈225
+    local defs = {
+        {
+            name = "LT4_Mail",
+            key = "mail",
+            defaultPos = 135,
+            icon = "Interface\\Icons\\INV_Letter_15",
+            label = "Mail",
+            onClick = function() end, -- Indicator only
+            onTooltip = function(tooltip)
+                tooltip:AddLine("|cFFFFFFFFMail|r")
+                if HasNewMail() then
+                    tooltip:AddLine("You have unread mail", 0, 1, 0)
+                else
+                    tooltip:AddLine("No new mail", 0.5, 0.5, 0.5)
+                end
+            end,
+        },
+        {
+            name = "LT4_Queue",
+            key = "queue",
+            defaultPos = 225,
+            icon = "Interface\\Icons\\INV_Misc_Eye_02",
+            label = "Queue Status",
+            onClick = function(_, btn)
+                if QueueStatusButton and QueueStatusButton.Click then
+                    QueueStatusButton:Click(btn)
+                end
+            end,
+            onTooltip = function(tooltip)
+                tooltip:AddLine("|cFFFFFFFFQueue Status|r")
+                tooltip:AddLine("Click to view queue info", 0.8, 0.8, 0.8)
+            end,
+        },
+    }
+
+    self.minimapButtons = {}
+
+    for _, def in ipairs(defs) do
+        -- Initialize saved position if missing
+        if not buttons[def.key] then
+            buttons[def.key] = { minimapPos = def.defaultPos }
         end
+
+        -- Create LDB data object
+        local dataObj = LDB:NewDataObject(def.name, {
+            type = "launcher",
+            icon = def.icon,
+            text = def.label,
+            OnClick = def.onClick,
+            OnTooltipShow = def.onTooltip,
+        })
+
+        -- Register with LibDBIcon (positions around minimap edge, draggable)
+        LDI:Register(def.name, dataObj, buttons[def.key])
+
+        self.minimapButtons[def.key] = {
+            name = def.name,
+            dataObject = dataObj,
+        }
+    end
+
+    -- Set initial visibility for conditional buttons
+    self:UpdateMailButton()
+    self:UpdateQueueButton()
+end
+
+function Module:UpdateMailButton()
+    if not self.minimapButtons or not self.minimapButtons.mail then return end
+    local btn = LDI.objects[self.minimapButtons.mail.name]
+    if not btn then return end
+
+    if HasNewMail() then
+        btn:SetAlpha(1)
+        btn:Show()
+    else
+        btn:Hide()
     end
 end
+
+function Module:UpdateQueueButton()
+    if not self.minimapButtons or not self.minimapButtons.queue then return end
+    local btn = LDI.objects[self.minimapButtons.queue.name]
+    if not btn then return end
+
+    local hasQueue = false
+    -- Check battlefield / BG queues
+    for i = 1, GetMaxBattlefieldID() do
+        local status = GetBattlefieldStatus(i)
+        if status and status ~= "none" then
+            hasQueue = true
+            break
+        end
+    end
+    -- Check LFG queues
+    if not hasQueue then
+        for i = 1, (NUM_LE_LFG_CATEGORYS or 0) do
+            local mode = GetLFGMode(i)
+            if mode and mode ~= "none" then
+                hasQueue = true
+                break
+            end
+        end
+    end
+
+    if hasQueue then
+        btn:SetAlpha(1)
+        btn:Show()
+    else
+        btn:Hide()
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Minimap Setup
+--------------------------------------------------------------------------------
 
 function Module:UpdateMinimap()
     -- Apply square mask
     Minimap:SetMaskTexture("Interface\\ChatFrame\\ChatFrameBackground")
 
-    -- Hide Blizzard art (borders, etc.)
-    local borderElements = {
+    -- Hide Blizzard art
+    local hideFrames = {
         MinimapBackdrop,
         TimeManagerClockButton,
         GameTimeFrame,
         MinimapCluster.BorderTop,
         MinimapCluster.InstanceDifficulty,
-	MinimapCluster.Tracking,
+        MinimapCluster.IndicatorFrame.MailFrame,
     }
 
-    for _, frame in pairs(borderElements) do
+    for _, frame in pairs(hideFrames) do
         if frame then
             frame:Hide()
             frame:SetAlpha(0)
         end
     end
 
+    -- Fully hide mail and queue originals (we handle visibility ourselves)
+    if MiniMapMailFrame then
+        MiniMapMailFrame:Hide()
+        MiniMapMailFrame:SetAlpha(0)
+        -- Prevent Blizzard from re-showing the mail indicator
+        if not self.mailShowHooked then
+            hooksecurefunc(MiniMapMailFrame, "Show", function(f)
+                f:Hide()
+            end)
+            self.mailShowHooked = true
+        end
+    end
+    if QueueStatusButton then
+        QueueStatusButton:Hide()
+        QueueStatusButton:SetAlpha(0)
+    end
+
     -- Fill the container width (remain square)
     self:ResizeToFillContainer()
 
-    -- Position elements
+    -- Position corner elements
     self:PositionElements()
 
     -- Hook container size changes
@@ -156,23 +304,11 @@ end
 
 function Module:PositionElements()
     local frames = {
-        -- Mail Icon
-        { 
-            frame = MiniMapMailIcon, 
-            point = "TOPLEFT", 
-            x = 4, y = -4 
-        },
         -- Addon Compartment
-        { 
-            frame = AddonCompartmentFrame or (MinimapCluster and MinimapCluster.AddonCompartment), 
-            point = "TOPRIGHT", 
-            x = -4, y = -4 
-        },
-        -- LFG Eye (Queue Status)
-        { 
-            frame = QueueStatusButton, 
-            point = "BOTTOMLEFT", 
-            x = 4, y = 4 
+        {
+            frame = AddonCompartmentFrame or (MinimapCluster and MinimapCluster.AddonCompartment),
+            point = "TOPRIGHT",
+            x = -4, y = -4
         },
         -- Zone Text
         {
@@ -203,7 +339,7 @@ function Module:PositionElements()
                 end)
                 frame.lt4HooksApplied = true
             end
-            
+
             -- Manual update in case hooks aren't firing or for initial load
             frame.lt4IsPositioning = true
             frame:ClearAllPoints()
@@ -213,11 +349,23 @@ function Module:PositionElements()
     end
 end
 
-function Module:SkinAddonIcons()
-    -- LibDBIcon support
-    local LDI = LibStub("LibDBIcon-1.0", true)
+--------------------------------------------------------------------------------
+-- Addon Icon Skinning
+--------------------------------------------------------------------------------
+
+function Module:UpdateAllIcons()
     if LDI then
-        -- Set radius to half of icon size to make them flush with the outside edge
+        local size = LT4.db.profile.minimap.iconSize or 20
+        LDI:SetButtonRadius(size / 2)
+
+        for _, button in pairs(LDI.objects) do
+            self:SkinButton(button, true)
+        end
+    end
+end
+
+function Module:SkinAddonIcons()
+    if LDI then
         local size = LT4.db.profile.minimap.iconSize or 20
         LDI:SetButtonRadius(size / 2)
 
