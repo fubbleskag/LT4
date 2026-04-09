@@ -7,190 +7,178 @@ local options = {
     name = "LumiBar",
     handler = LumiBar,
     type = "group",
-    childGroups = "tab",
+    childGroups = "tree",
     args = {
         general = {
-            name = "General Settings",
+            name = "General",
             type = "group",
             order = 1,
             args = {
-                barGroup = {
-                    name = "Bar",
-                    type = "group",
-                    inline = true,
-                    order = 10,
-                    args = {
-                        moduleLayout = {
-                            name = "Module Layout",
-                            desc = "Open the module layout editor",
-                            type = "execute",
-                            func = function()
-                                if LumiBar.OpenLayoutEditor then
-                                    LumiBar:OpenLayoutEditor()
-                                end
-                            end,
-                            order = 0,
-                        },
-                        position = {
-                            name = "Position",
-                            desc = "Set the bar to the top or bottom of the screen",
-                            type = "select",
-                            values = { ["TOP"] = "Top", ["BOTTOM"] = "Bottom" },
-                            get = function(info) return LumiBar.db.profile.bar.position end,
-                            set = function(info, value) 
-                                LumiBar.db.profile.bar.position = value
-                                LumiBar:RefreshConfig()
-                            end,
-                            order = 1,
-                        },
-                        height = {
-                            name = "Height",
-                            type = "range",
-                            min = 10, max = 100, step = 1,
-                            get = function(info) return LumiBar.db.profile.bar.height end,
-                            set = function(info, value) 
-                                LumiBar.db.profile.bar.height = value
-                                LumiBar:RefreshConfig()
-                                LumiBar:RefreshModules()
-                            end,
-                            order = 2,
-                        },
-                        lineBreak = {
-                            type = "header",
-                            name = "",
-                            order = 3,
-                        },
-                        backgroundColor = {
-                            name = "Background Color",
-                            type = "color",
-                            hasAlpha = true,
-                            get = function(info)
-                                local c = LumiBar.db.profile.bar.backgroundColor
-                                return c.r, c.g, c.b, c.a
-                            end,
-                            set = function(info, r, g, b, a)
-                                local c = LumiBar.db.profile.bar.backgroundColor
-                                c.r, c.g, c.b, c.a = r, g, b, a
-                                LumiBar:RefreshConfig()
-                            end,
-                            order = 4,
-                        },
-                        useClassColor = {
-                            name = "Use Class Color",
-                            type = "toggle",
-                            get = function(info) return LumiBar.db.profile.bar.useClassColor end,
-                            set = function(info, value)
-                                LumiBar.db.profile.bar.useClassColor = value
-                                LumiBar:RefreshConfig()
-                            end,
-                            order = 5,
-                        },
-                        backgroundTexture = {
-                            name = "Background Texture",
-                            type = "select",
-                            dialogControl = LSM and "LSM30_Statusbar" or nil,
-                            values = LSM and LSM:HashTable("statusbar") or { ["Solid"] = "Solid" },
-                            get = function(info) return LumiBar.db.profile.bar.backgroundTexture end,
-                            set = function(info, value)
-                                LumiBar.db.profile.bar.backgroundTexture = value
-                                LumiBar:RefreshConfig()
-                            end,
-                            order = 6,
-                        },
-                    },
+                moduleLayout = {
+                    name = "Module Layout",
+                    desc = "Open the module layout editor",
+                    type = "execute",
+                    width = "full",
+                    func = function()
+                        if LumiBar.OpenLayoutEditor then
+                            LumiBar:OpenLayoutEditor()
+                        end
+                    end,
+                    order = 0,
                 },
-                fontGroup = {
+                position = {
+                    name = "Position",
+                    desc = "Set the bar to the top or bottom of the screen",
+                    type = "select",
+                    width = "full",
+                    values = { ["TOP"] = "Top", ["BOTTOM"] = "Bottom" },
+                    get = function(info) return LumiBar.db.profile.bar.position end,
+                    set = function(info, value)
+                        LumiBar.db.profile.bar.position = value
+                        LumiBar:RefreshConfig()
+                    end,
+                    order = 1,
+                },
+                height = {
+                    name = "Height",
+                    type = "range",
+                    width = "full",
+                    min = 10, max = 100, step = 1,
+                    get = function(info) return LumiBar.db.profile.bar.height end,
+                    set = function(info, value)
+                        LumiBar.db.profile.bar.height = value
+                        LumiBar:RefreshConfig()
+                        LumiBar:RefreshModules()
+                    end,
+                    order = 2,
+                },
+                lineBreak1 = {
+                    type = "header",
+                    name = "Background",
+                    order = 3,
+                },
+                backgroundColor = {
+                    name = "Background Color",
+                    type = "color",
+                    hasAlpha = true,
+                    get = function(info)
+                        local c = LumiBar.db.profile.bar.backgroundColor
+                        return c.r, c.g, c.b, c.a
+                    end,
+                    set = function(info, r, g, b, a)
+                        local c = LumiBar.db.profile.bar.backgroundColor
+                        c.r, c.g, c.b, c.a = r, g, b, a
+                        LumiBar:RefreshConfig()
+                    end,
+                    order = 4,
+                },
+                useClassColor = {
+                    name = "Use Class Color",
+                    type = "toggle",
+                    get = function(info) return LumiBar.db.profile.bar.useClassColor end,
+                    set = function(info, value)
+                        LumiBar.db.profile.bar.useClassColor = value
+                        LumiBar:RefreshConfig()
+                    end,
+                    order = 5,
+                },
+                backgroundTexture = {
+                    name = "Background Texture",
+                    type = "select",
+                    width = "full",
+                    dialogControl = LSM and "LSM30_Statusbar" or nil,
+                    values = LSM and LSM:HashTable("statusbar") or { ["Solid"] = "Solid" },
+                    get = function(info) return LumiBar.db.profile.bar.backgroundTexture end,
+                    set = function(info, value)
+                        LumiBar.db.profile.bar.backgroundTexture = value
+                        LumiBar:RefreshConfig()
+                    end,
+                    order = 6,
+                },
+                lineBreak2 = {
+                    type = "header",
                     name = "Font",
-                    type = "group",
-                    inline = true,
-                    order = 20,
-                    args = {
-                        face = {
-                            name = "Font Face",
-                            type = "select",
-                            dialogControl = LSM and "LSM30_Font" or nil,
-                            values = LSM and LSM:HashTable("font") or { ["Arial Narrow"] = "Arial Narrow" },
-                            get = function(info) return LumiBar.db.profile.general.font.face end,
-                            set = function(info, value)
-                                LumiBar.db.profile.general.font.face = value
-                                LumiBar:RefreshModules()
-                            end,
-                            order = 1,
-                        },
-                        size = {
-                            name = "Font Size",
-                            type = "range",
-                            min = 6, max = 32, step = 1,
-                            get = function(info) return LumiBar.db.profile.general.font.size end,
-                            set = function(info, value)
-                                LumiBar.db.profile.general.font.size = value
-                                LumiBar:RefreshModules()
-                            end,
-                            order = 2,
-                        },
-                        outline = {
-                            name = "Font Outline",
-                            type = "select",
-                            values = { ["NONE"] = "None", ["OUTLINE"] = "Outline", ["THICKOUTLINE"] = "Thick Outline", ["MONOCHROME"] = "Monochrome" },
-                            get = function(info) return LumiBar.db.profile.general.font.outline end,
-                            set = function(info, value)
-                                LumiBar.db.profile.general.font.outline = value
-                                LumiBar:RefreshModules()
-                            end,
-                            order = 3,
-                        },
-                        color = {
-                            name = "Primary Color",
-                            type = "color",
-                            hasAlpha = true,
-                            get = function(info)
-                                local c = LumiBar.db.profile.general.font.color
-                                return c.r, c.g, c.b, c.a
-                            end,
-                            set = function(info, r, g, b, a)
-                                local c = LumiBar.db.profile.general.font.color
-                                c.r, c.g, c.b, c.a = r, g, b, a
-                                LumiBar:RefreshModules()
-                            end,
-                            order = 4,
-                        },
-                        accentColor = {
-                            name = "Accent Color",
-                            desc = "Used for icons and highlights",
-                            type = "color",
-                            hasAlpha = true,
-                            get = function(info)
-                                local c = LumiBar.db.profile.general.accentColor
-                                return c.r, c.g, c.b, c.a
-                            end,
-                            set = function(info, r, g, b, a)
-                                local c = LumiBar.db.profile.general.accentColor
-                                c.r, c.g, c.b, c.a = r, g, b, a
-                                LumiBar:RefreshModules()
-                            end,
-                            order = 5,
-                        },
-                    },
+                    order = 10,
+                },
+                fontFace = {
+                    name = "Font Face",
+                    type = "select",
+                    width = "full",
+                    dialogControl = LSM and "LSM30_Font" or nil,
+                    values = LSM and LSM:HashTable("font") or { ["Arial Narrow"] = "Arial Narrow" },
+                    get = function(info) return LumiBar.db.profile.general.font.face end,
+                    set = function(info, value)
+                        LumiBar.db.profile.general.font.face = value
+                        LumiBar:RefreshModules()
+                    end,
+                    order = 11,
+                },
+                fontSize = {
+                    name = "Font Size",
+                    type = "range",
+                    width = "full",
+                    min = 6, max = 32, step = 1,
+                    get = function(info) return LumiBar.db.profile.general.font.size end,
+                    set = function(info, value)
+                        LumiBar.db.profile.general.font.size = value
+                        LumiBar:RefreshModules()
+                    end,
+                    order = 12,
+                },
+                fontOutline = {
+                    name = "Font Outline",
+                    type = "select",
+                    width = "full",
+                    values = { ["NONE"] = "None", ["OUTLINE"] = "Outline", ["THICKOUTLINE"] = "Thick Outline", ["MONOCHROME"] = "Monochrome" },
+                    get = function(info) return LumiBar.db.profile.general.font.outline end,
+                    set = function(info, value)
+                        LumiBar.db.profile.general.font.outline = value
+                        LumiBar:RefreshModules()
+                    end,
+                    order = 13,
+                },
+                primaryColor = {
+                    name = "Primary Color",
+                    type = "color",
+                    hasAlpha = true,
+                    get = function(info)
+                        local c = LumiBar.db.profile.general.font.color
+                        return c.r, c.g, c.b, c.a
+                    end,
+                    set = function(info, r, g, b, a)
+                        local c = LumiBar.db.profile.general.font.color
+                        c.r, c.g, c.b, c.a = r, g, b, a
+                        LumiBar:RefreshModules()
+                    end,
+                    order = 14,
+                },
+                accentColor = {
+                    name = "Accent Color",
+                    desc = "Used for icons and highlights",
+                    type = "color",
+                    hasAlpha = true,
+                    get = function(info)
+                        local c = LumiBar.db.profile.general.accentColor
+                        return c.r, c.g, c.b, c.a
+                    end,
+                    set = function(info, r, g, b, a)
+                        local c = LumiBar.db.profile.general.accentColor
+                        c.r, c.g, c.b, c.a = r, g, b, a
+                        LumiBar:RefreshModules()
+                    end,
+                    order = 15,
                 },
             },
-        },
-        modules = {
-            name = "Module Settings",
-            type = "group",
-            order = 3,
-            args = {},
         },
     },
 }
 
--- This function will be called by LumiBar:OnInitialize or similar if needed, 
--- but here we just populate the table.
 local function UpdateModuleOptions()
+    local moduleOrder = 10
     for mName, module in pairs(LumiBar.Modules) do
-        -- Add to Module Settings Tab
         if LumiBar.moduleOptions and LumiBar.moduleOptions[mName] then
             local moduleOpts = LumiBar.moduleOptions[mName]
-            
+
             -- Inject a wrapper for the 'set' function if it exists, or add one if it doesn't
             -- This ensures that whenever a module setting is changed, LumiBar:RefreshModules() is called.
             local originalSet = moduleOpts.set
@@ -207,7 +195,10 @@ local function UpdateModuleOptions()
                 LumiBar:RefreshModules()
             end
 
-            options.args.modules.args[mName] = moduleOpts
+            -- Add as its own tab
+            moduleOpts.order = moduleOrder
+            options.args[mName] = moduleOpts
+            moduleOrder = moduleOrder + 1
         end
     end
 end

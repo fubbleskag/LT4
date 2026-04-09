@@ -129,6 +129,7 @@ function DataBar:Init()
             barHeight = {
                 name = "Bar Height",
                 type = "range",
+                width = "full",
                 min = 1, max = 20, step = 1,
                 order = 1,
             },

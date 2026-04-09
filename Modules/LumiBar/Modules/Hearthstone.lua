@@ -139,7 +139,8 @@ function HS:Init()
             primaryHS = {
                 name = "Primary Hearthstone",
                 type = "select",
-                values = function() 
+                width = "full",
+                values = function()
                     local all = self:ScanAvailable()
                     local vals = {}
                     for key, info in pairs(all.Standard) do vals[key] = info.name end
@@ -147,7 +148,7 @@ function HS:Init()
                 end,
                 order = 1,
             },
-            cooldownEnabled = { name = "Show Cooldown", type = "toggle", order = 2 },
+            cooldownEnabled = { name = "Show Cooldown", type = "toggle", width = "full", order = 2 },
             visibilityGroup = {
                 name = "Additional Portals",
                 type = "group",
@@ -164,6 +165,7 @@ function HS:Init()
                             showSeasonPortals = {
                                 name = "|cff00ff00Current Season|r",
                                 type = "toggle",
+                                width = "full",
                                 order = 0,
                             },
                             sep = { name = "", type = "description", order = 0.5 },
@@ -179,6 +181,7 @@ function HS:Init()
         options.args.visibilityGroup.args.standard.args[key:gsub(":", "_")] = {
             name = info.name,
             type = "toggle",
+            width = "full",
             get = function() return self.db.hiddenPortals[key] == true end,
             set = function(_, val) 
                 self.db.hiddenPortals[key] = val or nil
@@ -201,6 +204,7 @@ function HS:Init()
         options.args.visibilityGroup.args.expansions.args[expName:gsub(" ", "")] = {
             name = expName,
             type = "toggle",
+            width = "full",
             get = function() return self.db.hiddenExpansions[expName] == true end,
             set = function(_, val) 
                 self.db.hiddenExpansions[expName] = val or nil

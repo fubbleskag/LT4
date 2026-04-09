@@ -21,16 +21,19 @@ function Spec:Init()
             showSpec1 = {
                 name = "Show Active Spec",
                 type = "toggle",
+                width = "full",
                 order = 1,
             },
             showSpec2 = {
                 name = "Show Loot Spec",
                 type = "toggle",
+                width = "full",
                 order = 2,
             },
             showLoadout = {
                 name = "Show Loadout Name",
                 type = "toggle",
+                width = "full",
                 order = 3,
             },
         }

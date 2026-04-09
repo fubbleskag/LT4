@@ -31,6 +31,7 @@ function Volume:Init()
                 name = "Volume Color Mode",
                 desc = "Color of the volume % when not muted.",
                 type = "select",
+                width = "full",
                 values = { ["NONE"] = "None", ["GREEN"] = "Green", ["ACCENT"] = "Accent" },
                 order = 1,
             },

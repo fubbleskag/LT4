@@ -36,10 +36,10 @@ function SystemModule:Init()
                 inline = true,
                 order = 1,
                 args = {
-                    showFPS = { name = "Show FPS", type = "toggle", order = 1 },
-                    showMS = { name = "Show Latency (ms)", type = "toggle", order = 2 },
-                    showMEM = { name = "Show Memory (MB)", type = "toggle", order = 3 },
-                    showCPU = { name = "Show CPU (%)", type = "toggle", order = 4 },
+                    showFPS = { name = "Show FPS", type = "toggle", width = "full", order = 1 },
+                    showMS = { name = "Show Latency (ms)", type = "toggle", width = "full", order = 2 },
+                    showMEM = { name = "Show Memory (MB)", type = "toggle", width = "full", order = 3 },
+                    showCPU = { name = "Show CPU (%)", type = "toggle", width = "full", order = 4 },
                 }
             },
         }

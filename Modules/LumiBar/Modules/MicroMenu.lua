@@ -82,16 +82,18 @@ function MicroMenu:Init()
                         name = "Auto Size to Bar",
                         desc = "Match the height of the LumiBar automatically.",
                         type = "toggle",
+                        width = "full",
                         order = 1,
                     },
                     iconSize = {
                         name = "Custom Icon Size",
                         type = "range",
+                        width = "full",
                         min = 10, max = 100, step = 1,
                         hidden = function() return self.db.autoSize end,
                         order = 2,
                     },
-                    spacing = { name = "Spacing", type = "range", min = -10, max = 20, step = 1, order = 3 },
+                    spacing = { name = "Spacing", type = "range", width = "full", min = -10, max = 20, step = 1, order = 3 },
                 }
             },
             colorGroup = {
@@ -104,12 +106,14 @@ function MicroMenu:Init()
                         name = "Use Global Accent Color",
                         desc = "Use the global accent color for keyboard shortcuts.",
                         type = "toggle",
+                        width = "full",
                         order = 1,
                     },
                     customColor = {
                         name = "Custom Color",
                         desc = "Custom color for keyboard shortcuts if not using global accent.",
                         type = "color",
+                        width = "full",
                         hasAlpha = false,
                         hidden = function() return self.db.useAccent end,
                         get = function(info)
@@ -138,6 +142,7 @@ function MicroMenu:Init()
         options.args.buttonsGroup.args["show"..btn.id] = {
             name = btn.name or btn.id,
             type = "toggle",
+            width = "full",
             order = i,
         }
     end

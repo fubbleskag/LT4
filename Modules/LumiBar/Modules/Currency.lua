@@ -26,6 +26,7 @@ function CurrencyModule:Init()
                 name = "Displayed Currency",
                 desc = "Select what to show on the bar.",
                 type = "select",
+                width = "full",
                 values = { ["GOLD"] = "Gold", ["BAGS"] = "Bags Space" },
                 order = 1,
             },
@@ -33,12 +34,14 @@ function CurrencyModule:Init()
                 name = "Show Bag Space",
                 desc = "Show free bag slots next to gold.",
                 type = "toggle",
+                width = "full",
                 order = 2,
             },
             useGoldColors = {
                 name = "Use Gold Colors",
                 desc = "Use colored gold/silver/copper icons.",
                 type = "toggle",
+                width = "full",
                 order = 3,
             },
         }

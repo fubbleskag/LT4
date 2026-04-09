@@ -25,17 +25,20 @@ function Prof:Init()
             showProf1 = {
                 name = "Profession 1",
                 type = "toggle",
+                width = "full",
                 order = 1,
             },
             showProf2 = {
                 name = "Profession 2",
                 type = "toggle",
+                width = "full",
                 order = 2,
             },
             reverseOrder = {
                 name = "Reverse Order",
                 desc = "Display professions in reverse order (2, 1)",
                 type = "toggle",
+                width = "full",
                 order = 3,
             },
         }
