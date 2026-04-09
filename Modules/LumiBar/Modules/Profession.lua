@@ -11,6 +11,7 @@ function Prof:Init()
     -- Set defaults
     if self.db.showProf1 == nil then self.db.showProf1 = true end
     if self.db.showProf2 == nil then self.db.showProf2 = true end
+    if self.db.reverseOrder == nil then self.db.reverseOrder = false end
 
     local options = {
         name = "Profession",
@@ -30,6 +31,12 @@ function Prof:Init()
                 name = "Profession 2",
                 type = "toggle",
                 order = 2,
+            },
+            reverseOrder = {
+                name = "Reverse Order",
+                desc = "Display professions in reverse order (2, 1)",
+                type = "toggle",
+                order = 3,
             },
         }
     }
@@ -90,6 +97,7 @@ end
 
 function Prof:UpdateStatus()
     local p1, p2 = GetProfessions()
+    if self.db.reverseOrder then p1, p2 = p2, p1 end
 
     self.has1 = false
     self.show1 = false
