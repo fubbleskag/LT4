@@ -396,16 +396,6 @@ function Module:SkinAddonIcons()
         end
     end
 
-    -- Find other minimap children that look like buttons
-    local children = {Minimap:GetChildren()}
-    for _, child in ipairs(children) do
-        if child:IsObjectType("Button") and child:IsShown() then
-            local name = child:GetName()
-            if (name and (name:find("MinimapButton") or name:find("LibDBIcon"))) or child.icon or child.Icon then
-                -- self:SkinButton(child)
-            end
-        end
-    end
 end
 
 function Module:SkinButton(button, forceUpdate)
