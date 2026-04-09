@@ -300,20 +300,19 @@ function LumiBar:ConstructBar()
 end
 
 -- Layout Logic
-local layoutUpdateTimer = false
 function LumiBar:UpdateLayout()
-    if not self.db or layoutUpdateTimer then return end
-    
+    if not self.db or self.layoutUpdateTimer then return end
+
     if InCombatLockdown() then
         self.needsRefresh = true
         self:RegisterEvent("PLAYER_REGEN_ENABLED")
         return
     end
 
-    layoutUpdateTimer = true
-    
+    self.layoutUpdateTimer = true
+
     C_Timer.After(0.05, function()
-        layoutUpdateTimer = false
+        self.layoutUpdateTimer = false
         if not self.db or InCombatLockdown() then 
             if InCombatLockdown() then
                 self.needsRefresh = true
