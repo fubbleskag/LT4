@@ -269,6 +269,11 @@ function Module:UpdateMerchantCollectedIndicators()
             end
         else
             if slot and slot:IsShown() and itemButton then
+                -- Clear stale originalText from previous pages before checking
+                if nameText and nameText.originalText then
+                    nameText.originalText = nil
+                end
+
                 local itemLink = GetMerchantItemLink(index)
                 local isCollected = itemLink and IsItemCollected(itemLink)
                 
