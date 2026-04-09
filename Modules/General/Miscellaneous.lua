@@ -136,6 +136,14 @@ function Module:OnInitialize()
                 end,
                 order = 2,
             },
+            autoConfirmDelete = {
+                type = "toggle",
+                name = "Auto-fill DELETE Confirmation",
+                desc = "Automatically fills in \"DELETE\" when the item deletion confirmation dialog appears.",
+                get = function() return LT4.db.profile.miscellaneous.autoConfirmDelete end,
+                set = function(_, val) LT4.db.profile.miscellaneous.autoConfirmDelete = val end,
+                order = 2.5,
+            },
             automation = {
                 type = "group",
                 name = "Merchant Automation",
@@ -550,6 +558,25 @@ function Module:OnEnable()
 
     -- Update alt list visibility when switching between Inbox/Send Mail tabs
     self:SecureHook("SendMailFrame_Update", "UpdateMailAltVisibility")
+
+    -- Auto-fill DELETE confirmation
+    self:SecureHook("StaticPopup_Show", function(which)
+        if which ~= "DELETE_GOOD_ITEM" and which ~= "DELETE_GOOD_QUEST_ITEM" and which ~= "DELETE_MAIL" then return end
+        if not LT4.db.profile.miscellaneous.autoConfirmDelete then return end
+        local i = 1
+        while true do
+            local dialog = _G["StaticPopup" .. i]
+            if not dialog then break end
+            if dialog.which == which and dialog:IsShown() then
+                local editBox = dialog.editBox or _G["StaticPopup" .. i .. "EditBox"]
+                if editBox then
+                    editBox:SetText(DELETE_ITEM_CONFIRM_STRING)
+                end
+                break
+            end
+            i = i + 1
+        end
+    end)
 
     -- TooltipDataProcessor is the modern (Dragonflight+) way to hook all tooltips globally
     -- We'll catch everything that returns an ID via the modern system

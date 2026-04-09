@@ -37,6 +37,7 @@ local defaults = {
             collectedIndicator = true,
             mailAlts = true,
             mailAltSort = "login",
+            autoConfirmDelete = true,
         },
     },
 }
