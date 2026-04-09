@@ -1,10 +1,10 @@
 local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
-local Module = LT4:NewModule("Miscellaneous", "AceEvent-3.0", "AceHook-3.0")
+local Module = LT4:NewModule("Quality of Life", "AceEvent-3.0", "AceHook-3.0")
 
-Module.description = "A collection of miscellaneous quality-of-life tweaks."
+Module.description = "A collection of quality-of-life tweaks."
 
 local function AddID(tooltip, id, typeLabel)
-    if InCombatLockdown() or not id or not LT4:GetModuleEnabled("Miscellaneous") or not LT4.db.profile.miscellaneous.showIDs then return end
+    if InCombatLockdown() or not id or not LT4:GetModuleEnabled("Quality of Life") or not LT4.db.profile.qol.showIDs then return end
     
     local name = tooltip:GetName()
     if not name then return end
@@ -97,17 +97,17 @@ function Module:OnInitialize()
                         name = "Enable",
                         desc = "Double-right-click while not in combat to cast your fishing rod.",
                         order = 1,
-                        get = function() return LT4.db.profile.miscellaneous.betterFishing end,
-                        set = function(_, val) LT4.db.profile.miscellaneous.betterFishing = val end,
+                        get = function() return LT4.db.profile.qol.betterFishing end,
+                        set = function(_, val) LT4.db.profile.qol.betterFishing = val end,
                     },
                     sit = {
                         type = "toggle",
                         name = "Sit to fish",
                         desc = "Automatically sit before casting your fishing rod.",
                         order = 2,
-                        disabled = function() return not LT4.db.profile.miscellaneous.betterFishing end,
-                        get = function() return LT4.db.profile.miscellaneous.sitFishing end,
-                        set = function(_, val) LT4.db.profile.miscellaneous.sitFishing = val end,
+                        disabled = function() return not LT4.db.profile.qol.betterFishing end,
+                        get = function() return LT4.db.profile.qol.sitFishing end,
+                        set = function(_, val) LT4.db.profile.qol.sitFishing = val end,
                     },
                 },
             },
@@ -122,17 +122,17 @@ function Module:OnInitialize()
                         name = "Auto Repair",
                         desc = "Automatically repair your gear when visiting a merchant.",
                         order = 1,
-                        get = function() return LT4.db.profile.miscellaneous.autoRepair end,
-                        set = function(_, val) LT4.db.profile.miscellaneous.autoRepair = val end,
+                        get = function() return LT4.db.profile.qol.autoRepair end,
+                        set = function(_, val) LT4.db.profile.qol.autoRepair = val end,
                     },
                     useGuildRepair = {
                         type = "toggle",
                         name = "Use Guild Funds",
                         desc = "Use guild funds for auto-repairs if available.",
                         order = 2,
-                        disabled = function() return not LT4.db.profile.miscellaneous.autoRepair end,
-                        get = function() return LT4.db.profile.miscellaneous.useGuildRepair end,
-                        set = function(_, val) LT4.db.profile.miscellaneous.useGuildRepair = val end,
+                        disabled = function() return not LT4.db.profile.qol.autoRepair end,
+                        get = function() return LT4.db.profile.qol.useGuildRepair end,
+                        set = function(_, val) LT4.db.profile.qol.useGuildRepair = val end,
                     },
                     autoSellJunk = {
                         type = "toggle",
@@ -140,8 +140,8 @@ function Module:OnInitialize()
                         desc = "Automatically sell all grey items when visiting a merchant.",
                         width = "full",
                         order = 3,
-                        get = function() return LT4.db.profile.miscellaneous.autoSellJunk end,
-                        set = function(_, val) LT4.db.profile.miscellaneous.autoSellJunk = val end,
+                        get = function() return LT4.db.profile.qol.autoSellJunk end,
+                        set = function(_, val) LT4.db.profile.qol.autoSellJunk = val end,
                     },
                     collectedIndicator = {
                         type = "toggle",
@@ -149,8 +149,8 @@ function Module:OnInitialize()
                         desc = "Adds a green checkmark to items you already own (mounts, pets, toys, etc) in the merchant window.",
                         width = "full",
                         order = 4,
-                        get = function() return LT4.db.profile.miscellaneous.collectedIndicator end,
-                        set = function(_, val) LT4.db.profile.miscellaneous.collectedIndicator = val end,
+                        get = function() return LT4.db.profile.qol.collectedIndicator end,
+                        set = function(_, val) LT4.db.profile.qol.collectedIndicator = val end,
                     },
                 },
             },
@@ -188,8 +188,8 @@ function Module:OnInitialize()
                         desc = "Adds Item, Spell, Currency, and Achievement IDs to all tooltips globally.",
                         width = "full",
                         order = 1,
-                        get = function() return LT4.db.profile.miscellaneous.showIDs end,
-                        set = function(_, val) LT4.db.profile.miscellaneous.showIDs = val end,
+                        get = function() return LT4.db.profile.qol.showIDs end,
+                        set = function(_, val) LT4.db.profile.qol.showIDs = val end,
                     },
                     mailAlts = {
                         type = "toggle",
@@ -197,9 +197,9 @@ function Module:OnInitialize()
                         desc = "Shows a clickable list of your alts beside the Send Mail frame for quick addressing.",
                         width = "full",
                         order = 2,
-                        get = function() return LT4.db.profile.miscellaneous.mailAlts end,
+                        get = function() return LT4.db.profile.qol.mailAlts end,
                         set = function(_, val)
-                            LT4.db.profile.miscellaneous.mailAlts = val
+                            LT4.db.profile.qol.mailAlts = val
                             if self.mailAltFrame then
                                 if val then
                                     self:UpdateMailAltVisibility()
@@ -215,8 +215,8 @@ function Module:OnInitialize()
                         desc = "Automatically fills in \"DELETE\" when the item deletion confirmation dialog appears.",
                         width = "full",
                         order = 3,
-                        get = function() return LT4.db.profile.miscellaneous.autoConfirmDelete end,
-                        set = function(_, val) LT4.db.profile.miscellaneous.autoConfirmDelete = val end,
+                        get = function() return LT4.db.profile.qol.autoConfirmDelete end,
+                        set = function(_, val) LT4.db.profile.qol.autoConfirmDelete = val end,
                     },
                 },
             },
@@ -242,8 +242,8 @@ function Module:SetupBetterFishing()
         if button ~= "RightButton" then return end
         if IsMouseButtonDown("LeftButton") then return end -- Don't trigger if left button is also down
         
-        local moduleEnabled = LT4:GetModuleEnabled("Miscellaneous")
-        local fishingEnabled = LT4.db.profile.miscellaneous.betterFishing
+        local moduleEnabled = LT4:GetModuleEnabled("Quality of Life")
+        local fishingEnabled = LT4.db.profile.qol.betterFishing
         
         if not moduleEnabled or not fishingEnabled then return end
         if InCombatLockdown() then return end
@@ -260,7 +260,7 @@ function Module:SetupBetterFishing()
             
             if fishingSpellName then
                 local macrotext = "/cast " .. fishingSpellName
-                if LT4.db.profile.miscellaneous.sitFishing then
+                if LT4.db.profile.qol.sitFishing then
                     macrotext = "/sit\n" .. macrotext
                 end
                 fishingButton:SetAttribute("macrotext", macrotext)
@@ -284,7 +284,7 @@ function Module:SetupBetterFishing()
 end
 
 function Module:UpdateMerchantCollectedIndicators()
-    local enabled = LT4:GetModuleEnabled("Miscellaneous") and LT4.db.profile.miscellaneous.collectedIndicator
+    local enabled = LT4:GetModuleEnabled("Quality of Life") and LT4.db.profile.qol.collectedIndicator
     
     for i = 1, MERCHANT_ITEMS_PER_PAGE do
         local index = (((MerchantFrame.page - 1) * MERCHANT_ITEMS_PER_PAGE) + i)
@@ -356,13 +356,13 @@ function Module:UpdateMerchantCollectedIndicators()
 end
 
 function Module:MERCHANT_SHOW()
-    if not LT4:GetModuleEnabled("Miscellaneous") then return end
+    if not LT4:GetModuleEnabled("Quality of Life") then return end
 
     -- Auto Repair
-    if LT4.db.profile.miscellaneous.autoRepair and CanMerchantRepair() then
+    if LT4.db.profile.qol.autoRepair and CanMerchantRepair() then
         local repairCost, canRepair = GetRepairAllCost()
         if canRepair and repairCost > 0 then
-            local useGuild = LT4.db.profile.miscellaneous.useGuildRepair and CanGuildBankRepair()
+            local useGuild = LT4.db.profile.qol.useGuildRepair and CanGuildBankRepair()
             if useGuild then
                 local guildMoney = GetGuildBankMoney()
                 local amount = GetGuildBankWithdrawMoney() -- -1 means unlimited
@@ -381,7 +381,7 @@ function Module:MERCHANT_SHOW()
     end
 
     -- Auto Sell Junk
-    if LT4.db.profile.miscellaneous.autoSellJunk then
+    if LT4.db.profile.qol.autoSellJunk then
         local profit = 0
         for bag = 0, 5 do
             for slot = 1, C_Container.GetContainerNumSlots(bag) do
@@ -428,7 +428,7 @@ function Module:GetSortedAlts()
         end
     end
 
-    local sortMode = LT4.db.profile.miscellaneous.mailAltSort
+    local sortMode = LT4.db.profile.qol.mailAltSort
     if sortMode == "alpha" then
         table.sort(alts, function(a, b) return a.name < b.name end)
     else
@@ -438,7 +438,7 @@ function Module:GetSortedAlts()
 end
 
 function Module:GetSortLabel()
-    if LT4.db.profile.miscellaneous.mailAltSort == "alpha" then
+    if LT4.db.profile.qol.mailAltSort == "alpha" then
         return "Alts (A-Z)"
     else
         return "Alts (Recent)"
@@ -468,10 +468,10 @@ function Module:CreateMailAltFrame()
     sortBtn:SetText(self:GetSortLabel())
     sortBtn:GetFontString():SetTextColor(1, 0.82, 0)
     sortBtn:SetScript("OnClick", function()
-        if LT4.db.profile.miscellaneous.mailAltSort == "alpha" then
-            LT4.db.profile.miscellaneous.mailAltSort = "login"
+        if LT4.db.profile.qol.mailAltSort == "alpha" then
+            LT4.db.profile.qol.mailAltSort = "login"
         else
-            LT4.db.profile.miscellaneous.mailAltSort = "alpha"
+            LT4.db.profile.qol.mailAltSort = "alpha"
         end
         sortBtn:SetText(self:GetSortLabel())
         self:RefreshMailAltButtons()
@@ -568,7 +568,7 @@ end
 
 function Module:UpdateMailAltVisibility()
     if not self.mailAltFrame then return end
-    local enabled = LT4:GetModuleEnabled("Miscellaneous") and LT4.db.profile.miscellaneous.mailAlts
+    local enabled = LT4:GetModuleEnabled("Quality of Life") and LT4.db.profile.qol.mailAlts
 
     if enabled and MailFrame:IsShown() and SendMailFrame:IsVisible() then
         self:RefreshMailAltButtons()
@@ -602,7 +602,7 @@ function Module:OnEnable()
     -- Auto-fill DELETE confirmation
     self:SecureHook("StaticPopup_Show", function(which)
         if which ~= "DELETE_GOOD_ITEM" and which ~= "DELETE_GOOD_QUEST_ITEM" and which ~= "DELETE_MAIL" then return end
-        if not LT4.db.profile.miscellaneous.autoConfirmDelete then return end
+        if not LT4.db.profile.qol.autoConfirmDelete then return end
         local i = 1
         while true do
             local dialog = _G["StaticPopup" .. i]

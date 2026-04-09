@@ -23,7 +23,7 @@ function Module:OnInitialize()
         args = {
             description = {
                 type = "description",
-                name = self.description .. "\n\nSettings for this module can be found under Miscellaneous.",
+                name = self.description .. "\n\nSettings for this module can be found under Quality of Life.",
                 order = 0,
             },
         },

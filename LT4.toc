@@ -33,7 +33,7 @@ Core.lua
 
 # Modules
 Modules\Minimap\SquareMinimap.lua
-Modules\General\Miscellaneous.lua
+Modules\General\QoL.lua
 Modules\Professions\General.lua
 Modules\Professions\Skinning.lua
 Modules\Professions\SkinningTracker.lua

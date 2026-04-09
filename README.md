@@ -22,7 +22,7 @@ A full-width data bar anchored to the top or bottom of the screen. Modules are a
 - **DataBar** — XP/reputation/honor progress bar with multiple display modes.
 - **MicroMenu** — Compact row of game menu icons (character, spells, collections, etc.).
 
-### Miscellaneous
+### Quality of Life
 - **Tooltip IDs** — Adds Item, Spell, Currency, Achievement, Toy, and Mount IDs to all tooltips.
 - **Better Fishing** — Double-right-click to cast your fishing rod. Optional sit-while-fishing.
 - **Auto Repair** — Automatically repair gear at merchants (supports guild funds).

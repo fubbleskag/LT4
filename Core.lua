@@ -8,7 +8,7 @@ LT4.moduleOrder = {
     ["LumiBar"]        = 10,
     ["SquareMinimap"]  = 20,
     ["Professions"]    = 30,
-    ["Miscellaneous"]  = 99,
+    ["Quality of Life"] = 99,
 }
 
 -- Get AddOn metadata
@@ -27,7 +27,7 @@ local defaults = {
         modules = {
             ["*"] = false, 
         },
-        miscellaneous = {
+        qol = {
             showIDs = true,
             betterFishing = true,
             sitFishing = true,
@@ -45,6 +45,18 @@ local defaults = {
 function LT4:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("LT4DB", defaults, true)
     self.moduleRegistry = {}
+
+    -- Migration: Miscellaneous → Quality of Life
+    for _, profile in pairs(self.db.profiles or {}) do
+        if profile.miscellaneous then
+            profile.qol = profile.miscellaneous
+            profile.miscellaneous = nil
+        end
+        if profile.modules and profile.modules["Miscellaneous"] ~= nil then
+            profile.modules["Quality of Life"] = profile.modules["Miscellaneous"]
+            profile.modules["Miscellaneous"] = nil
+        end
+    end
     
     StaticPopupDialogs["LT4_RELOAD_UI"] = {
         text = "|cFF00AAFF" .. self.title .. "|r: A UI reload is required to fully apply these changes. Reload now?",
