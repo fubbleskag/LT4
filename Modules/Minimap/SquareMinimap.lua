@@ -68,6 +68,18 @@ end
 function Module:ThrottledUpdate()
     -- Ensure elements stay positioned correctly
     self:PositionElements()
+
+    -- Update Zone Text Alpha (Hover only)
+    local zoneText = MinimapZoneText or (MinimapCluster and MinimapCluster.ZoneTextButton)
+    if zoneText then
+        if not zoneText.lt4MouseEnabled then
+            zoneText:EnableMouse(true)
+            zoneText.lt4MouseEnabled = true
+        end
+        if not zoneText:IsShown() then zoneText:Show() end
+        local isOver = MouseIsOver(Minimap) or MouseIsOver(zoneText)
+        zoneText:SetAlpha(isOver and 1 or 0)
+    end
 end
 
 function Module:UpdateAllIcons()
@@ -94,13 +106,9 @@ function Module:UpdateMinimap()
         MinimapCluster.BorderTop,
         TimeManagerClockButton,
         GameTimeFrame,
-        -- MinimapBorder,
-        -- Minimap.Background,
-        -- MinimapNorthTag,
-        -- MinimapZoomIn,
-        -- MinimapZoomOut,
-        -- MinimapCompassTexture,
+        MinimapCluster.InstanceDifficulty,
     }
+
     for _, frame in pairs(borderElements) do
         if frame then
             frame:Hide()
@@ -136,17 +144,23 @@ function Module:PositionElements()
             point = "TOPRIGHT", 
             x = -4, y = -4 
         },
-        -- Instance Difficulty
-        { 
-            frame = (MinimapCluster and MinimapCluster.InstanceDifficulty) or (MinimapCluster and MinimapCluster.IndicatorFrame), 
-            point = "BOTTOMRIGHT", 
-            x = -4, y = 4 
-        },
         -- LFG Eye (Queue Status)
         { 
             frame = QueueStatusButton, 
             point = "BOTTOMLEFT", 
             x = 4, y = 4 
+        },
+        -- Zone Text
+        {
+            frame = MinimapZoneText or (MinimapCluster and MinimapCluster.ZoneTextButton),
+            point = "TOP",
+            x = 0, y = -4
+        },
+        -- Tracking Button
+        {
+            frame = MinimapCluster and MinimapCluster.Tracking and MinimapCluster.Tracking.Button,
+            point = "BOTTOMRIGHT",
+            x = -4, y = 4
         },
     }
 
@@ -170,7 +184,6 @@ function Module:PositionElements()
             frame.lt4IsPositioning = true
             frame:ClearAllPoints()
             frame:SetPoint(data.point, Minimap, data.point, data.x, data.y)
-            frame:Show()
             frame.lt4IsPositioning = nil
         end
     end
