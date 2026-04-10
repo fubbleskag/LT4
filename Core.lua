@@ -27,6 +27,10 @@ local defaults = {
         modules = {
             ["*"] = false, 
         },
+        professionsSummaryView = false,
+        skinningTrackerUI = true,
+        skinningTrackerCollapsed = false,
+        skinningTrackerPosition = {},
         qol = {
             showIDs = true,
             betterFishing = true,

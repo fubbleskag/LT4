@@ -94,6 +94,7 @@ function LumiBar:OnInitialize()
                     useUppercase = true, selectedProf1 = 1, selectedProf2 = 1, iconFontSize = 18,
                     abbreviate = false, limitChar = 16, showIcons = true, showBars = true,
                     barHeight = 2, barOffset = -4, barSpacing = 4,
+                    showProf1 = true, showProf2 = true, reverseOrder = false,
                 },
                 Currency = {
                     icon = "", iconFontSize = 18,
@@ -112,6 +113,8 @@ function LumiBar:OnInitialize()
                     infoIcon = "", infoFontSize = 12, infoOffset = 18, infoUseAccent = true,
                 },
                 MicroMenu = {
+                    useAccent = true,
+                    customColor = { r = 1, g = 0.8, b = 0 },
                     showCharacter = true,
                     showProfessions = true,
                     showPlayerSpells = true,

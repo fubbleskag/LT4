@@ -45,8 +45,6 @@ function Module:OnInitialize()
     }
     self.options = options
     LT4:RegisterModuleOptions(self:GetName(), options)
-    if LT4.db.profile.professionsSummaryView == nil then LT4.db.profile.professionsSummaryView = false end
-
     -- Initialize sub-features if they exist
     if self.InitSkinning then self:InitSkinning() end
 

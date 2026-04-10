@@ -12,11 +12,6 @@ Module.skinningQuestData = {
 function Module:InitSkinning()
     if not self:HasSkinning() or not LT4.db then return end
 
-    local p = LT4.db.profile
-    if p.skinningTrackerUI == nil then p.skinningTrackerUI = true end
-    if p.skinningTrackerCollapsed == nil then p.skinningTrackerCollapsed = false end
-    if p.skinningTrackerPosition == nil then p.skinningTrackerPosition = {} end
-
     local options = self.options.args
     options.skinningHeader = { type = "header", name = "Skinning", order = 10 }
     options.skinningTrackerUI = {

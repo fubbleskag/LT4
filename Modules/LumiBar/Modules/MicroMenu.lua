@@ -59,10 +59,6 @@ local buttons = {
 function MicroMenu:Init()
     self.db = LumiBar.db.profile.modules.MicroMenu
     
-    -- Set defaults if missing
-    if self.db.useAccent == nil then self.db.useAccent = true end
-    if not self.db.customColor then self.db.customColor = { r = 1, g = 0.8, b = 0 } end -- Default to a gold-ish color if not using accent
-
     local options = {
         name = "Micro Menu",
         type = "group",

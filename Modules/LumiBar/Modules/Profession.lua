@@ -8,11 +8,6 @@ LumiBar:RegisterModule("Profession", Prof)
 function Prof:Init()
     self.db = LumiBar.db.profile.modules.Profession
     
-    -- Set defaults
-    if self.db.showProf1 == nil then self.db.showProf1 = true end
-    if self.db.showProf2 == nil then self.db.showProf2 = true end
-    if self.db.reverseOrder == nil then self.db.reverseOrder = false end
-
     local options = {
         name = "Profession",
         type = "group",
