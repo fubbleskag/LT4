@@ -49,9 +49,17 @@ local function InternalUpdate()
     trackerFrame:SetHeight(isCollapsed and 22 or (math.abs(yOffset) + 2))
 end
 
+function Module:DisableSkinningTracker()
+    if refreshTicker then
+        refreshTicker:Cancel()
+        refreshTicker = nil
+    end
+    if trackerFrame then trackerFrame:Hide() end
+end
+
 function Module:UpdateSkinningTracker()
     if not self:HasSkinning() or not LT4:GetModuleEnabled("Professions") or not LT4.db.profile.skinningTrackerUI then
-        if trackerFrame then trackerFrame:Hide() end
+        self:DisableSkinningTracker()
         return
     end
 

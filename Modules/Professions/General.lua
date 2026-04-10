@@ -87,8 +87,8 @@ function Module:OnDisable()
     self:UnhookAll()
     if self.toggleButton then self.toggleButton:Hide() end
     if self.summaryFrame then self.summaryFrame:Hide() end
-    if self.UpdateSkinningTracker then self:UpdateSkinningTracker() end
-    
+    if self.DisableSkinningTracker then self:DisableSkinningTracker() end
+
     local tracker = GetTrackerModule()
     if tracker and tracker.ContentsFrame then tracker.ContentsFrame:Show() end
 end
