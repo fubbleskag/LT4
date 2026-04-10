@@ -11,6 +11,13 @@ local GetScreenWidth = GetScreenWidth
 local SetPortraitTexture = SetPortraitTexture
 local GameTooltip = GameTooltip
 
+-- Flyout dimensions
+local MIN_BUTTON_WIDTH = 180
+local BUTTON_HEIGHT = 26
+local BUTTON_SPACING = 2
+local FRAME_PADDING = 4
+local UPDATE_THROTTLE = 0.05
+
 -- Flyout Frames Pool
 local Flyouts = {}
 local buttonPool = {}
@@ -86,9 +93,9 @@ local function SetupMenu(level, parent, items, direction)
     frame.currentParent = parent
     frame:ClearAllPoints()
     
-    local minBtnWidth, btnHeight = 180, 26
-    local spacing = 2
-    local padding = 4
+    local minBtnWidth, btnHeight = MIN_BUTTON_WIDTH, BUTTON_HEIGHT
+    local spacing = BUTTON_SPACING
+    local padding = FRAME_PADDING
     local maxBtnWidth = minBtnWidth
     
     -- First pass: Set text and measure needed width
@@ -312,7 +319,7 @@ SecureFlyout:SetScript("OnEvent", HideAll)
 local lastUpdate = 0
 local function OnUpdate(self, elapsed)
     lastUpdate = lastUpdate + elapsed
-    if lastUpdate < 0.05 then return end
+    if lastUpdate < UPDATE_THROTTLE then return end
     lastUpdate = 0
 
     local isOverAny = false

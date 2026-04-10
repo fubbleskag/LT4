@@ -6,6 +6,11 @@ local LDI = LibStub("LibDBIcon-1.0")
 Module.description = "Transforms the circular minimap into a sleek, square design and skins addon icons for a consistent flat look."
 Module.requiresReload = true -- Changing the mask is best handled via reload for stability
 
+-- Throttle intervals (seconds)
+local SKIN_ICONS_INTERVAL = 5
+local QUEUE_UPDATE_INTERVAL = 3
+local HOVER_UPDATE_INTERVAL = 0.05
+
 -- Override global GetMinimapShape so LibDBIcon and other libs know we are square
 function GetMinimapShape()
     if LT4:GetModuleEnabled("SquareMinimap") then
@@ -49,7 +54,7 @@ function Module:OnEnable()
 
     -- Register events for new icons
     self:RegisterEvent("ADDON_LOADED", "SkinAddonIcons")
-    self:ScheduleRepeatingTimer("SkinAddonIcons", 5)
+    self:ScheduleRepeatingTimer("SkinAddonIcons", SKIN_ICONS_INTERVAL)
 
     -- Mail events
     self:RegisterEvent("UPDATE_PENDING_MAIL", "UpdateMailButton")
@@ -64,10 +69,10 @@ function Module:OnEnable()
     self:RegisterEvent("UPDATE_BATTLEFIELD_STATUS", "UpdateQueueButton")
     self:RegisterEvent("PLAYER_ENTERING_WORLD", "UpdateQueueButton")
     -- Periodic fallback for queue status (catches edge cases)
-    self:ScheduleRepeatingTimer("UpdateQueueButton", 3)
+    self:ScheduleRepeatingTimer("UpdateQueueButton", QUEUE_UPDATE_INTERVAL)
 
-    -- Throttled updates (0.05s) as per project mandates
-    self:ScheduleRepeatingTimer("ThrottledUpdate", 0.05)
+    -- Throttled updates as per project mandates
+    self:ScheduleRepeatingTimer("ThrottledUpdate", HOVER_UPDATE_INTERVAL)
 end
 
 function Module:OnDisable()

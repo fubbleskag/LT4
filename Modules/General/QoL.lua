@@ -3,6 +3,11 @@ local Module = LT4:NewModule("Quality of Life", "AceEvent-3.0", "AceHook-3.0")
 
 Module.description = "A collection of quality-of-life tweaks."
 
+-- Right-click double-click window for Better Fishing (seconds)
+local DOUBLE_CLICK_MIN = 0.05
+local DOUBLE_CLICK_MAX = 0.4
+local FISHING_OVERRIDE_CLEAR_DELAY = 1
+
 local function AddID(tooltip, id, typeLabel)
     if InCombatLockdown() or not id or not LT4:GetModuleEnabled("Quality of Life") or not LT4.db.profile.qol.showIDs then return end
     
@@ -254,7 +259,7 @@ function Module:SetupBetterFishing()
         local now = GetTime()
         local diff = now - lastClickTime
 
-        if diff > 0.05 and diff < 0.4 then
+        if diff > DOUBLE_CLICK_MIN and diff < DOUBLE_CLICK_MAX then
             local spellInfo = C_Spell.GetSpellInfo(131474)
             local fishingSpellName = spellInfo and spellInfo.name
             
@@ -270,7 +275,7 @@ function Module:SetupBetterFishing()
                 SetOverrideBindingClick(fishingButton, true, "BUTTON2", "LT4BetterFishingButton")
                 
                 -- Clear the override after a short delay
-                C_Timer.After(1, function()
+                C_Timer.After(FISHING_OVERRIDE_CLEAR_DELAY, function()
                     ClearOverrideBindings(fishingButton)
                 end)
             end
