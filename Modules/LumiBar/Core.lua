@@ -23,6 +23,15 @@ function LumiBar:RegisterModule(name, module)
     self.Modules[name] = module
 end
 
+local function safeCall(module, name, methodName, ...)
+    local method = module[methodName]
+    if not method then return end
+    local ok, err = pcall(method, module, ...)
+    if not ok then
+        LumiBar:Print(string.format("|cFFFF0000%s:%s()|r %s", name, methodName, tostring(err)))
+    end
+end
+
 function LumiBar:OnInitialize()
     if not LT4.db then return end
     
@@ -166,8 +175,8 @@ function LumiBar:OnInitialize()
     end
 
     -- Init Modules
-    for _, module in pairs(self.Modules) do
-        if module.Init then pcall(module.Init, module) end
+    for name, module in pairs(self.Modules) do
+        safeCall(module, name, "Init")
     end
     
     self.db.RegisterCallback(self, "OnProfileChanged", "RefreshConfig")
@@ -231,8 +240,8 @@ function LumiBar:RefreshConfig()
 end
 
 function LumiBar:OnDisable()
-    for _, module in pairs(self.Modules) do
-        if module.Disable then pcall(module.Disable, module) end
+    for name, module in pairs(self.Modules) do
+        safeCall(module, name, "Disable")
     end
     
     if self.bar then self.bar:Hide() end
@@ -406,7 +415,7 @@ function LumiBar:RefreshModules()
 
     for mName, module in pairs(self.Modules) do
         if not active[mName] then
-            if module.Disable then pcall(module.Disable, module) end
+            safeCall(module, mName, "Disable")
             if module.frame then
                 module.frame:Hide()
                 module.frame:SetParent(nil)
@@ -419,11 +428,13 @@ function LumiBar:RefreshModules()
         local frame = self.Zones[zName]
         if module then
             if not module.frame or not module.frame:IsShown() then
-                if module.Enable then pcall(module.Enable, module, frame) end
+                safeCall(module, mName, "Enable", frame)
             else
-                if module.Refresh then pcall(module.Refresh, module, frame) end
-                local update = module.UpdateStatus or module.UpdateCurrency or module.UpdateCounts
-                if update then pcall(update, module) end
+                safeCall(module, mName, "Refresh", frame)
+                local updateName = module.UpdateStatus and "UpdateStatus"
+                    or module.UpdateCurrency and "UpdateCurrency"
+                    or module.UpdateCounts and "UpdateCounts"
+                if updateName then safeCall(module, mName, updateName) end
             end
         end
     end
