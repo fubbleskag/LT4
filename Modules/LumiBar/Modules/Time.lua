@@ -127,13 +127,11 @@ function Time:Refresh(slotFrame)
 
     local size = self.db.overrideFontSize and self.db.fontSize or nil
     local color = self.db.colorType == "ACCENT" and "ACCENT" or nil
-    Utils:SetFont(self.text, size, nil, color)
-
+    local face = nil
     if self.db.overrideFontFace and self.db.fontFace then
-        local face = LSM:Fetch("font", self.db.fontFace) or STANDARD_TEXT_FONT
-        local _, curSize, curFlags = self.text:GetFont()
-        self.text:SetFont(face, curSize, curFlags)
+        face = LSM:Fetch("font", self.db.fontFace) or STANDARD_TEXT_FONT
     end
+    Utils:SetFont(self.text, size, nil, color, face)
 
     self.text:SetText(self:GetTimeString())
     Utils:ApplyBackground(self.frame, self.db)

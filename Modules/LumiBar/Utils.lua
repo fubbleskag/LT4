@@ -56,10 +56,11 @@ end
 -- @param size (Optional) Font size.
 -- @param outline (Optional) Font outline.
 -- @param colorType (Optional) "CLASS", "ACCENT", "WHITE", or nil for default.
-function Utils:SetFont(fs, size, outline, colorType)
+-- @param face (Optional) Already-resolved font file path to override the global font face.
+function Utils:SetFont(fs, size, outline, colorType, face)
     if not fs then return end
     local db = LumiBar.db.profile.general.font
-    local fontFace = LSM:Fetch("font", db.face) or STANDARD_TEXT_FONT
+    local fontFace = face or LSM:Fetch("font", db.face) or STANDARD_TEXT_FONT
     local fontSize = size or db.size or 12
     local fontOutline = outline or db.outline or "OUTLINE"
     
