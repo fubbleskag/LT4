@@ -111,6 +111,7 @@ local function SetupMenu(level, parent, items, direction)
         btn:SetAttribute("*macrotext2", nil)
         btn:SetAttribute("spell", nil)
         btn:SetAttribute("item", nil)
+        btn:SetAttribute("outfit", nil)
 
         local displayName = item.name or "Unknown"
         if item.isActive then
@@ -160,6 +161,9 @@ local function SetupMenu(level, parent, items, direction)
             elseif item.type == "item" or item.type == "toy" then
                 btn:SetAttribute("type", "item")
                 btn:SetAttribute("item", "item:" .. item.id)
+            elseif item.type == "outfit" then
+                btn:SetAttribute("type", "outfit")
+                btn:SetAttribute("outfit", item.id)
             elseif item.type == "macro" then
                 if item.leftMacrotext or item.rightMacrotext then
                     if item.leftMacrotext then
@@ -175,10 +179,14 @@ local function SetupMenu(level, parent, items, direction)
                     btn:SetAttribute("macrotext", item.macrotext)
                 end
             end
-            btn:SetScript("OnEnter", function(s) 
+            btn:SetScript("OnEnter", function(s)
                 for l = level + 1, #Flyouts do Flyouts[l]:Hide() end
-                
-                if item.type == "spell" and item.id then
+
+                if type(item.tooltip) == "function" then
+                    GameTooltip:SetOwner(s, "ANCHOR_RIGHT")
+                    item.tooltip(GameTooltip)
+                    GameTooltip:Show()
+                elseif item.type == "spell" and item.id then
                     GameTooltip:SetOwner(s, "ANCHOR_RIGHT")
                     GameTooltip:SetSpellByID(item.id)
                     GameTooltip:Show()

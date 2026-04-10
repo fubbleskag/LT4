@@ -1,0 +1,381 @@
+local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
+local LumiBar = LT4:GetModule("LumiBar")
+local Utils = LumiBar.Utils
+local Data = LumiBar.Data
+
+local Favourites = {}
+LumiBar:RegisterModule("Favourites", Favourites)
+
+-- Performance: Cache common lookups
+local CreateFrame = CreateFrame
+local GameTooltip = GameTooltip
+local InCombatLockdown = InCombatLockdown
+local PlayerHasToy = PlayerHasToy
+local GetItemCooldown = GetItemCooldown
+local GetItemInfo = GetItemInfo
+local GetTime = GetTime
+local C_MountJournal = C_MountJournal
+local C_PetJournal = C_PetJournal
+local C_ToyBox = C_ToyBox
+local C_TransmogOutfitInfo = C_TransmogOutfitInfo
+local ipairs = ipairs
+local type = type
+local table_insert = table.insert
+local table_sort = table.sort
+local string_format = string.format
+local math_ceil = math.ceil
+
+local categories = {
+    {
+        id = "Mounts",
+        label = "Mounts",
+        icon = "Interface\\ICONS\\Ability_Mount_RidingHorse",
+    },
+    {
+        id = "Pets",
+        label = "Pets",
+        icon = "Interface\\ICONS\\INV_Box_PetCarrier_01",
+    },
+    {
+        id = "Toys",
+        label = "Toys",
+        icon = "Interface\\ICONS\\INV_Misc_Toy_10",
+    },
+    {
+        id = "Outfits",
+        label = "Equipment Sets",
+        icon = "Interface\\ICONS\\INV_Shirt_GuildTabard_01",
+    },
+}
+
+-- Cached lists per category, invalidated by events
+local cache = {}
+
+function Favourites:InvalidateCache(which)
+    if which then cache[which] = nil else cache = {} end
+end
+
+local function GetCooldownInfo(itemID)
+    local start, duration = GetItemCooldown(itemID)
+    if start and duration and duration > 0 then
+        local remain = duration - (GetTime() - start)
+        if remain > 0 then return remain, duration end
+    end
+    return 0, 0
+end
+
+function Favourites:BuildMountList()
+    if cache.Mounts then return cache.Mounts end
+    local items = {}
+    local mountIDs = C_MountJournal.GetMountIDs() or {}
+    for _, mountID in ipairs(mountIDs) do
+        local name, spellID, icon, _, _, _, isFavorite, _, _, _, isCollected = C_MountJournal.GetMountInfoByID(mountID)
+        if isCollected and isFavorite and spellID then
+            local sID = spellID
+            table_insert(items, {
+                type = "macro",
+                macrotext = string_format("/run C_MountJournal.SummonByID(%d)", mountID),
+                name = name or "Unknown Mount",
+                icon = icon,
+                tooltip = function(tt) tt:SetMountBySpellID(sID) end,
+            })
+        end
+    end
+    table_sort(items, function(a, b) return a.name < b.name end)
+    cache.Mounts = items
+    return items
+end
+
+function Favourites:BuildPetList()
+    if cache.Pets then return cache.Pets end
+    local items = {}
+    local numPets = C_PetJournal.GetNumPets() or 0
+    for i = 1, numPets do
+        local petID, _, owned, customName, _, favorite, _, speciesName, icon = C_PetJournal.GetPetInfoByIndex(i)
+        if owned and favorite and petID then
+            local displayName = (customName and customName ~= "" and customName) or speciesName or "Unknown Pet"
+            local id = petID
+            table_insert(items, {
+                type = "macro",
+                macrotext = string_format("/run C_PetJournal.SummonPetByGUID(\"%s\")", petID),
+                name = displayName,
+                icon = icon,
+                tooltip = function(tt) tt:SetCompanionPet(id) end,
+            })
+        end
+    end
+    table_sort(items, function(a, b) return a.name < b.name end)
+    cache.Pets = items
+    return items
+end
+
+function Favourites:BuildToyList()
+    if cache.Toys then return cache.Toys end
+    local items = {}
+    -- Note: iterates within current ToyBox filter state
+    local numToys = C_ToyBox.GetNumToys() or 0
+    for i = 1, numToys do
+        local itemID = C_ToyBox.GetToyFromIndex(i)
+        if itemID and itemID ~= 0 then
+            local _, toyName, icon, isFavorite = C_ToyBox.GetToyInfo(itemID)
+            if isFavorite and PlayerHasToy(itemID) and not Data.HearthstoneData[itemID] then
+                table_insert(items, {
+                    type = "toy",
+                    id = itemID,
+                    name = toyName or GetItemInfo(itemID) or "Unknown Toy",
+                    icon = icon,
+                })
+            end
+        end
+    end
+    table_sort(items, function(a, b) return a.name < b.name end)
+    cache.Toys = items
+    return items
+end
+
+function Favourites:BuildOutfitList()
+    if cache.Outfits then return cache.Outfits end
+    local items = {}
+    local outfits = C_TransmogOutfitInfo and C_TransmogOutfitInfo.GetOutfitsInfo() or {}
+    local activeID = C_TransmogOutfitInfo and C_TransmogOutfitInfo.GetActiveOutfitID and C_TransmogOutfitInfo.GetActiveOutfitID()
+    for _, info in ipairs(outfits) do
+        if info.outfitID and not info.isDisabled then
+            local outfitName = info.name or "Outfit"
+            local isActive = (activeID == info.outfitID)
+            table_insert(items, {
+                type = "outfit",
+                id = info.outfitID,
+                name = outfitName,
+                icon = info.icon,
+                isActive = isActive,
+                tooltip = function(tt)
+                    local r, g, b = Utils:GetAccentColor()
+                    tt:AddLine(outfitName, r, g, b)
+                    if isActive then
+                        tt:AddLine("|cff00ff00Currently active|r")
+                    end
+                    tt:AddLine(" ")
+                    tt:AddLine("|cffFFFFFFLeft-click:|r Apply outfit", 0, 1, 0)
+                end,
+            })
+        end
+    end
+    table_sort(items, function(a, b) return a.name < b.name end)
+    cache.Outfits = items
+    return items
+end
+
+local function AddToyCooldowns(items)
+    for _, item in ipairs(items) do
+        if item.type == "toy" and item.id then
+            local remain, total = GetCooldownInfo(item.id)
+            if remain > 0 and total > 0 then
+                item.bar = (remain / total) * 100
+                if remain > 60 then
+                    item.value = string_format("%dm", math_ceil(remain / 60))
+                else
+                    item.value = string_format("%ds", math_ceil(remain))
+                end
+            else
+                item.bar = nil
+                item.value = nil
+            end
+        end
+    end
+    return items
+end
+
+function Favourites:BuildList(catID)
+    if catID == "Mounts" then return self:BuildMountList()
+    elseif catID == "Pets" then return self:BuildPetList()
+    elseif catID == "Toys" then return AddToyCooldowns(self:BuildToyList())
+    elseif catID == "Outfits" then return self:BuildOutfitList() end
+    return {}
+end
+
+function Favourites:Init()
+    self.db = LumiBar.db.profile.modules.Favourites
+
+    local options = {
+        name = "Favourites",
+        type = "group",
+        get = function(info) return self.db[info[#info]] end,
+        set = function(info, value)
+            self.db[info[#info]] = value
+            self:Refresh()
+        end,
+        args = {
+            displayGroup = {
+                name = "Display",
+                type = "group",
+                inline = true,
+                order = 1,
+                args = {
+                    autoSize = {
+                        name = "Auto Size to Bar",
+                        desc = "Match the height of the LumiBar automatically.",
+                        type = "toggle",
+                        width = "full",
+                        order = 1,
+                    },
+                    iconSize = {
+                        name = "Custom Icon Size",
+                        type = "range",
+                        width = "full",
+                        min = 10, max = 100, step = 1,
+                        hidden = function() return self.db.autoSize end,
+                        order = 2,
+                    },
+                    spacing = { name = "Spacing", type = "range", width = "full", min = -10, max = 20, step = 1, order = 3 },
+                },
+            },
+            categoryGroup = {
+                name = "Categories",
+                type = "group",
+                inline = true,
+                order = 2,
+                args = {
+                    showMounts  = { name = "Mounts",         type = "toggle", width = "full", order = 1 },
+                    showPets    = { name = "Pets",           type = "toggle", width = "full", order = 2 },
+                    showToys    = { name = "Toys",           type = "toggle", width = "full", order = 3 },
+                    showOutfits = { name = "Equipment Sets", type = "toggle", width = "full", order = 4 },
+                },
+            },
+        },
+    }
+
+    LumiBar:RegisterModuleOptions("Favourites", options)
+end
+
+function Favourites:ShowCategoryTooltip(btn, cat)
+    local anchor = (LumiBar.db.profile.bar.position == "BOTTOM") and "ANCHOR_TOP" or "ANCHOR_BOTTOM"
+    GameTooltip:SetOwner(btn, anchor)
+    local r, g, b = Utils:GetAccentColor()
+    GameTooltip:AddLine(cat.label, r, g, b)
+    GameTooltip:AddLine(" ")
+    GameTooltip:AddLine("|cffFFFFFFRight-click:|r Open favourites", 0, 1, 0)
+    GameTooltip:Show()
+end
+
+function Favourites:OpenFlyout(btn, cat)
+    if InCombatLockdown() then return end
+    if cat.id == "Outfits" then self:InvalidateCache("Outfits") end
+    local items = self:BuildList(cat.id)
+    if #items == 0 then
+        items = { { name = "|cff888888No " .. cat.label:lower() .. "|r" } }
+    end
+    local direction = (LumiBar.db.profile.bar.position == "BOTTOM") and "UP" or "DOWN"
+    LumiBar.SecureFlyout:ShowMenu(btn, items, direction)
+end
+
+function Favourites:Enable(slotFrame)
+    self.db = LumiBar.db.profile.modules.Favourites
+    if not self.frame then
+        self.frame = CreateFrame("Frame", nil, slotFrame, "BackdropTemplate")
+        self.btns = {}
+        for _, cat in ipairs(categories) do
+            local btn = CreateFrame("Button", nil, self.frame)
+            btn.icon = btn:CreateTexture(nil, "ARTWORK")
+            btn.icon:SetAllPoints()
+            btn.icon:SetTexture(cat.icon)
+            btn.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+
+            btn.highlight = btn:CreateTexture(nil, "HIGHLIGHT")
+            btn.highlight:SetAllPoints()
+            btn.highlight:SetTexture(cat.icon)
+            btn.highlight:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            btn.highlight:SetBlendMode("ADD")
+            btn.highlight:SetAlpha(0.3)
+
+            local category = cat
+            btn:SetScript("OnMouseDown", function(f, button)
+                if button == "RightButton" then
+                    self:OpenFlyout(f, category)
+                end
+            end)
+            btn:SetScript("OnEnter", function(f) self:ShowCategoryTooltip(f, category) end)
+            btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+            self.btns[cat.id] = btn
+        end
+    end
+
+    if not self.eventsRegistered then
+        self.frame:RegisterEvent("NEW_MOUNT_ADDED")
+        self.frame:RegisterEvent("MOUNT_JOURNAL_USABILITY_CHANGED")
+        self.frame:RegisterEvent("COMPANION_LEARNED")
+        self.frame:RegisterEvent("NEW_PET_ADDED")
+        self.frame:RegisterEvent("PET_JOURNAL_LIST_UPDATE")
+        self.frame:RegisterEvent("NEW_TOY_ADDED")
+        self.frame:RegisterEvent("TOYS_UPDATED")
+        self.frame:SetScript("OnEvent", function(_, event)
+            if event == "NEW_MOUNT_ADDED" or event == "MOUNT_JOURNAL_USABILITY_CHANGED" then
+                self:InvalidateCache("Mounts")
+            elseif event == "COMPANION_LEARNED" or event == "NEW_PET_ADDED" or event == "PET_JOURNAL_LIST_UPDATE" then
+                self:InvalidateCache("Pets")
+            elseif event == "NEW_TOY_ADDED" or event == "TOYS_UPDATED" then
+                self:InvalidateCache("Toys")
+            end
+        end)
+        self.eventsRegistered = true
+    end
+
+    self:InvalidateCache()
+    self.frame:SetParent(slotFrame)
+    self.frame:SetHeight(slotFrame:GetHeight())
+    self.frame:Show()
+    self:Refresh(slotFrame)
+end
+
+function Favourites:Refresh(slotFrame)
+    if not self.frame then return end
+    slotFrame = slotFrame or self.frame:GetParent()
+    if not slotFrame then return end
+
+    self.frame:SetHeight(slotFrame:GetHeight())
+    Utils:ApplyBackground(self.frame, self.db)
+
+    local prevBtn = nil
+    local totalWidth = 0
+    local spacing = self.db.spacing or 2
+
+    local iconHeight
+    if self.db.autoSize then
+        iconHeight = slotFrame:GetHeight()
+    else
+        iconHeight = self.db.iconSize or 20
+    end
+    local iconWidth = iconHeight
+
+    for _, cat in ipairs(categories) do
+        local btn = self.btns[cat.id]
+        if self.db["show" .. cat.id] then
+            btn:Show()
+            btn:SetSize(iconWidth, iconHeight)
+            btn:ClearAllPoints()
+            if not prevBtn then
+                btn:SetPoint("LEFT", self.frame, "LEFT", 0, 0)
+            else
+                btn:SetPoint("LEFT", prevBtn, "RIGHT", spacing, 0)
+            end
+            totalWidth = totalWidth + iconWidth + (prevBtn and spacing or 0)
+            prevBtn = btn
+        else
+            btn:Hide()
+        end
+    end
+
+    self:UpdateWidth(totalWidth)
+end
+
+function Favourites:UpdateWidth(width)
+    Utils:UpdateModuleWidth(self, width, function() self:Refresh() end)
+end
+
+function Favourites:Disable()
+    cache = {}
+    if self.frame then
+        self.frame:UnregisterAllEvents()
+        self.eventsRegistered = false
+    end
+end
