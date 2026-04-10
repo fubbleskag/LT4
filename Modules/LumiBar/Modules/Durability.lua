@@ -2,8 +2,8 @@ local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
 local LumiBar = LT4:GetModule("LumiBar")
 local Utils = LumiBar.Utils
 
-local Dur = {}
-LumiBar:RegisterModule("Durability", Dur)
+local Durability = {}
+LumiBar:RegisterModule("Durability", Durability)
 
 -- Caches
 local GetInventoryItemDurability = GetInventoryItemDurability
@@ -14,7 +14,7 @@ local math_min = math.min
 local string_format = string.format
 local ipairs = ipairs
 
-function Dur:Init()
+function Durability:Init()
     self.db = LumiBar.db.profile.modules.Durability
     
     local options = {
@@ -72,7 +72,7 @@ function Dur:Init()
     LumiBar:RegisterModuleOptions("Durability", options)
 end
 
-function Dur:UpdateStatus()
+function Durability:UpdateStatus()
     if not self.durText then return end
     
     local minDur = 100
@@ -105,7 +105,7 @@ function Dur:UpdateStatus()
     self:UpdateWidth()
 end
 
-function Dur:UpdateWidth()
+function Durability:UpdateWidth()
     if not self.durText then return end
     local durW = self.durText:GetStringWidth()
     local iconW = 16
@@ -115,7 +115,7 @@ function Dur:UpdateWidth()
     Utils:UpdateModuleWidth(self, durW + iconW + ilvlW + spacing + 16, function() self:UpdateWidth() end)
 end
 
-function Dur:Enable(slotFrame)
+function Durability:Enable(slotFrame)
     self.db = LumiBar.db.profile.modules.Durability
     
     if not self.frame then
@@ -150,7 +150,7 @@ function Dur:Enable(slotFrame)
     self:UpdateStatus()
 end
 
-function Dur:Refresh(slotFrame)
+function Durability:Refresh(slotFrame)
     if not self.durText then return end
     slotFrame = slotFrame or self.frame:GetParent()
     if not slotFrame then return end

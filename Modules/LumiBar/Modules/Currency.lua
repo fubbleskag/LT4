@@ -2,14 +2,14 @@ local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
 local LumiBar = LT4:GetModule("LumiBar")
 local Utils = LumiBar.Utils
 
-local CurrencyModule = {}
-LumiBar:RegisterModule("Currency", CurrencyModule)
+local Currency = {}
+LumiBar:RegisterModule("Currency", Currency)
 
 -- Expansion compatibility
 local GetNumFreeSlots = C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots
 local GetNumSlots = C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots
 
-function CurrencyModule:Init()
+function Currency:Init()
     self.db = LumiBar.db.profile.modules.Currency
     
     local options = {
@@ -41,7 +41,7 @@ function CurrencyModule:Init()
     LumiBar:RegisterModuleOptions("Currency", options)
 end
 
-function CurrencyModule:GetBagSpace()
+function Currency:GetBagSpace()
     local free, total = 0, 0
     -- Bag 0 is backpack, 1-4 are standard bags, 5 is reagent bag (Retail)
     local maxBags = NUM_BAG_SLOTS
@@ -58,7 +58,7 @@ function CurrencyModule:GetBagSpace()
     return free, total
 end
 
-function CurrencyModule:UpdateGoldData()
+function Currency:UpdateGoldData()
     local realm = GetRealmName()
     local name = UnitName("player")
     local _, class = UnitClass("player")
@@ -70,7 +70,7 @@ function CurrencyModule:UpdateGoldData()
     }
 end
 
-function CurrencyModule:UpdateCurrency()
+function Currency:UpdateCurrency()
     local gold = GetMoney()
     local str
     if self.db.useGoldColors then
@@ -90,13 +90,13 @@ function CurrencyModule:UpdateCurrency()
     self:UpdateWidth()
 end
 
-function CurrencyModule:UpdateWidth()
+function Currency:UpdateWidth()
     if not self.text then return end
     local textW = self.text:GetStringWidth()
     Utils:UpdateModuleWidth(self, textW + 16, function() self:UpdateWidth() end)
 end
 
-function CurrencyModule:Enable(slotFrame)
+function Currency:Enable(slotFrame)
     self.db = LumiBar.db.profile.modules.Currency
     
     if not self.frame then
@@ -177,6 +177,6 @@ function CurrencyModule:Enable(slotFrame)
     self:UpdateCurrency()
 end
 
-function CurrencyModule:Refresh(slotFrame)
+function Currency:Refresh(slotFrame)
     Utils:RefreshBase(self, slotFrame)
 end

@@ -2,8 +2,8 @@ local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
 local LumiBar = LT4:GetModule("LumiBar")
 local Utils = LumiBar.Utils
 
-local SystemModule = {}
-LumiBar:RegisterModule("System", SystemModule)
+local System = {}
+LumiBar:RegisterModule("System", System)
 
 -- Performance: Cache common lookups
 local GetFramerate = GetFramerate
@@ -18,7 +18,7 @@ local table_concat = table.concat
 local table_insert = table.insert
 local GetTime = GetTime
 
-function SystemModule:Init()
+function System:Init()
     self.db = LumiBar.db.profile.modules.System
 
     local options = {
@@ -50,7 +50,7 @@ end
 -- Optimization: Throttle memory updates (expensive)
 local lastMemUpdate = 0
 local cachedMem = 0
-function SystemModule:GetMemoryUsage(force)
+function System:GetMemoryUsage(force)
     local now = GetTime()
     if force or (now - lastMemUpdate > 30) then
         UpdateAddOnMemoryUsage()
@@ -64,7 +64,7 @@ function SystemModule:GetMemoryUsage(force)
     return cachedMem
 end
 
-function SystemModule:GetCPUUsage()
+function System:GetCPUUsage()
     if C_AddOnProfiler and C_AddOnProfiler.IsEnabled() then
         -- Recent Average CPU % (Index 1)
         return math_floor((C_AddOnProfiler.GetApplicationMetric(1) or 0) + 0.5)
@@ -72,7 +72,7 @@ function SystemModule:GetCPUUsage()
     return 0
 end
 
-function SystemModule:UpdateStatus()
+function System:UpdateStatus()
     if not self.text then return end
     
     local fps = math_floor(GetFramerate())
@@ -103,7 +103,7 @@ function SystemModule:UpdateStatus()
     self:UpdateWidth()
 end
 
-function SystemModule:Enable(slotFrame)
+function System:Enable(slotFrame)
     self.db = LumiBar.db.profile.modules.System
     if not self.frame then
         self.frame = CreateFrame("Frame", nil, slotFrame, "BackdropTemplate")
@@ -155,12 +155,12 @@ function SystemModule:Enable(slotFrame)
     self:UpdateStatus()
 end
 
-function SystemModule:UpdateWidth()
+function System:UpdateWidth()
     if not self.text then return end
     Utils:UpdateModuleWidth(self, self.text:GetStringWidth() + 16, function() self:UpdateWidth() end)
 end
 
-function SystemModule:Refresh(slotFrame)
+function System:Refresh(slotFrame)
     if not Utils:RefreshBase(self, slotFrame) then return end
     self:UpdateStatus()
 end

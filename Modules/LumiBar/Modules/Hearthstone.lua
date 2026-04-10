@@ -4,8 +4,8 @@ local Utils = LumiBar.Utils
 local Data = LumiBar.Data
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
-local HS = {}
-LumiBar:RegisterModule("Hearthstone", HS)
+local Hearthstone = {}
+LumiBar:RegisterModule("Hearthstone", Hearthstone)
 
 -- Cached scan result, invalidated by events
 local cachedScan = nil
@@ -51,11 +51,11 @@ local function GetResourceInfo(key)
     return name, icon, type, id
 end
 
-function HS:InvalidateCache()
+function Hearthstone:InvalidateCache()
     cachedScan = nil
 end
 
-function HS:ScanAvailable()
+function Hearthstone:ScanAvailable()
     if cachedScan then return cachedScan end
     local allKnown = { Standard = {}, Expansions = {}, Seasonal = {}, MagePortals = {}, MageTeleports = {} }
     local class = select(2, UnitClass("player"))
@@ -129,7 +129,7 @@ function HS:ScanAvailable()
     return allKnown
 end
 
-function HS:Init()
+function Hearthstone:Init()
     self.db = LumiBar.db.char.modules.Hearthstone
     self.db.hiddenPortals = self.db.hiddenPortals or {}
     self.db.hiddenExpansions = self.db.hiddenExpansions or {}
@@ -223,7 +223,7 @@ function HS:Init()
     LumiBar:RegisterModuleOptions("Hearthstone", options)
 end
 
-function HS:GetCooldown(type, id)
+function Hearthstone:GetCooldown(type, id)
     local start, duration
     if type == "spell" then
         local cdInfo = C_Spell.GetSpellCooldown(id)
@@ -238,7 +238,7 @@ function HS:GetCooldown(type, id)
     return 0, 0
 end
 
-function HS:AddCooldownData(item)
+function Hearthstone:AddCooldownData(item)
     if not item or item.isCategory then return item end
     local cd, total = self:GetCooldown(item.type, item.id)
     if cd > 0 and total > 0 then
@@ -250,7 +250,7 @@ function HS:AddCooldownData(item)
     return item
 end
 
-function HS:UpdateStatus()
+function Hearthstone:UpdateStatus()
     local name, icon, type, id = GetResourceInfo(self.db.primaryHS)
     if not name then return end
     
@@ -275,12 +275,12 @@ function HS:UpdateStatus()
     self:UpdateWidth()
 end
 
-function HS:UpdateWidth()
+function Hearthstone:UpdateWidth()
     if not self.text then return end
     Utils:UpdateModuleWidth(self, 16 + 4 + self.text:GetStringWidth() + 12, function() self:UpdateWidth() end)
 end
 
-function HS:UpdateSecureAttributes()
+function Hearthstone:UpdateSecureAttributes()
     if InCombatLockdown() or not self.frame then return end
     local _, _, type, id = GetResourceInfo(self.db.primaryHS)
     if type and id then
@@ -290,7 +290,7 @@ function HS:UpdateSecureAttributes()
     end
 end
 
-function HS:Enable(slotFrame)
+function Hearthstone:Enable(slotFrame)
     self.db = LumiBar.db.char.modules.Hearthstone
     if not self.frame then
         self.frame = CreateFrame("Button", "LumiBarHearthstoneBtn", slotFrame, "SecureActionButtonTemplate, BackdropTemplate")
@@ -401,7 +401,7 @@ function HS:Enable(slotFrame)
     self:UpdateStatus()
 end
 
-function HS:Refresh(slotFrame)
+function Hearthstone:Refresh(slotFrame)
     if not self.icon or not self.text then return end
     slotFrame = slotFrame or self.frame:GetParent()
     if not slotFrame then return end
@@ -427,7 +427,7 @@ function HS:Refresh(slotFrame)
     end
 end
 
-function HS:Disable()
+function Hearthstone:Disable()
     cachedScan = nil
     if self.frame then
         self.frame:UnregisterAllEvents()

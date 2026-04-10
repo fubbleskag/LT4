@@ -3,10 +3,10 @@ local LumiBar = LT4:GetModule("LumiBar")
 local LSM = LibStub("LibSharedMedia-3.0")
 local Utils = LumiBar.Utils
 
-local TimeModule = {}
-LumiBar:RegisterModule("Time", TimeModule)
+local Time = {}
+LumiBar:RegisterModule("Time", Time)
 
-function TimeModule:Init()
+function Time:Init()
     self.db = LumiBar.db.profile.modules.Time
 
     local options = {
@@ -66,7 +66,7 @@ function TimeModule:Init()
     LumiBar:RegisterModuleOptions("Time", options)
 end
 
-function TimeModule:GetTimeString()
+function Time:GetTimeString()
     local hour, minute = tonumber(date("%H")), tonumber(date("%M"))
 
     local h = hour
@@ -82,7 +82,7 @@ function TimeModule:GetTimeString()
     end
 end
 
-function TimeModule:Enable(slotFrame)
+function Time:Enable(slotFrame)
     self.db = LumiBar.db.profile.modules.Time
 
     if not self.frame then
@@ -108,16 +108,16 @@ function TimeModule:Enable(slotFrame)
     self:UpdateStatus()
 end
 
-function TimeModule:UpdateStatus()
+function Time:UpdateStatus()
     if self.text then self.text:SetText(self:GetTimeString()) end
 end
 
-function TimeModule:UpdateWidth()
+function Time:UpdateWidth()
     if not self.text then return end
     Utils:UpdateModuleWidth(self, self.text:GetStringWidth() + 12, function() self:UpdateWidth() end)
 end
 
-function TimeModule:Refresh(slotFrame)
+function Time:Refresh(slotFrame)
     if not self.text then return end
     slotFrame = slotFrame or self.frame:GetParent()
     if not slotFrame then return end

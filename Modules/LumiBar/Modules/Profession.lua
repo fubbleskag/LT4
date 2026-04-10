@@ -2,10 +2,10 @@ local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
 local LumiBar = LT4:GetModule("LumiBar")
 local Utils = LumiBar.Utils
 
-local Prof = {}
-LumiBar:RegisterModule("Profession", Prof)
+local Profession = {}
+LumiBar:RegisterModule("Profession", Profession)
 
-function Prof:Init()
+function Profession:Init()
     self.db = LumiBar.db.profile.modules.Profession
     
     local options = {
@@ -41,7 +41,7 @@ function Prof:Init()
     LumiBar:RegisterModuleOptions("Profession", options)
 end
 
-function Prof:UpdateProfession(index, bar, text)
+function Profession:UpdateProfession(index, bar, text)
     if not index or index == 0 then
         bar:Hide()
         text:Hide()
@@ -76,7 +76,7 @@ function Prof:UpdateProfession(index, bar, text)
     return true
 end
 
-function Prof:SetPlaceholder(bar, text)
+function Profession:SetPlaceholder(bar, text)
     text:SetText("Not Learned")
     text:SetAlpha(0)
     text:Show()
@@ -93,7 +93,7 @@ function Prof:SetPlaceholder(bar, text)
     bar.profName = nil
 end
 
-function Prof:UpdateStatus()
+function Profession:UpdateStatus()
     local p1, p2 = GetProfessions()
     if self.db.reverseOrder then p1, p2 = p2, p1 end
 
@@ -137,7 +137,7 @@ function Prof:UpdateStatus()
     self:UpdateWidth()
 end
 
-function Prof:UpdateWidth()
+function Profession:UpdateWidth()
     if not self.frame then return end
 
     local width = 0
@@ -161,7 +161,7 @@ function Prof:UpdateWidth()
     Utils:UpdateModuleWidth(self, width, function() self:UpdateWidth() end)
 end
 
-function Prof:GetProfessionItems()
+function Profession:GetProfessionItems()
     local items = {}
     local prof1, prof2, arch, fish, cook = GetProfessions()
     local projs = {prof1, prof2, arch, fish, cook}
@@ -195,7 +195,7 @@ function Prof:GetProfessionItems()
     return items
 end
 
-function Prof:HandleClick(bar, button)
+function Profession:HandleClick(bar, button)
     if not bar.profIndex or bar.profIndex == 0 then return end
     if InCombatLockdown() then return end
     
@@ -214,7 +214,7 @@ function Prof:HandleClick(bar, button)
     end
 end
 
-function Prof:Enable(slotFrame)
+function Profession:Enable(slotFrame)
     self.db = LumiBar.db.profile.modules.Profession
     
     if not self.frame then
@@ -252,7 +252,7 @@ function Prof:Enable(slotFrame)
     self:UpdateStatus()
 end
 
-function Prof:Refresh(slotFrame)
+function Profession:Refresh(slotFrame)
     if not self.frame then return end
     slotFrame = slotFrame or self.frame:GetParent()
     if not slotFrame then return end

@@ -2,10 +2,10 @@ local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
 local LumiBar = LT4:GetModule("LumiBar")
 local Utils = LumiBar.Utils
 
-local Spec = {}
-LumiBar:RegisterModule("SpecSwitch", Spec)
+local SpecSwitch = {}
+LumiBar:RegisterModule("SpecSwitch", SpecSwitch)
 
-function Spec:Init()
+function SpecSwitch:Init()
     self.db = LumiBar.db.profile.modules.SpecSwitch
     
     local options = {
@@ -41,7 +41,7 @@ function Spec:Init()
     LumiBar:RegisterModuleOptions("SpecSwitch", options)
 end
 
-function Spec:UpdateStatus()
+function SpecSwitch:UpdateStatus()
     local specIndex = GetSpecialization()
     local str = ""
     
@@ -87,13 +87,13 @@ function Spec:UpdateStatus()
     self:UpdateWidth()
 end
 
-function Spec:UpdateWidth()
+function SpecSwitch:UpdateWidth()
     if not self.text then return end
     local textW = self.text:GetStringWidth()
     Utils:UpdateModuleWidth(self, textW + 16, function() self:UpdateWidth() end)
 end
 
-function Spec:GetSpecItems()
+function SpecSwitch:GetSpecItems()
     local items = {}
     local currentSpec = GetSpecialization()
     for i = 1, GetNumSpecializations() do
@@ -108,7 +108,7 @@ function Spec:GetSpecItems()
     return items
 end
 
-function Spec:LoadConfig(configID)
+function SpecSwitch:LoadConfig(configID)
     if InCombatLockdown() then return end
     
     -- Ensure Blizzard ClassTalentUI is loaded
@@ -134,7 +134,7 @@ function Spec:LoadConfig(configID)
     end
 end
 
-function Spec:GetLoadoutItems()
+function SpecSwitch:GetLoadoutItems()
     local items = {}
     local specIndex = GetSpecialization()
     if not specIndex then return items end
@@ -170,7 +170,7 @@ function Spec:GetLoadoutItems()
     return items
 end
 
-function Spec:GetLootItems()
+function SpecSwitch:GetLootItems()
     local items = {}
     local currentLoot = GetLootSpecialization()
     for i = 1, GetNumSpecializations() do
@@ -191,7 +191,7 @@ function Spec:GetLootItems()
     return items
 end
 
-function Spec:Enable(slotFrame)
+function SpecSwitch:Enable(slotFrame)
     self.db = LumiBar.db.profile.modules.SpecSwitch
     
     if not self.frame then
@@ -248,6 +248,6 @@ function Spec:Enable(slotFrame)
     self:UpdateStatus()
 end
 
-function Spec:Refresh(slotFrame)
+function SpecSwitch:Refresh(slotFrame)
     Utils:RefreshBase(self, slotFrame)
 end
