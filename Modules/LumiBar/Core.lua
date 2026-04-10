@@ -103,7 +103,7 @@ function LumiBar:OnInitialize()
                     useUppercase = true, selectedProf1 = 1, selectedProf2 = 1, iconFontSize = 18,
                     abbreviate = false, limitChar = 16, showIcons = true, showBars = true,
                     barHeight = 2, barOffset = -4, barSpacing = 4,
-                    showProf1 = true, showProf2 = true, reverseOrder = false,
+                    showProf1 = true, showProf2 = true, sortMode = "default",
                 },
                 Currency = {
                     icon = "", iconFontSize = 18,

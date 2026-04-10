@@ -5,6 +5,18 @@ local Utils = LumiBar.Utils
 local Profession = {}
 LumiBar:RegisterModule("Profession", Profession)
 
+local GATHERING_SKILL_LINES = {
+    [182] = true, -- Herbalism
+    [186] = true, -- Mining
+    [393] = true, -- Skinning
+}
+
+local function IsGatheringIndex(index)
+    if not index then return false end
+    local _, _, _, _, _, _, skillLine = GetProfessionInfo(index)
+    return skillLine ~= nil and GATHERING_SKILL_LINES[skillLine] == true
+end
+
 function Profession:Init()
     self.db = LumiBar.db.profile.modules.Profession
     
@@ -20,21 +32,26 @@ function Profession:Init()
             showProf1 = {
                 name = "Profession 1",
                 type = "toggle",
-                width = "full",
+                width = "double",
                 order = 1,
             },
             showProf2 = {
                 name = "Profession 2",
                 type = "toggle",
-                width = "full",
+                width = "double",
                 order = 2,
             },
-            reverseOrder = {
-                name = "Reverse Order",
-                desc = "Display professions in reverse order (2, 1)",
-                type = "toggle",
-                width = "full",
+            sortMode = {
+                name = "Sort",
+                type = "select",
+                --width = "double",
                 order = 3,
+                values = {
+                    ["default"] = "None",
+                    ["gatherFirst"] = "Gathering First",
+                    ["craftFirst"] = "Crafting First",
+                },
+                sorting = { "default", "gatherFirst", "craftFirst" },
             },
         }
     }
@@ -95,7 +112,16 @@ end
 
 function Profession:UpdateStatus()
     local p1, p2 = GetProfessions()
-    if self.db.reverseOrder then p1, p2 = p2, p1 end
+    local mode = self.db.sortMode or "default"
+    if mode == "gatherFirst" or mode == "craftFirst" then
+        local g1 = IsGatheringIndex(p1)
+        local g2 = IsGatheringIndex(p2)
+        if mode == "gatherFirst" and g2 and not g1 then
+            p1, p2 = p2, p1
+        elseif mode == "craftFirst" and g1 and not g2 then
+            p1, p2 = p2, p1
+        end
+    end
 
     self.has1 = false
     self.show1 = false
