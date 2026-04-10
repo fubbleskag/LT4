@@ -27,14 +27,14 @@ function Module:InitSkinning()
 end
 
 function Module:EnableSkinning()
-    if not self:HasSkinning() or self.isWaypointHooked then return end
+    if not self:HasSkinning() or self.waypointHooked then return end
     hooksecurefunc("SetItemRef", function(link)
         local linkType, addon, action, rareID = strsplit(":", link)
         if linkType == "addon" and addon == "LT4" and action == "rare" then
             self:SetRareWaypoint(tonumber(rareID))
         end
     end)
-    self.isWaypointHooked = true
+    self.waypointHooked = true
 end
 
 function Module:SetRareWaypoint(rareID)

@@ -399,7 +399,7 @@ function Module:SkinAddonIcons()
 end
 
 function Module:SkinButton(button, forceUpdate)
-    if not button or (button.isLT4Skinned and not forceUpdate) then return end
+    if not button or (button.lt4Skinned and not forceUpdate) then return end
 
     -- Apply size
     local size = LT4.db.profile.minimap.iconSize or 20
@@ -445,5 +445,5 @@ function Module:SkinButton(button, forceUpdate)
         button.lt4Backdrop:SetFrameLevel(button:GetFrameLevel() - 1)
     end
 
-    button.isLT4Skinned = true
+    button.lt4Skinned = true
 end
