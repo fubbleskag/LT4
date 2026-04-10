@@ -112,7 +112,7 @@ end
 function DataBar:Init()
     self.db = LumiBar.db.profile.modules.DataBar
     
-    if self.db.activeBar == nil then
+    if not self.db.activeBar then
         self.db.activeBar = "xp"
     end
 

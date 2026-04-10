@@ -41,7 +41,7 @@ end
 
 function Module:OnEnable()
     -- Initialize defaults if missing
-    if LT4.db.profile.minimap.iconSize == nil then
+    if not LT4.db.profile.minimap.iconSize then
         LT4.db.profile.minimap.iconSize = 20
     end
     if not LT4.db.profile.minimap.buttons then

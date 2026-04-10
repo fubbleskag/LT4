@@ -49,7 +49,7 @@ function Durability:Init()
                         end
                     end
                     -- If none known, show placeholder
-                    if next(known) == nil then
+                    if not next(known) then
                         known[0] = "None Known"
                     end
                     return known
