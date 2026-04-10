@@ -113,7 +113,7 @@ function Module:OnInitialize()
                     enabled = {
                         type = "toggle",
                         name = "Enable",
-                        desc = "Double-right-click while not in combat to cast your fishing rod.",
+                        desc = "Double-click while not in combat to cast your fishing rod.",
                         order = 1,
                         get = function() return qol.betterFishing end,
                         set = function(_, val) qol.betterFishing = val end,
@@ -126,6 +126,19 @@ function Module:OnInitialize()
                         disabled = function() return not qol.betterFishing end,
                         get = function() return qol.sitFishing end,
                         set = function(_, val) qol.sitFishing = val end,
+                    },
+                    clickButton = {
+                        type = "select",
+                        name = "Cast button",
+                        desc = "Which mouse button to double-click for casting.",
+                        order = 3,
+                        values = {
+                            RightButton = "Double right-click",
+                            LeftButton = "Double left-click",
+                        },
+                        disabled = function() return not qol.betterFishing end,
+                        get = function() return qol.fishingClickButton or "RightButton" end,
+                        set = function(_, val) qol.fishingClickButton = val end,
                     },
                 },
             },
@@ -257,15 +270,17 @@ function Module:SetupBetterFishing()
     local lastClickTime = 0
     
     self:RegisterEvent("GLOBAL_MOUSE_DOWN", function(_, button)
-        if button ~= "RightButton" then return end
-        if IsMouseButtonDown("LeftButton") then return end -- Don't trigger if left button is also down
-        
+        local configuredButton = qol.fishingClickButton or "RightButton"
+        if button ~= configuredButton then return end
+        local otherButton = configuredButton == "RightButton" and "LeftButton" or "RightButton"
+        if IsMouseButtonDown(otherButton) then return end -- Don't trigger if other button is also down
+
         local moduleEnabled = LT4:GetModuleEnabled("Quality of Life")
         local fishingEnabled = qol.betterFishing
-        
+
         if not moduleEnabled or not fishingEnabled then return end
         if InCombatLockdown() then return end
-        
+
         -- Safety checks
         if IsPlayerMoving() or IsMounted() or IsFalling() or IsStealthed() or IsSwimming() then return end
 
@@ -275,17 +290,18 @@ function Module:SetupBetterFishing()
         if diff > DOUBLE_CLICK_MIN and diff < DOUBLE_CLICK_MAX then
             local spellInfo = C_Spell.GetSpellInfo(131474)
             local fishingSpellName = spellInfo and spellInfo.name
-            
+
             if fishingSpellName then
                 local macrotext = "/cast " .. fishingSpellName
                 if qol.sitFishing then
                     macrotext = "/sit\n" .. macrotext
                 end
                 fishingButton:SetAttribute("macrotext", macrotext)
-                
+
                 -- Set override for the Up event of this click
                 -- Use the button itself as the owner for the binding
-                SetOverrideBindingClick(fishingButton, true, "BUTTON2", "LT4BetterFishingButton")
+                local bindKey = configuredButton == "RightButton" and "BUTTON2" or "BUTTON1"
+                SetOverrideBindingClick(fishingButton, true, bindKey, "LT4BetterFishingButton")
                 
                 -- Clear the override after a short delay
                 C_Timer.After(FISHING_OVERRIDE_CLEAR_DELAY, function()

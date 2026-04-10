@@ -35,6 +35,7 @@ local defaults = {
             showIDs = true,
             betterFishing = true,
             sitFishing = true,
+            fishingClickButton = "RightButton",
             autoRepair = true,
             useGuildRepair = true,
             autoSellJunk = true,
