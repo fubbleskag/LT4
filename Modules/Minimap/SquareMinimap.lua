@@ -11,6 +11,13 @@ local SKIN_ICONS_INTERVAL = 5
 local QUEUE_UPDATE_INTERVAL = 3
 local HOVER_UPDATE_INTERVAL = 0.05
 
+-- AceDB profile slice; refreshed via RefreshDB on init and profile changes
+local db
+
+local function RefreshDB()
+    db = LT4.db.profile.minimap
+end
+
 -- Override global GetMinimapShape so LibDBIcon and other libs know we are square
 function GetMinimapShape()
     if LT4:GetModuleEnabled("SquareMinimap") then
@@ -21,6 +28,11 @@ function GetMinimapShape()
 end
 
 function Module:OnInitialize()
+    RefreshDB()
+    LT4.db.RegisterCallback(self, "OnProfileChanged", RefreshDB)
+    LT4.db.RegisterCallback(self, "OnProfileCopied", RefreshDB)
+    LT4.db.RegisterCallback(self, "OnProfileReset", RefreshDB)
+
     LT4:RegisterModuleOptions(self:GetName(), {
         type = "group",
         name = self:GetName(),
@@ -41,11 +53,11 @@ end
 
 function Module:OnEnable()
     -- Initialize defaults if missing
-    if not LT4.db.profile.minimap.iconSize then
-        LT4.db.profile.minimap.iconSize = 20
+    if not db.iconSize then
+        db.iconSize = 20
     end
-    if not LT4.db.profile.minimap.buttons then
-        LT4.db.profile.minimap.buttons = {}
+    if not db.buttons then
+        db.buttons = {}
     end
 
     self:UpdateMinimap()
@@ -119,7 +131,7 @@ end
 --------------------------------------------------------------------------------
 
 function Module:CreateMinimapButtons()
-    local buttons = LT4.db.profile.minimap.buttons
+    local buttons = db.buttons
 
     local defs = {
         {
@@ -382,7 +394,7 @@ end
 
 function Module:UpdateAllIcons()
     if LDI then
-        local size = LT4.db.profile.minimap.iconSize or 20
+        local size = db.iconSize or 20
         LDI:SetButtonRadius(size / 2)
 
         for _, button in pairs(LDI.objects) do
@@ -393,7 +405,7 @@ end
 
 function Module:SkinAddonIcons()
     if LDI then
-        local size = LT4.db.profile.minimap.iconSize or 20
+        local size = db.iconSize or 20
         LDI:SetButtonRadius(size / 2 + 1)
 
         for _, button in pairs(LDI.objects) do
@@ -407,7 +419,7 @@ function Module:SkinButton(button, forceUpdate)
     if not button or (button.lt4Skinned and not forceUpdate) then return end
 
     -- Apply size
-    local size = LT4.db.profile.minimap.iconSize or 20
+    local size = db.iconSize or 20
     button:SetSize(size, size)
 
     -- Make it square

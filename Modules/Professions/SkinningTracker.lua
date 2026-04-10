@@ -4,9 +4,9 @@ local Module = LT4:GetModule("Professions")
 local trackerFrame, buttons, refreshTicker = nil, {}, nil
 
 local function InternalUpdate()
-    if not LT4.db or not trackerFrame then return end
-    
-    local isCollapsed = LT4.db.profile.skinningTrackerCollapsed
+    if not Module.db or not trackerFrame then return end
+
+    local isCollapsed = Module.db.skinningTrackerCollapsed
     local rowHeight, yOffset = 20, -22
     
     if trackerFrame.isMKPT and _G.MKPT_Frame then trackerFrame:SetScale(_G.MKPT_Frame:GetScale()) end
@@ -58,7 +58,7 @@ function Module:DisableSkinningTracker()
 end
 
 function Module:UpdateSkinningTracker()
-    if not self:HasSkinning() or not LT4:GetModuleEnabled("Professions") or not LT4.db.profile.skinningTrackerUI then
+    if not self:HasSkinning() or not LT4:GetModuleEnabled("Professions") or not self.db.skinningTrackerUI then
         self:DisableSkinningTracker()
         return
     end
@@ -73,7 +73,7 @@ function Module:UpdateSkinningTracker()
             b.rightText = b:CreateFontString(nil, "OVERLAY", "GameFontNormal"); b.rightText:SetPoint("RIGHT", -4, 0); b.rightText:SetFont(b.rightText:GetFont(), 13); b.rightText:SetShadowOffset(2, -2); b.rightText:SetJustifyH("RIGHT")
             b.text = b:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); b.text:SetPoint("CENTER", b, "CENTER", 0, 0); b.text:SetText("Renowned Beasts"); b.text:SetFont(b.text:GetFont(), 13)
             b.highlight = b:CreateTexture(nil, "HIGHLIGHT"); b.highlight:SetAtlas("Professions_Recipe_Hover", false); b.highlight:SetPoint("TOPLEFT", b.icon, "TOPRIGHT", 0, 0); b.highlight:SetPoint("BOTTOMRIGHT"); b.highlight:SetAlpha(0.7)
-            b:SetScript("OnClick", function() LT4.db.profile.skinningTrackerCollapsed = not LT4.db.profile.skinningTrackerCollapsed; InternalUpdate() end)
+            b:SetScript("OnClick", function() Module.db.skinningTrackerCollapsed = not Module.db.skinningTrackerCollapsed; InternalUpdate() end)
             return b
         end
 
@@ -85,13 +85,13 @@ function Module:UpdateSkinningTracker()
         else
             trackerFrame = CreateFrame("Frame", "LT4_SkinningTracker", UIParent, "BackdropTemplate")
             trackerFrame:SetSize(340, 150)
-            local pos = LT4.db.profile.skinningTrackerPosition
+            local pos = Module.db.skinningTrackerPosition
             if pos and pos.point then trackerFrame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y) else trackerFrame:SetPoint("CENTER") end
             trackerFrame:SetMovable(true); trackerFrame:EnableMouse(true); trackerFrame:RegisterForDrag("LeftButton")
             trackerFrame:SetScript("OnDragStart", trackerFrame.StartMoving)
-            trackerFrame:SetScript("OnDragStop", function(s) s:StopMovingOrSizing(); local p, _, rp, x, y = s:GetPoint(); LT4.db.profile.skinningTrackerPosition = {point=p, relativePoint=rp, x=x, y=y} end)
+            trackerFrame:SetScript("OnDragStop", function(s) s:StopMovingOrSizing(); local p, _, rp, x, y = s:GetPoint(); Module.db.skinningTrackerPosition = {point=p, relativePoint=rp, x=x, y=y} end)
             trackerFrame.closeBtn = CreateFrame("Button", nil, trackerFrame, "UIPanelCloseButton"); trackerFrame.closeBtn:SetPoint("TOPRIGHT", trackerFrame, "TOPRIGHT", 2, 2); trackerFrame.closeBtn:SetScale(0.8)
-            trackerFrame.closeBtn:SetScript("OnClick", function() LT4.db.profile.skinningTrackerUI = false; Module:UpdateSkinningTracker() end)
+            trackerFrame.closeBtn:SetScript("OnClick", function() Module.db.skinningTrackerUI = false; Module:UpdateSkinningTracker() end)
         end
         
         trackerFrame:SetBackdrop({bgFile = "Interface/Tooltips/UI-Tooltip-Background", insets = { left = -3, right = -3, top = -1, bottom = -2 }})

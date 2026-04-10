@@ -16,9 +16,9 @@ function Module:InitSkinning()
     options.skinningHeader = { type = "header", name = "Skinning", order = 10 }
     options.skinningTrackerUI = {
         type = "toggle", name = "Show Rare Tracker UI", order = 11,
-        get = function() return LT4.db.profile.skinningTrackerUI end,
-        set = function(_, val) 
-            LT4.db.profile.skinningTrackerUI = val 
+        get = function() return self.db.skinningTrackerUI end,
+        set = function(_, val)
+            self.db.skinningTrackerUI = val
             if self.UpdateSkinningTracker then self:UpdateSkinningTracker() end
         end,
     }
@@ -83,9 +83,9 @@ function Module:HandleSkinningCommand(input)
             self:Print(string.format("%s %s (%s)%s", status, name, data.zone, coords))
         end
     elseif arg1 == "tracker" then
-        LT4.db.profile.skinningTrackerUI = not LT4.db.profile.skinningTrackerUI
+        self.db.skinningTrackerUI = not self.db.skinningTrackerUI
         self:UpdateSkinningTracker()
-        self:Print("Skinning Tracker UI: " .. (LT4.db.profile.skinningTrackerUI and "|cFF00FF00Enabled|r" or "|cFFFF0000Disabled|r"))
+        self:Print("Skinning Tracker UI: " .. (self.db.skinningTrackerUI and "|cFF00FF00Enabled|r" or "|cFFFF0000Disabled|r"))
     else
         self:Print("Available parameters: |cFFFFD100rares|r, |cFFFFD100tracker|r")
     end

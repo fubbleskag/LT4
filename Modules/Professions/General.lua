@@ -36,7 +36,16 @@ local function GetTrackedReagents()
     return summary
 end
 
+function Module:RefreshDB()
+    self.db = LT4.db.profile
+end
+
 function Module:OnInitialize()
+    self:RefreshDB()
+    LT4.db.RegisterCallback(self, "OnProfileChanged", "RefreshDB")
+    LT4.db.RegisterCallback(self, "OnProfileCopied", "RefreshDB")
+    LT4.db.RegisterCallback(self, "OnProfileReset", "RefreshDB")
+
     local options = {
         type = "group",
         name = "Professions",
@@ -101,7 +110,7 @@ function Module:CreateToggleButton(header)
         btn:SetNormalAtlas("poi-workorders")
         btn:SetHighlightAtlas("poi-workorders")
         btn:SetScript("OnClick", function()
-            LT4.db.profile.professionsSummaryView = not LT4.db.profile.professionsSummaryView
+            self.db.professionsSummaryView = not self.db.professionsSummaryView
             self:UpdateTracker()
             LibStub("AceConfigRegistry-3.0"):NotifyChange("LT4")
         end)
@@ -143,7 +152,7 @@ function Module:OnTrackerUpdate()
 end
 
 function Module:DisplaySummary()
-    if not LT4:GetModuleEnabled(self:GetName()) or not LT4.db.profile.professionsSummaryView then
+    if not LT4:GetModuleEnabled(self:GetName()) or not self.db.professionsSummaryView then
         if self.summaryFrame then self.summaryFrame:Hide() end
         local tracker = GetTrackerModule()
         if tracker and tracker.ContentsFrame then tracker.ContentsFrame:Show() end
