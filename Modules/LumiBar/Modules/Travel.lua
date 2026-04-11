@@ -4,8 +4,8 @@ local Utils = LumiBar.Utils
 local Data = LumiBar.Data
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 
-local Hearthstone = {}
-LumiBar:RegisterModule("Hearthstone", Hearthstone)
+local Travel = {}
+LumiBar:RegisterModule("Travel", Travel)
 
 -- Cached scan result, invalidated by events
 local cachedScan = nil
@@ -51,11 +51,11 @@ local function GetResourceInfo(key)
     return name, icon, type, id
 end
 
-function Hearthstone:InvalidateCache()
+function Travel:InvalidateCache()
     cachedScan = nil
 end
 
-function Hearthstone:ScanAvailable()
+function Travel:ScanAvailable()
     if cachedScan then return cachedScan end
     local allKnown = { Standard = {}, Expansions = {}, Seasonal = {}, MagePortals = {}, MageTeleports = {} }
     local class = select(2, UnitClass("player"))
@@ -129,13 +129,13 @@ function Hearthstone:ScanAvailable()
     return allKnown
 end
 
-function Hearthstone:Init()
-    self.db = LumiBar.db.char.modules.Hearthstone
+function Travel:Init()
+    self.db = LumiBar.db.char.modules.Travel
     self.db.hiddenPortals = self.db.hiddenPortals or {}
     self.db.hiddenExpansions = self.db.hiddenExpansions or {}
     
     local options = {
-        name = "Hearthstone",
+        name = "Travel",
         type = "group",
         get = function(info) return self.db[info[#info]] end,
         set = function(info, value) 
@@ -220,10 +220,10 @@ function Hearthstone:Init()
         eOrder = eOrder + 1
     end
 
-    LumiBar:RegisterModuleOptions("Hearthstone", options)
+    LumiBar:RegisterModuleOptions("Travel", options)
 end
 
-function Hearthstone:GetCooldown(type, id)
+function Travel:GetCooldown(type, id)
     local start, duration
     if type == "spell" then
         local cdInfo = C_Spell.GetSpellCooldown(id)
@@ -238,7 +238,7 @@ function Hearthstone:GetCooldown(type, id)
     return 0, 0
 end
 
-function Hearthstone:AddCooldownData(item)
+function Travel:AddCooldownData(item)
     if not item or item.isCategory then return item end
     local cd, total = self:GetCooldown(item.type, item.id)
     if cd > 0 and total > 0 then
@@ -250,7 +250,7 @@ function Hearthstone:AddCooldownData(item)
     return item
 end
 
-function Hearthstone:UpdateStatus()
+function Travel:UpdateStatus()
     local name, icon, type, id = GetResourceInfo(self.db.primaryHS)
     if not name then return end
     
@@ -275,12 +275,12 @@ function Hearthstone:UpdateStatus()
     self:UpdateWidth()
 end
 
-function Hearthstone:UpdateWidth()
+function Travel:UpdateWidth()
     if not self.text then return end
     Utils:UpdateModuleWidth(self, 16 + 4 + self.text:GetStringWidth() + 12, function() self:UpdateWidth() end)
 end
 
-function Hearthstone:UpdateSecureAttributes()
+function Travel:UpdateSecureAttributes()
     if InCombatLockdown() or not self.frame then return end
     local _, _, type, id = GetResourceInfo(self.db.primaryHS)
     if type and id then
@@ -290,10 +290,10 @@ function Hearthstone:UpdateSecureAttributes()
     end
 end
 
-function Hearthstone:Enable(slotFrame)
-    self.db = LumiBar.db.char.modules.Hearthstone
+function Travel:Enable(slotFrame)
+    self.db = LumiBar.db.char.modules.Travel
     if not self.frame then
-        self.frame = CreateFrame("Button", "LumiBarHearthstoneBtn", slotFrame, "SecureActionButtonTemplate, BackdropTemplate")
+        self.frame = CreateFrame("Button", "LumiBarTravelBtn", slotFrame, "SecureActionButtonTemplate, BackdropTemplate")
         self.frame:RegisterForClicks("AnyUp", "AnyDown")
         self.icon = self.frame:CreateTexture(nil, "ARTWORK")
         self.text = self.frame:CreateFontString(nil, "OVERLAY")
@@ -401,7 +401,7 @@ function Hearthstone:Enable(slotFrame)
     self:UpdateStatus()
 end
 
-function Hearthstone:Refresh(slotFrame)
+function Travel:Refresh(slotFrame)
     if not self.icon or not self.text then return end
     slotFrame = slotFrame or self.frame:GetParent()
     if not slotFrame then return end
@@ -427,7 +427,7 @@ function Hearthstone:Refresh(slotFrame)
     end
 end
 
-function Hearthstone:Disable()
+function Travel:Disable()
     cachedScan = nil
     if self.frame then
         self.frame:UnregisterAllEvents()

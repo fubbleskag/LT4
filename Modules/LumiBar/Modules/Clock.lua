@@ -3,14 +3,14 @@ local LumiBar = LT4:GetModule("LumiBar")
 local LSM = LibStub("LibSharedMedia-3.0")
 local Utils = LumiBar.Utils
 
-local Time = {}
-LumiBar:RegisterModule("Time", Time)
+local Clock = {}
+LumiBar:RegisterModule("Clock", Clock)
 
-function Time:Init()
-    self.db = LumiBar.db.profile.modules.Time
+function Clock:Init()
+    self.db = LumiBar.db.profile.modules.Clock
 
     local options = {
-        name = "Time",
+        name = "Clock",
         type = "group",
         get = function(info) return self.db[info[#info]] end,
         set = function(info, value)
@@ -63,10 +63,10 @@ function Time:Init()
             },
         }
     }
-    LumiBar:RegisterModuleOptions("Time", options)
+    LumiBar:RegisterModuleOptions("Clock", options)
 end
 
-function Time:GetTimeString()
+function Clock:GetTimeString()
     local hour, minute = tonumber(date("%H")), tonumber(date("%M"))
 
     local h = hour
@@ -82,8 +82,8 @@ function Time:GetTimeString()
     end
 end
 
-function Time:Enable(slotFrame)
-    self.db = LumiBar.db.profile.modules.Time
+function Clock:Enable(slotFrame)
+    self.db = LumiBar.db.profile.modules.Clock
 
     if not self.frame then
         self.frame = CreateFrame("Frame", nil, slotFrame, "BackdropTemplate")
@@ -108,16 +108,16 @@ function Time:Enable(slotFrame)
     self:UpdateStatus()
 end
 
-function Time:UpdateStatus()
+function Clock:UpdateStatus()
     if self.text then self.text:SetText(self:GetTimeString()) end
 end
 
-function Time:UpdateWidth()
+function Clock:UpdateWidth()
     if not self.text then return end
     Utils:UpdateModuleWidth(self, self.text:GetStringWidth() + 12, function() self:UpdateWidth() end)
 end
 
-function Time:Refresh(slotFrame)
+function Clock:Refresh(slotFrame)
     if not self.text then return end
     slotFrame = slotFrame or self.frame:GetParent()
     if not slotFrame then return end
@@ -141,7 +141,7 @@ function Time:Refresh(slotFrame)
     self.text:ClearAllPoints()
     self.text:SetPoint(align, self.frame, align, 0, self.db.textOffset or 0)
 
-    Utils:SetTooltip(self.frame, "Time", function()
+    Utils:SetTooltip(self.frame, "Clock", function()
         local sHour, sMinute = GetGameTime()
         return {
             {"Server Time:", string.format("%02d:%02d", sHour, sMinute)},

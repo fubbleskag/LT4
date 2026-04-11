@@ -44,7 +44,7 @@ function LumiBar:OnInitialize()
     local defaults = {
         char = {
             modules = {
-                Hearthstone = {
+                Travel = {
                     showIcon = true, iconFontSize = 18, cooldownEnabled = true, cooldownFontSize = 18,
                     primaryHS = "item:6948", hiddenPortals = {}, hiddenExpansions = {}, showSeasonPortals = true,
                 },
@@ -80,7 +80,7 @@ function LumiBar:OnInitialize()
                 },
             },
             modules = {
-                Time = {
+                Clock = {
                     timeFormat = "12",
                     colorType = "PRIMARY",
                     overrideFontFace = false, fontFace = "Arial Narrow",
@@ -168,7 +168,30 @@ function LumiBar:OnInitialize()
     
     self.db = LT4.db:RegisterNamespace("LumiBar", defaults)
     self.defaults = defaults
-    
+
+    -- Migration: Hearthstone module renamed to Travel
+    if self.db.char.modules.Hearthstone then
+        for k, v in pairs(self.db.char.modules.Hearthstone) do
+            self.db.char.modules.Travel[k] = v
+        end
+        self.db.char.modules.Hearthstone = nil
+    end
+    -- Migration: Time module renamed to Clock
+    if self.db.profile.modules.Time then
+        for k, v in pairs(self.db.profile.modules.Time) do
+            self.db.profile.modules.Clock[k] = v
+        end
+        self.db.profile.modules.Time = nil
+    end
+    for _, side in pairs(self.db.profile.layoutV2) do
+        for _, zone in pairs(side) do
+            for i, mName in ipairs(zone) do
+                if mName == "Hearthstone" then zone[i] = "Travel"
+                elseif mName == "Time" then zone[i] = "Clock" end
+            end
+        end
+    end
+
     -- First Run Population
     if not self.db.global.firstRunCompleted then
         self.db.profile.layoutV2 = {
@@ -178,7 +201,7 @@ function LumiBar:OnInitialize()
             },
             Right = {
                 Near = {"SpecSwitch", "Profession"},
-                Far = {"Hearthstone", "Currency"},
+                Far = {"Travel", "Currency"},
             },
         }
         self.db.global.firstRunCompleted = true
@@ -346,13 +369,13 @@ function LumiBar:UpdateLayout()
         local spacing = 10
         local layout = self.db.profile.layoutV2
         
-        -- 1. Handle Center (Time)
+        -- 1. Handle Center (Clock)
         local centerZone = self.Zones["Center"]
-        local timeModule = self.Modules["Time"]
-        if timeModule and timeModule.frame then
-            timeModule.frame:ClearAllPoints()
-            timeModule.frame:SetPoint("CENTER", centerZone, "CENTER", 0, 0)
-            centerZone:SetWidth(timeModule.frame:GetWidth() or 50)
+        local clockModule = self.Modules["Clock"]
+        if clockModule and clockModule.frame then
+            clockModule.frame:ClearAllPoints()
+            clockModule.frame:SetPoint("CENTER", centerZone, "CENTER", 0, 0)
+            centerZone:SetWidth(clockModule.frame:GetWidth() or 50)
         end
         
         -- 2. Position Near Zones relative to Center
@@ -416,7 +439,7 @@ end
 function LumiBar:RefreshModules()
     if not self.db then return end
 
-    local active = { ["Time"] = "Center" }
+    local active = { ["Clock"] = "Center" }
     local layout = self.db.profile.layoutV2
     for _, mName in ipairs(layout.Left.Far) do active[mName] = "FarLeft" end
     for _, mName in ipairs(layout.Left.Near) do active[mName] = "NearLeft" end

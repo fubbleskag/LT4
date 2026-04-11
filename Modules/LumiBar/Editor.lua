@@ -266,7 +266,7 @@ function LumiBar:RefreshEditor()
     end
 
     for mName, _ in pairs(self.Modules) do
-        if mName ~= "Time" and not activeMap[mName] then
+        if mName ~= "Clock" and not activeMap[mName] then
             local btn = self.ModuleButtons[mName]
             if not btn then
                 btn = CreateFrame("Button", nil, f, "BackdropTemplate")

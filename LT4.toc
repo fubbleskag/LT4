@@ -45,14 +45,14 @@ Modules\LumiBar\Utils.lua
 Modules\LumiBar\Editor.lua
 Modules\LumiBar\SecureFlyout.lua
 Modules\LumiBar\Options.lua
+Modules\LumiBar\Modules\Clock.lua
 Modules\LumiBar\Modules\Currency.lua
 Modules\LumiBar\Modules\DataBar.lua
 Modules\LumiBar\Modules\Durability.lua
 Modules\LumiBar\Modules\Favourites.lua
-Modules\LumiBar\Modules\Hearthstone.lua
 Modules\LumiBar\Modules\MicroMenu.lua
 Modules\LumiBar\Modules\Profession.lua
 Modules\LumiBar\Modules\SpecSwitch.lua
 Modules\LumiBar\Modules\System.lua
-Modules\LumiBar\Modules\Time.lua
+Modules\LumiBar\Modules\Travel.lua
 Modules\LumiBar\Modules\Volume.lua

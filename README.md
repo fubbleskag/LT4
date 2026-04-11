@@ -11,11 +11,11 @@ Transforms the circular minimap into a square design. Skins LibDBIcon addon butt
 A full-width data bar anchored to the top or bottom of the screen. Modules are arranged via a drag-and-drop layout editor with five zones (Far Left, Near Left, Center, Near Right, Far Right).
 
 **Sub-modules:**
-- **Time** — Clock display (12/24h), flashing colon, date, mail indicator, resting animation.
+- **Clock** — Clock display (12/24h), flashing colon, date, mail indicator, resting animation.
 - **System** — FPS, latency, CPU, and memory usage.
 - **Currency** — Gold display with colored denominations, expansion currencies, bag space.
 - **Durability** — Equipment durability %, item level, color-coded warnings, repair mount summoning.
-- **Hearthstone** — Primary hearthstone with flyout for portals/teleports (auto-detects Mage spells), cooldown bars.
+- **Travel** — Primary hearthstone with flyout for portals/teleports (auto-detects Mage spells), cooldown bars.
 - **Profession** — Quick-access profession icons with skill progress bars.
 - **Spec Switch** — Talent specialization and loadout switching.
 - **Volume** — Master volume quick-control.
