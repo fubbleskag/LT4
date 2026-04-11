@@ -33,22 +33,22 @@ local categories = {
     {
         id = "Mounts",
         label = "Mounts",
-        icon = "Interface\\ICONS\\Ability_Mount_RidingHorse",
+        atlas = "category-icons_mounts_inactive",
     },
     {
         id = "Pets",
         label = "Pets",
-        icon = "Interface\\ICONS\\INV_Box_PetCarrier_01",
+        atlas = "category-icons_pets_inactive",
     },
     {
         id = "Toys",
         label = "Toys",
-        icon = "Interface\\ICONS\\INV_Misc_Toy_10",
+        atlas = "category-icons_interactive_inactive",
     },
     {
         id = "Outfits",
         label = "Equipment Sets",
-        icon = "Interface\\ICONS\\INV_Shirt_GuildTabard_01",
+        atlas = "category-icons_storage_inactive",
     },
 }
 
@@ -336,7 +336,7 @@ function Favourites:Init()
                     showMounts  = { name = "Mounts",         type = "toggle", width = "full", order = 1 },
                     showPets    = { name = "Pets",           type = "toggle", width = "full", order = 2 },
                     showToys    = { name = "Toys",           type = "toggle", width = "full", order = 3 },
-                    showOutfits = { name = "Equipment Sets", type = "toggle", width = "full", order = 4 },
+                    showOutfits = { name = "Transmog", type = "toggle", width = "full", order = 4 },
                 },
             },
         },
@@ -397,13 +397,11 @@ function Favourites:Enable(slotFrame)
             local btn = CreateFrame("Button", nil, self.frame)
             btn.icon = btn:CreateTexture(nil, "ARTWORK")
             btn.icon:SetAllPoints()
-            btn.icon:SetTexture(cat.icon)
-            btn.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            btn.icon:SetAtlas(cat.atlas)
 
             btn.highlight = btn:CreateTexture(nil, "HIGHLIGHT")
             btn.highlight:SetAllPoints()
-            btn.highlight:SetTexture(cat.icon)
-            btn.highlight:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            btn.highlight:SetAtlas(cat.atlas)
             btn.highlight:SetBlendMode("ADD")
             btn.highlight:SetAlpha(0.3)
 
