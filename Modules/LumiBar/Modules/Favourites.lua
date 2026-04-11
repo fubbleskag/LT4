@@ -34,21 +34,29 @@ local categories = {
         id = "Mounts",
         label = "Mounts",
         atlas = "category-icons_mounts_inactive",
+        collectionsTab = 1,
+        uiLabel = "Mount Journal",
     },
     {
         id = "Pets",
         label = "Pets",
         atlas = "category-icons_pets_inactive",
+        collectionsTab = 2,
+        uiLabel = "Pet Journal",
     },
     {
         id = "Toys",
         label = "Toys",
         atlas = "category-icons_interactive_inactive",
+        collectionsTab = 3,
+        uiLabel = "Toy Box",
     },
     {
         id = "Outfits",
         label = "Outfits",
         atlas = "category-icons_storage_inactive",
+        collectionsTab = 5,
+        uiLabel = "Appearances",
     },
 }
 
@@ -351,8 +359,18 @@ function Favourites:ShowCategoryTooltip(btn, cat)
     local r, g, b = Utils:GetAccentColor()
     GameTooltip:AddLine(cat.label, r, g, b)
     GameTooltip:AddLine(" ")
+    GameTooltip:AddLine("|cffFFFFFFLeft-click:|r Open " .. (cat.uiLabel or cat.label), 0, 1, 0)
     GameTooltip:AddLine("|cffFFFFFFRight-click:|r Open favourites", 0, 1, 0)
     GameTooltip:Show()
+end
+
+function Favourites:OpenBlizzardUI(cat)
+    if InCombatLockdown() then return end
+    if not cat.collectionsTab then return end
+    if CollectionsJournal_LoadUI then CollectionsJournal_LoadUI() end
+    if ToggleCollectionsJournal then
+        ToggleCollectionsJournal(cat.collectionsTab)
+    end
 end
 
 function Favourites:OpenFlyout(btn, cat)
@@ -409,6 +427,8 @@ function Favourites:Enable(slotFrame)
             btn:SetScript("OnMouseDown", function(f, button)
                 if button == "RightButton" then
                     self:OpenFlyout(f, category)
+                elseif button == "LeftButton" then
+                    self:OpenBlizzardUI(category)
                 end
             end)
             btn:SetScript("OnEnter", function(f) self:ShowCategoryTooltip(f, category) end)
