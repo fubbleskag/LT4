@@ -98,6 +98,7 @@ function LumiBar:OnInitialize()
                     mode = "auto", icon = "", iconFontSize = 18, infoEnabled = true,
                     infoFontSize = 17, infoOffset = 13, infoUseAccent = true, showCompletedXP = false,
                     showIcon = true, barHeight = 10, barOffset = 0, textDisplay = "PERCENT",
+                    autoSize = true,
                 },
                 Profession = {
                     useUppercase = true, selectedProf1 = 1, selectedProf2 = 1, iconFontSize = 18,

@@ -213,6 +213,8 @@ local function SetupMenu(level, parent, items, direction)
             if item.icon == "player" then
                 SetPortraitTexture(btn.icon, "player")
                 btn.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            elseif type(item.icon) == "table" and item.icon.atlas then
+                btn.icon:SetAtlas(item.icon.atlas)
             elseif type(item.icon) == "table" and item.icon.texture then
                 btn.icon:SetTexture(item.icon.texture)
                 if item.icon.coords then

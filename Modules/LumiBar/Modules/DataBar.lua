@@ -8,6 +8,7 @@ local string_format = string.format
 local C_Reputation = C_Reputation
 local C_MajorFactions = C_MajorFactions
 local C_GossipInfo = C_GossipInfo
+local C_Housing = C_Housing
 local UnitLevel = UnitLevel
 local UnitXP = UnitXP
 local UnitXPMax = UnitXPMax
@@ -97,45 +98,89 @@ function DataBar:GetAvailableBars()
     -- 3. Tracked Faction (Blizzard XP Bar tracking)
     local watchedData = C_Reputation.GetWatchedFactionData()
     if watchedData and watchedData.factionID and not midnightIDs[watchedData.factionID] then
-        table_insert(bars, { 
-            id = "tracked", 
+        table_insert(bars, {
+            id = "tracked",
             name = watchedData.name,
             factionID = watchedData.factionID,
             isMajor = IsMajorFaction(watchedData.factionID),
             icon = { texture = "Interface\\Icons\\INV_Misc_Book_07", coords = { 0, 1, 0, 1 } }
         })
     end
-    
+
+    -- 4. Housing (only shown once the server has sent us favor data)
+    if self.housing then
+        table_insert(bars, {
+            id = "housing",
+            name = "Housing",
+            icon = { atlas = "homestone-minimap-icon-innerglow" },
+        })
+    end
+
     return bars
 end
 
 function DataBar:Init()
     self.db = LumiBar.db.profile.modules.DataBar
-    
+
     if not self.db.activeBar then
         self.db.activeBar = "xp"
+    end
+
+    -- Restore last-seen housing favor payload (per-character). The
+    -- HOUSE_LEVEL_FAVOR_UPDATED event only fires reliably when the player
+    -- opens the Housing interface, so we cache the last push to show the
+    -- bar immediately on reload.
+    if LumiBar.db.char and LumiBar.db.char.lastHousing then
+        self.housing = LumiBar.db.char.lastHousing
     end
 
     local options = {
         name = "DataBar",
         type = "group",
         get = function(info) return self.db[info[#info]] end,
-        set = function(info, value) 
+        set = function(info, value)
             self.db[info[#info]] = value
             self:Refresh()
             self:UpdateStatus()
         end,
         args = {
+            autoSize = {
+                name = "Auto Size to Bar",
+                desc = "Match the height of the LumiBar automatically.",
+                type = "toggle",
+                width = "full",
+                order = 1,
+            },
             barHeight = {
                 name = "Bar Height",
                 type = "range",
                 width = "full",
                 min = 1, max = 20, step = 1,
-                order = 1,
+                hidden = function() return self.db.autoSize end,
+                order = 2,
             },
         }
     }
     LumiBar:RegisterModuleOptions("DataBar", options)
+end
+
+-- Returns cur, max, level, isMax (or nil if no housing data cached yet)
+function DataBar:GetHousingProgress()
+    if not self.housing then return nil end
+    local level = self.housing.houseLevel or 1
+    local favor = self.housing.houseFavor or 0
+    local maxLevel = (C_Housing and C_Housing.GetMaxHouseLevel and C_Housing.GetMaxHouseLevel()) or 9
+
+    if level >= maxLevel then
+        return 1, 1, level, true
+    end
+
+    local curThreshold = (C_Housing.GetHouseLevelFavorForLevel and C_Housing.GetHouseLevelFavorForLevel(level)) or 0
+    local nextThreshold = (C_Housing.GetHouseLevelFavorForLevel and C_Housing.GetHouseLevelFavorForLevel(level + 1)) or (curThreshold + 1)
+    local cur = favor - curThreshold
+    local max = nextThreshold - curThreshold
+    if max <= 0 then cur, max = 0, 1 end
+    return cur, max, level, false
 end
 
 function DataBar:GetXP()
@@ -227,19 +272,22 @@ end
 function DataBar:UpdateStatus()
     local active = self.db.activeBar or "xp"
     local r, g, b = Utils:GetAccentColor()
-    
+
+    local nameText, valueText = "", ""
+
     if active == "xp" then
         local cur, max, rested, isMax = self:GetXP()
+        nameText = "Experience"
         if isMax then
-            self.text:SetText("XP: MAX")
+            valueText = "MAX"
             self.bar:SetMinMaxValues(0, 1)
             self.bar:SetValue(1)
             self.restedBar:Hide()
         else
-            self.text:SetText(self:FormatText(cur, max, "XP"))
+            valueText = tostring(UnitLevel("player"))
             self.bar:SetMinMaxValues(0, max)
             self.bar:SetValue(cur)
-            
+
             if rested > 0 then
                 self.restedBar:SetMinMaxValues(0, max)
                 self.restedBar:SetValue(math.min(cur + rested, max))
@@ -248,6 +296,23 @@ function DataBar:UpdateStatus()
                 self.restedBar:Hide()
             end
         end
+    elseif active == "housing" then
+        local cur, max, level, isMax = self:GetHousingProgress()
+        nameText = "Housing"
+        if not cur then
+            valueText = "?"
+            self.bar:SetMinMaxValues(0, 1)
+            self.bar:SetValue(0)
+        elseif isMax then
+            valueText = "MAX"
+            self.bar:SetMinMaxValues(0, 1)
+            self.bar:SetValue(1)
+        else
+            valueText = tostring(level)
+            self.bar:SetMinMaxValues(0, max)
+            self.bar:SetValue(cur)
+        end
+        self.restedBar:Hide()
     else
         local factionID = tonumber(active)
         if active == "tracked" then
@@ -256,19 +321,37 @@ function DataBar:UpdateStatus()
         end
 
         if factionID then
-            local cur, max, label, _, isMajor = self:GetFactionProgress(factionID, true)
-            
-            self.text:SetText(self:FormatText(cur, max, label, isMajor))
+            local cur, max, _label, _color, _isMajor = self:GetFactionProgress(factionID, true)
+            local data = C_Reputation.GetFactionDataByID(factionID)
+            local majorData = C_MajorFactions.GetMajorFactionData(factionID)
+            nameText = (majorData and majorData.name) or (data and data.name) or "Unknown"
+
+            if majorData and majorData.renownLevel then
+                local maxRenown = majorData.maxRenownLevel or majorData.renownMaxLevel or 25
+                if majorData.renownLevel >= maxRenown then
+                    valueText = "MAX"
+                else
+                    valueText = tostring(majorData.renownLevel)
+                end
+            else
+                local perc = (max > 0) and (cur / max) * 100 or 0
+                valueText = string_format("%.1f%%", perc)
+            end
+
             self.bar:SetMinMaxValues(0, max)
             self.bar:SetValue(cur)
         else
-            self.text:SetText("No Tracked Faction")
+            nameText = "No Tracked Faction"
+            valueText = ""
             self.bar:SetValue(0)
             self.bar:SetMinMaxValues(0, 1)
         end
         self.restedBar:Hide()
     end
-    
+
+    self.text:SetText(nameText)
+    self.valueText:SetText(valueText)
+
     self.bar:SetStatusBarColor(r, g, b)
     self.bar.bg:SetVertexColor(r * 0.2, g * 0.2, b * 0.2, 0.8)
     if active == "xp" then
@@ -290,25 +373,50 @@ function DataBar:GetFlyoutItems()
         if bar.id == "xp" then
             local xpCur, xpMax, xpRested, isMax = self:GetXP()
             local xpPerc = isMax and 100 or ((xpMax > 0) and (xpCur / xpMax) * 100 or 0)
+            local playerLevel = UnitLevel("player")
             table_insert(items, {
                 name = "Experience",
                 icon = "player", -- Special handling in SecureFlyout
-                value = isMax and "MAX" or string_format("%d%%", xpPerc),
+                value = isMax and "MAX" or tostring(playerLevel),
                 bar = xpPerc,
                 isActive = (self.db.activeBar == "xp"),
                 type = "macro",
                 leftMacrotext = "/run LibStub('AceAddon-3.0'):GetAddon('LT4'):GetModule('LumiBar').Modules['DataBar']:SetActiveBar('xp')",
+            })
+        elseif bar.id == "housing" then
+            local cur, max, level, isMax = self:GetHousingProgress()
+            local perc = (cur and max and max > 0) and (cur / max) * 100 or 0
+            local valueText = isMax and "MAX" or (level and tostring(level) or "?")
+            table_insert(items, {
+                name = bar.name,
+                icon = bar.icon,
+                value = valueText,
+                bar = perc,
+                isActive = (self.db.activeBar == "housing"),
+                type = "macro",
+                leftMacrotext = "/run LibStub('AceAddon-3.0'):GetAddon('LT4'):GetModule('LumiBar').Modules['DataBar']:SetActiveBar('housing')",
             })
         else
             local factionID = bar.factionID or tonumber(bar.id)
             local isActive = (self.db.activeBar == bar.id)
             local cur, max, label, color = self:GetFactionProgress(factionID, isActive)
             local perc = (max > 0) and (cur / max) * 100 or 0
-            
+
+            local valueText = string_format("%d%%", perc)
+            local majorData = factionID and C_MajorFactions.GetMajorFactionData(factionID)
+            if majorData and majorData.renownLevel then
+                local maxRenown = majorData.maxRenownLevel or majorData.renownMaxLevel or 25
+                if majorData.renownLevel >= maxRenown then
+                    valueText = "MAX"
+                else
+                    valueText = tostring(majorData.renownLevel)
+                end
+            end
+
             table_insert(items, {
                 name = bar.name,
                 icon = bar.icon,
-                value = string_format("%d%%", perc),
+                value = valueText,
                 bar = perc,
                 isActive = isActive,
                 type = "macro",
@@ -365,6 +473,22 @@ function DataBar:ShowTooltip(f)
                 GameTooltip:AddDoubleLine("Progress:", string_format("%.1f%%", (cur/max)*100), 1, 1, 1, 1, 1, 1)
             end
         end
+    elseif active == "housing" then
+        GameTooltip:AddLine("Housing", r, g, b)
+        local cur, max, level, isMax = self:GetHousingProgress()
+        if not cur then
+            GameTooltip:AddDoubleLine("Status:", "No Data", 1, 1, 1, 1, 0.5, 0.5)
+        elseif isMax then
+            GameTooltip:AddDoubleLine("Level:", string_format("%d (MAX)", level), 1, 1, 1, 0, 1, 0)
+            GameTooltip:AddDoubleLine("Favor:", tostring(self.housing.houseFavor or 0), 1, 1, 1, 1, 1, 1)
+        else
+            local totalFavor = self.housing.houseFavor or 0
+            local maxLevel = (C_Housing and C_Housing.GetMaxHouseLevel and C_Housing.GetMaxHouseLevel()) or 9
+            GameTooltip:AddDoubleLine("Level:", string_format("%d / %d", level, maxLevel), 1, 1, 1, 1, 1, 1)
+            GameTooltip:AddDoubleLine("Total Favor:", tostring(totalFavor), 1, 1, 1, 1, 1, 1)
+            GameTooltip:AddDoubleLine("This Level:", string_format("%d / %d", cur, max), 1, 1, 1, 1, 1, 1)
+            GameTooltip:AddDoubleLine("Progress:", string_format("%.1f%%", (cur/max)*100), 1, 1, 1, 1, 1, 1)
+        end
     else
         local factionID = tonumber(active)
         if active == "tracked" then
@@ -415,11 +539,35 @@ function DataBar:Enable(slotFrame)
         
         self.text = self.bar:CreateFontString(nil, "OVERLAY")
         self.text:SetDrawLayer("OVERLAY", 7)
+        self.text:SetJustifyH("LEFT")
+
+        self.valueText = self.bar:CreateFontString(nil, "OVERLAY")
+        self.valueText:SetDrawLayer("OVERLAY", 7)
+        self.valueText:SetJustifyH("RIGHT")
         
         self.frame:RegisterEvent("PLAYER_XP_UPDATE")
         self.frame:RegisterEvent("UPDATE_FACTION")
         self.frame:RegisterEvent("PLAYER_LEVEL_UP")
-        self.frame:SetScript("OnEvent", function() self:UpdateStatus() end)
+        self.frame:RegisterEvent("HOUSE_LEVEL_FAVOR_UPDATED")
+        self.frame:RegisterEvent("HOUSE_LEVEL_CHANGED")
+        self.frame:SetScript("OnEvent", function(_, event, payload)
+            if event == "HOUSE_LEVEL_FAVOR_UPDATED" and type(payload) == "table" then
+                self.housing = {
+                    houseLevel = payload.houseLevel,
+                    houseFavor = payload.houseFavor,
+                }
+                if LumiBar.db.char then
+                    LumiBar.db.char.lastHousing = self.housing
+                end
+            elseif event == "HOUSE_LEVEL_CHANGED" and type(payload) == "table" then
+                self.housing = self.housing or {}
+                if payload.houseLevel then self.housing.houseLevel = payload.houseLevel end
+                if LumiBar.db.char then
+                    LumiBar.db.char.lastHousing = self.housing
+                end
+            end
+            self:UpdateStatus()
+        end)
 
         self.frame:SetScript("OnMouseWheel", function(f, delta)
             self:CycleBar(delta)
@@ -455,20 +603,31 @@ function DataBar:Refresh(slotFrame)
     slotFrame = slotFrame or self.frame:GetParent()
     if not slotFrame then return end
     local align = slotFrame.align or "CENTER"
-    
+
     self.frame:SetHeight(slotFrame:GetHeight())
-    
+
     Utils:SetFont(self.text)
+    Utils:SetFont(self.valueText)
     Utils:ApplyBackground(self.frame, self.db)
-    
+
     local barW = 150
-    -- Set initial width. Since width is static for this module, we don't need UpdateModuleWidth in UpdateStatus.
     Utils:UpdateModuleWidth(self, barW + 24, function() self:Refresh(slotFrame) end)
-    
-    self.bar:SetSize(barW, self.db.barHeight or 10)
+
+    local barH
+    if self.db.autoSize then
+        barH = slotFrame:GetHeight()
+    else
+        barH = self.db.barHeight or 10
+    end
+
+    self.bar:SetSize(barW, barH)
     self.bar:ClearAllPoints()
     self.bar:SetPoint(align, self.frame, align, 0, 0)
-    
+
     self.text:ClearAllPoints()
-    self.text:SetPoint("CENTER", self.bar, "CENTER", 0, 0)
+    self.text:SetPoint("LEFT", self.bar, "LEFT", 4, 0)
+    self.text:SetPoint("RIGHT", self.valueText, "LEFT", -4, 0)
+
+    self.valueText:ClearAllPoints()
+    self.valueText:SetPoint("RIGHT", self.bar, "RIGHT", -4, 0)
 end
