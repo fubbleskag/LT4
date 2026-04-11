@@ -47,7 +47,7 @@ local categories = {
     },
     {
         id = "Outfits",
-        label = "Equipment Sets",
+        label = "Outfits",
         atlas = "category-icons_storage_inactive",
     },
 }
