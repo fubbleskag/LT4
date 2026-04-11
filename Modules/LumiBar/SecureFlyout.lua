@@ -151,6 +151,10 @@ local function SetupMenu(level, parent, items, direction)
         btn:ClearAllPoints()
         
         if item.isCategory then
+            if type(item.preClick) == "function" then
+                local preClickFn = item.preClick
+                btn:SetScript("PreClick", function(s, mb) preClickFn(s, mb) end)
+            end
             btn:SetScript("OnEnter", function(s)
                 GameTooltip:Hide()
                 for l = level + 1, #Flyouts do Flyouts[l]:Hide() end
@@ -159,7 +163,7 @@ local function SetupMenu(level, parent, items, direction)
         else
             if type(item.preClick) == "function" then
                 local preClickFn = item.preClick
-                btn:SetScript("PreClick", function(s) preClickFn(s) end)
+                btn:SetScript("PreClick", function(s, mb) preClickFn(s, mb) end)
             end
 
             if item.type == "spell" then

@@ -317,12 +317,19 @@ function Favourites:Init()
                 inline = true,
                 order = 1,
                 args = {
+                    singleIcon = {
+                        name = "Single Icon",
+                        desc = "Collapse all categories into one Collections icon. Enabled categories are grouped under a combined flyout.",
+                        type = "toggle",
+                        width = "full",
+                        order = 1,
+                    },
                     autoSize = {
                         name = "Auto Size to Bar",
                         desc = "Match the height of the LumiBar automatically.",
                         type = "toggle",
                         width = "full",
-                        order = 1,
+                        order = 2,
                     },
                     iconSize = {
                         name = "Custom Icon Size",
@@ -330,9 +337,16 @@ function Favourites:Init()
                         width = "full",
                         min = 10, max = 100, step = 1,
                         hidden = function() return self.db.autoSize end,
-                        order = 2,
+                        order = 3,
                     },
-                    spacing = { name = "Spacing", type = "range", width = "full", min = -10, max = 20, step = 1, order = 3 },
+                    spacing = {
+                        name = "Spacing",
+                        type = "range",
+                        width = "full",
+                        min = -10, max = 20, step = 1,
+                        hidden = function() return self.db.singleIcon end,
+                        order = 4,
+                    },
                 },
             },
             categoryGroup = {
@@ -341,9 +355,9 @@ function Favourites:Init()
                 inline = true,
                 order = 2,
                 args = {
-                    showMounts  = { name = "Mounts",         type = "toggle", width = "full", order = 1 },
-                    showPets    = { name = "Pets",           type = "toggle", width = "full", order = 2 },
-                    showToys    = { name = "Toys",           type = "toggle", width = "full", order = 3 },
+                    showMounts  = { name = "Mounts",   type = "toggle", width = "full", order = 1 },
+                    showPets    = { name = "Pets",     type = "toggle", width = "full", order = 2 },
+                    showToys    = { name = "Toys",     type = "toggle", width = "full", order = 3 },
                     showOutfits = { name = "Transmog", type = "toggle", width = "full", order = 4 },
                 },
             },
@@ -370,6 +384,82 @@ function Favourites:OpenBlizzardUI(cat)
     if CollectionsJournal_LoadUI then CollectionsJournal_LoadUI() end
     if ToggleCollectionsJournal then
         ToggleCollectionsJournal(cat.collectionsTab)
+    end
+end
+
+function Favourites:OpenFirstEnabledTab()
+    if InCombatLockdown() then return end
+    for _, cat in ipairs(categories) do
+        if self.db["show" .. cat.id] and cat.collectionsTab then
+            self:OpenBlizzardUI(cat)
+            return
+        end
+    end
+    if CollectionsJournal_LoadUI then CollectionsJournal_LoadUI() end
+    if ToggleCollectionsJournal then ToggleCollectionsJournal(1) end
+end
+
+function Favourites:ShowSingleTooltip(btn)
+    local anchor = (LumiBar.db.profile.bar.position == "BOTTOM") and "ANCHOR_TOP" or "ANCHOR_BOTTOM"
+    GameTooltip:SetOwner(btn, anchor)
+    local r, g, b = Utils:GetAccentColor()
+    GameTooltip:AddLine("Favourites", r, g, b)
+    GameTooltip:AddLine(" ")
+    GameTooltip:AddLine("|cffFFFFFFLeft-click:|r Open Collections", 0, 1, 0)
+    GameTooltip:AddLine("|cffFFFFFFRight-click:|r Open favourites", 0, 1, 0)
+    GameTooltip:Show()
+end
+
+function Favourites:OpenCombinedFlyout(btn)
+    if InCombatLockdown() then return end
+    local direction = (LumiBar.db.profile.bar.position == "BOTTOM") and "UP" or "DOWN"
+
+    local needsOutfits = self.db.showOutfits
+    local staged = false
+    if needsOutfits then
+        self:InvalidateCache("Outfits")
+        wipe(outfitButtonCache)
+        staged = StageTransmogFrame()
+    end
+
+    local function finish()
+        if InCombatLockdown() then return end
+        if needsOutfits then
+            ScanOutfitIcons()
+            self:InvalidateCache("Outfits")
+        end
+
+        local items = {}
+        for _, cat in ipairs(categories) do
+            if self.db["show" .. cat.id] then
+                local subItems = self:BuildList(cat.id)
+                if #subItems == 0 then
+                    subItems = { { name = "|cff888888No " .. cat.label:lower() .. "|r" } }
+                end
+                local category = cat
+                table_insert(items, {
+                    name = cat.label,
+                    icon = { atlas = cat.atlas },
+                    isCategory = true,
+                    subItems = subItems,
+                    preClick = function(_, mb)
+                        if mb == "LeftButton" then
+                            self:OpenBlizzardUI(category)
+                        end
+                    end,
+                })
+            end
+        end
+        if #items == 0 then
+            items = { { name = "|cff888888No favourites|r" } }
+        end
+        LumiBar.SecureFlyout:ShowMenu(btn, items, direction)
+    end
+
+    if needsOutfits and staged and C_Timer and C_Timer.After then
+        C_Timer.After(0, finish)
+    else
+        finish()
     end
 end
 
@@ -436,6 +526,33 @@ function Favourites:Enable(slotFrame)
 
             self.btns[cat.id] = btn
         end
+
+        local sbtn = CreateFrame("Button", nil, self.frame)
+        sbtn.icon = sbtn:CreateTexture(nil, "ARTWORK")
+        sbtn.icon:SetAllPoints()
+        sbtn.icon:SetAtlas("UI-HUD-MicroMenu-Collections-Up")
+
+        sbtn.favOverlay = sbtn:CreateTexture(nil, "OVERLAY")
+        sbtn.favOverlay:SetAtlas("collections-icon-favorites")
+        sbtn.favOverlay:SetPoint("TOPLEFT", sbtn, "TOPLEFT", 0, 0)
+
+        sbtn.highlight = sbtn:CreateTexture(nil, "HIGHLIGHT")
+        sbtn.highlight:SetAllPoints()
+        sbtn.highlight:SetAtlas("UI-HUD-MicroMenu-Collections-Up")
+        sbtn.highlight:SetBlendMode("ADD")
+        sbtn.highlight:SetAlpha(0.3)
+
+        sbtn:SetScript("OnMouseDown", function(f, button)
+            if button == "RightButton" then
+                self:OpenCombinedFlyout(f)
+            elseif button == "LeftButton" then
+                self:OpenFirstEnabledTab()
+            end
+        end)
+        sbtn:SetScript("OnEnter", function(f) self:ShowSingleTooltip(f) end)
+        sbtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        sbtn:Hide()
+        self.singleBtn = sbtn
     end
 
     if not self.flyoutHooked and LumiBar.SecureFlyout then
@@ -480,10 +597,6 @@ function Favourites:Refresh(slotFrame)
     self.frame:SetHeight(slotFrame:GetHeight())
     Utils:ApplyBackground(self.frame, self.db)
 
-    local prevBtn = nil
-    local totalWidth = 0
-    local spacing = self.db.spacing or 2
-
     local iconHeight
     if self.db.autoSize then
         iconHeight = slotFrame:GetHeight()
@@ -491,6 +604,27 @@ function Favourites:Refresh(slotFrame)
         iconHeight = self.db.iconSize or 20
     end
     local iconWidth = iconHeight
+
+    if self.db.singleIcon then
+        for _, btn in pairs(self.btns) do btn:Hide() end
+
+        self.singleBtn:Show()
+        self.singleBtn:SetSize(iconWidth, iconHeight)
+        self.singleBtn:ClearAllPoints()
+        self.singleBtn:SetPoint("LEFT", self.frame, "LEFT", 0, 0)
+
+        local overlaySize = iconHeight * 0.55
+        self.singleBtn.favOverlay:SetSize(overlaySize, overlaySize)
+
+        self:UpdateWidth(iconWidth)
+        return
+    end
+
+    self.singleBtn:Hide()
+
+    local prevBtn = nil
+    local totalWidth = 0
+    local spacing = self.db.spacing or 2
 
     for _, cat in ipairs(categories) do
         local btn = self.btns[cat.id]

@@ -123,6 +123,7 @@ function LumiBar:OnInitialize()
                     infoIcon = "", infoFontSize = 12, infoOffset = 18, infoUseAccent = true,
                 },
                 Favourites = {
+                    singleIcon = false,
                     showMounts = true,
                     showPets = true,
                     showToys = true,
