@@ -10,6 +10,9 @@ Thumbs.db
 # VS Code
 .vscode/
 
+# Claude Code
+.claude/
+
 # Local/Temporary files
 *.bak
 *.old
