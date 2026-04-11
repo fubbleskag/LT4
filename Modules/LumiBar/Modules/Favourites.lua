@@ -18,8 +18,12 @@ local C_MountJournal = C_MountJournal
 local C_PetJournal = C_PetJournal
 local C_ToyBox = C_ToyBox
 local C_TransmogOutfitInfo = C_TransmogOutfitInfo
+local C_Timer = C_Timer
+local UIParent = UIParent
 local ipairs = ipairs
 local type = type
+local wipe = wipe
+local unpack = unpack
 local table_insert = table.insert
 local table_sort = table.sort
 local string_format = string.format
@@ -133,6 +137,89 @@ function Favourites:BuildToyList()
     return items
 end
 
+-- Outfit click-forwarding: stage TransmogFrame hidden to populate its ScrollBox,
+-- then forward clicks to the real OutfitIcon buttons so outfits apply in one click.
+local outfitButtonCache = {}
+local transmogStaged = false
+local savedTransmogState = {}
+
+local function StageTransmogFrame()
+    if InCombatLockdown() then return false end
+    if not TransmogFrame and Transmog_LoadUI then Transmog_LoadUI() end
+    if not TransmogFrame then return false end
+    if transmogStaged then return true end
+    if TransmogFrame:IsShown() then return true end
+
+    savedTransmogState.alpha = TransmogFrame:GetAlpha()
+    savedTransmogState.points = {}
+    for i = 1, TransmogFrame:GetNumPoints() do
+        savedTransmogState.points[i] = { TransmogFrame:GetPoint(i) }
+    end
+
+    TransmogFrame:SetAlpha(0)
+    TransmogFrame:ClearAllPoints()
+    TransmogFrame:SetPoint("CENTER", UIParent, "CENTER", 100000, 0)
+    TransmogFrame:Show()
+    transmogStaged = true
+    return true
+end
+
+local function UnstageTransmogFrame()
+    if not transmogStaged then return end
+    if InCombatLockdown() then return end
+    if TransmogFrame then
+        TransmogFrame:Hide()
+        TransmogFrame:SetAlpha(savedTransmogState.alpha or 1)
+        TransmogFrame:ClearAllPoints()
+        if savedTransmogState.points and #savedTransmogState.points > 0 then
+            for _, p in ipairs(savedTransmogState.points) do
+                TransmogFrame:SetPoint(unpack(p))
+            end
+        else
+            TransmogFrame:SetPoint("CENTER")
+        end
+    end
+    transmogStaged = false
+    wipe(savedTransmogState)
+    wipe(outfitButtonCache)
+end
+
+local function ScanOutfitIcons()
+    wipe(outfitButtonCache)
+    if not TransmogFrame or not TransmogFrame.OutfitCollection then return end
+    local list = TransmogFrame.OutfitCollection.OutfitList
+    if not list or not list.ScrollBox then return end
+    local sb = list.ScrollBox
+    if not sb.ForEachFrame then return end
+    sb:ForEachFrame(function(frame, elementData)
+        local id
+        if elementData then
+            id = elementData.outfitID or elementData.id
+        end
+        if not id and frame.GetElementData then
+            local ed = frame:GetElementData()
+            if ed then id = ed.outfitID or ed.id end
+        end
+        if id and frame.OutfitIcon then
+            outfitButtonCache[id] = frame.OutfitIcon
+        end
+    end)
+end
+
+local function OpenTransmogForOutfit(outfitID)
+    if InCombatLockdown() then return end
+    if not TransmogFrame and Transmog_LoadUI then
+        Transmog_LoadUI()
+    end
+    if not TransmogFrame then return end
+    if C_TransmogOutfitInfo and C_TransmogOutfitInfo.ChangeViewedOutfit then
+        C_TransmogOutfitInfo.ChangeViewedOutfit(outfitID)
+    end
+    if not TransmogFrame:IsShown() then
+        TransmogFrame:Show()
+    end
+end
+
 function Favourites:BuildOutfitList()
     if cache.Outfits then return cache.Outfits end
     local items = {}
@@ -141,10 +228,10 @@ function Favourites:BuildOutfitList()
     for _, info in ipairs(outfits) do
         if info.outfitID and not info.isDisabled then
             local outfitName = info.name or "Outfit"
-            local isActive = (activeID == info.outfitID)
-            table_insert(items, {
-                type = "outfit",
-                id = info.outfitID,
+            local outfitID = info.outfitID
+            local isActive = (activeID == outfitID)
+            local clickTarget = outfitButtonCache[outfitID]
+            local item = {
                 name = outfitName,
                 icon = info.icon,
                 isActive = isActive,
@@ -155,9 +242,20 @@ function Favourites:BuildOutfitList()
                         tt:AddLine("|cff00ff00Currently active|r")
                     end
                     tt:AddLine(" ")
-                    tt:AddLine("|cffFFFFFFLeft-click:|r Apply outfit", 0, 1, 0)
+                    if clickTarget then
+                        tt:AddLine("|cffFFFFFFLeft-click:|r Apply outfit", 0, 1, 0)
+                    else
+                        tt:AddLine("|cffFFFFFFLeft-click:|r Open transmog & preview", 0, 1, 0)
+                    end
                 end,
-            })
+            }
+            if clickTarget then
+                item.type = "click"
+                item.clickTarget = clickTarget
+            else
+                item.preClick = function() OpenTransmogForOutfit(outfitID) end
+            end
+            table_insert(items, item)
         end
     end
     table_sort(items, function(a, b) return a.name < b.name end)
@@ -259,12 +357,34 @@ end
 
 function Favourites:OpenFlyout(btn, cat)
     if InCombatLockdown() then return end
-    if cat.id == "Outfits" then self:InvalidateCache("Outfits") end
+    local direction = (LumiBar.db.profile.bar.position == "BOTTOM") and "UP" or "DOWN"
+
+    if cat.id == "Outfits" then
+        self:InvalidateCache("Outfits")
+        wipe(outfitButtonCache)
+        local staged = StageTransmogFrame()
+        local function finish()
+            if InCombatLockdown() then return end
+            ScanOutfitIcons()
+            self:InvalidateCache("Outfits")
+            local items = self:BuildList(cat.id)
+            if #items == 0 then
+                items = { { name = "|cff888888No " .. cat.label:lower() .. "|r" } }
+            end
+            LumiBar.SecureFlyout:ShowMenu(btn, items, direction)
+        end
+        if staged and C_Timer and C_Timer.After then
+            C_Timer.After(0, finish)
+        else
+            finish()
+        end
+        return
+    end
+
     local items = self:BuildList(cat.id)
     if #items == 0 then
         items = { { name = "|cff888888No " .. cat.label:lower() .. "|r" } }
     end
-    local direction = (LumiBar.db.profile.bar.position == "BOTTOM") and "UP" or "DOWN"
     LumiBar.SecureFlyout:ShowMenu(btn, items, direction)
 end
 
@@ -298,6 +418,13 @@ function Favourites:Enable(slotFrame)
 
             self.btns[cat.id] = btn
         end
+    end
+
+    if not self.flyoutHooked and LumiBar.SecureFlyout then
+        LumiBar.SecureFlyout:HookScript("OnHide", function()
+            UnstageTransmogFrame()
+        end)
+        self.flyoutHooked = true
     end
 
     if not self.eventsRegistered then
@@ -374,6 +501,7 @@ end
 
 function Favourites:Disable()
     cache = {}
+    UnstageTransmogFrame()
     if self.frame then
         self.frame:UnregisterAllEvents()
         self.eventsRegistered = false
