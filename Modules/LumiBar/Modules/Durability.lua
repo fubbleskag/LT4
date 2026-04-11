@@ -31,7 +31,7 @@ function Durability:Init()
                 name = "Click Action Button",
                 desc = "Which mouse button triggers the repair mount summoning.",
                 type = "select",
-                width = "full",
+                width = "single",
                 values = { ["Left"] = "Left Click", ["Right"] = "Right Click" },
                 order = 1,
             },
@@ -39,7 +39,7 @@ function Durability:Init()
                 name = "Preferred Repair Mount",
                 desc = "The mount to summon (Only known mounts shown).",
                 type = "select",
-                width = "full",
+                width = "single",
                 values = function()
                     local known = {}
                     for id, name in pairs(LumiBar.Data.RepairMounts) do

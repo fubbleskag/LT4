@@ -148,13 +148,11 @@ function DataBar:Init()
                 name = "Auto Size to Bar",
                 desc = "Match the height of the LumiBar automatically.",
                 type = "toggle",
-                width = "full",
                 order = 1,
             },
             barHeight = {
                 name = "Bar Height",
                 type = "range",
-                width = "full",
                 min = 1, max = 20, step = 1,
                 hidden = function() return self.db.autoSize end,
                 order = 2,
