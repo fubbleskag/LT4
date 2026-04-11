@@ -48,6 +48,7 @@ Modules\LumiBar\Options.lua
 Modules\LumiBar\Modules\Currency.lua
 Modules\LumiBar\Modules\DataBar.lua
 Modules\LumiBar\Modules\Durability.lua
+Modules\LumiBar\Modules\Favourites.lua
 Modules\LumiBar\Modules\Hearthstone.lua
 Modules\LumiBar\Modules\MicroMenu.lua
 Modules\LumiBar\Modules\Profession.lua

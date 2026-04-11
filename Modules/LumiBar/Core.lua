@@ -121,6 +121,15 @@ function LumiBar:OnInitialize()
                     showLoadout = true, iconFontSize = 18, infoEnabled = true, infoShowIcon = false,
                     infoIcon = "", infoFontSize = 12, infoOffset = 18, infoUseAccent = true,
                 },
+                Favourites = {
+                    showMounts = true,
+                    showPets = true,
+                    showToys = true,
+                    showOutfits = true,
+                    autoSize = true,
+                    iconSize = 20,
+                    spacing = 2,
+                },
                 MicroMenu = {
                     useAccent = true,
                     customColor = { r = 1, g = 0.8, b = 0 },

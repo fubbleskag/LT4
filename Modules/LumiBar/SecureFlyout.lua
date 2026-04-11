@@ -111,6 +111,9 @@ local function SetupMenu(level, parent, items, direction)
         btn:SetAttribute("*macrotext2", nil)
         btn:SetAttribute("spell", nil)
         btn:SetAttribute("item", nil)
+        btn:SetAttribute("outfit", nil)
+        btn:SetAttribute("clickbutton", nil)
+        btn:SetScript("PreClick", nil)
 
         local displayName = item.name or "Unknown"
         if item.isActive then
@@ -154,12 +157,20 @@ local function SetupMenu(level, parent, items, direction)
                 LumiBar.SecureFlyout:ShowSubMenu(level + 1, s, item.subItems, direction)
             end)
         else
+            if type(item.preClick) == "function" then
+                local preClickFn = item.preClick
+                btn:SetScript("PreClick", function(s) preClickFn(s) end)
+            end
+
             if item.type == "spell" then
                 btn:SetAttribute("type", "spell")
                 btn:SetAttribute("spell", item.id)
             elseif item.type == "item" or item.type == "toy" then
                 btn:SetAttribute("type", "item")
                 btn:SetAttribute("item", "item:" .. item.id)
+            elseif item.type == "click" and item.clickTarget then
+                btn:SetAttribute("type", "click")
+                btn:SetAttribute("clickbutton", item.clickTarget)
             elseif item.type == "macro" then
                 if item.leftMacrotext or item.rightMacrotext then
                     if item.leftMacrotext then
@@ -175,10 +186,14 @@ local function SetupMenu(level, parent, items, direction)
                     btn:SetAttribute("macrotext", item.macrotext)
                 end
             end
-            btn:SetScript("OnEnter", function(s) 
+            btn:SetScript("OnEnter", function(s)
                 for l = level + 1, #Flyouts do Flyouts[l]:Hide() end
-                
-                if item.type == "spell" and item.id then
+
+                if type(item.tooltip) == "function" then
+                    GameTooltip:SetOwner(s, "ANCHOR_RIGHT")
+                    item.tooltip(GameTooltip)
+                    GameTooltip:Show()
+                elseif item.type == "spell" and item.id then
                     GameTooltip:SetOwner(s, "ANCHOR_RIGHT")
                     GameTooltip:SetSpellByID(item.id)
                     GameTooltip:Show()
