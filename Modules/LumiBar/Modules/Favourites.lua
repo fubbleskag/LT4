@@ -73,8 +73,8 @@ function Favourites:BuildMountList()
     local items = {}
     local mountIDs = C_MountJournal.GetMountIDs() or {}
     for _, mountID in ipairs(mountIDs) do
-        local name, spellID, icon, _, _, _, isFavorite, _, _, _, isCollected = C_MountJournal.GetMountInfoByID(mountID)
-        if isCollected and isFavorite and spellID then
+        local name, spellID, icon, _, isUsable, _, isFavorite, _, _, _, isCollected = C_MountJournal.GetMountInfoByID(mountID)
+        if isCollected and isFavorite and isUsable and spellID then
             local sID = spellID
             table_insert(items, {
                 type = "macro",
