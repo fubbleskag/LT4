@@ -32,7 +32,8 @@ local FRAMES = {
     { name = "FriendsFrame" },
     { name = "QuestFrame" },
     { name = "HousingDashboardFrame" },
-    { name = "HousingModelPreviewFrame" },
+    { name = "HousingModelPreviewFrame", insets = { 0, 28, 0, 0 } },
+    { name = "DressUpFrame" },
 }
 
 local function RefreshDB()
@@ -92,6 +93,10 @@ local function SetupFrame(entry)
 
     handle:EnableMouse(true)
     handle:RegisterForDrag("LeftButton")
+
+    if entry.insets then
+        handle:SetHitRectInsets(unpack(entry.insets))
+    end
 
     handle:HookScript("OnDragStart", function()
         if InCombatLockdown() then return end
