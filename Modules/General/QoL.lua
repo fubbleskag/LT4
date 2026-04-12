@@ -611,6 +611,7 @@ local function GetOwnedKeystoneLink()
 end
 
 function Module:HandleKeystoneRequest(event, msg, _, _, _, _, _, _, _, _, _, _, guid)
+    if InCombatLockdown() then return end
     if not LT4:GetModuleEnabled("Quality of Life") or not qol.keystones then return end
 
     local setting = qol.keystonesChannel or "BOTH"
