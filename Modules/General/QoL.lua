@@ -11,6 +11,7 @@ local FISHING_OVERRIDE_CLEAR_DELAY = 1
 local KEYSTONE_ITEM_ID = 180653
 local KEYSTONE_RESPONSE_COOLDOWN = 5
 local keystoneLastResponse = {}
+local playerGUID
 
 -- AceDB profile slices; refreshed via RefreshDB on init and profile changes
 local qol, minimap
@@ -620,7 +621,7 @@ function Module:HandleKeystoneRequest(event, msg, _, _, _, _, _, _, _, _, _, _, 
         if setting ~= "PARTY" and setting ~= "BOTH" then return end
     end
 
-    if guid and guid == UnitGUID("player") then return end
+    if guid and guid == playerGUID then return end
 
     local firstWord = msg and strlower(msg):match("^(%S+)")
     if firstWord ~= "!keys" and firstWord ~= "!keystone" and firstWord ~= "!keystones" then
@@ -933,6 +934,7 @@ function Module:MAIL_CLOSED()
 end
 
 function Module:OnEnable()
+    playerGUID = UnitGUID("player")
     self:RegisterCurrentAlt()
     self:RegisterEvent("MERCHANT_SHOW")
     self:RegisterEvent("MAIL_SHOW")
