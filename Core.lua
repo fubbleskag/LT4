@@ -9,6 +9,7 @@ LT4.moduleOrder = {
     ["SquareMinimap"]  = 20,
     ["Professions"]    = 30,
     ["Cursor"]         = 40,
+    ["Window Control"]  = 50,
     ["Quality of Life"] = 99,
 }
 
@@ -57,6 +58,9 @@ local defaults = {
             autoRejectDuelGuild = false,
             autoRejectGuildInvite = false,
             autoRejectGuildInviteFriends = false,
+        },
+        windowControl = {
+            positions = {},
         },
         cursor = {
             cursors = {

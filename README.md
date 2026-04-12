@@ -31,6 +31,9 @@ A full-width data bar anchored to the top or bottom of the screen. Modules are a
 - **Keystones** — Listens for `!keys` / `!keystone` / `!keystones` in party or guild chat and responds with a link to your current Mythic+ keystone.
 - **Social Automation** — Auto-accept group invites and summons, auto-reject duels and guild invites. Each toggle can be filtered to friends and/or guildmates.
 
+### Window Control
+Move Blizzard windows by dragging their title bars (or custom drag handles). Positions are saved per-profile and restored automatically. Right-click a title bar to reset that window to its default position. Supports CharacterFrame, ProfessionsBookFrame, PlayerSpellsFrame, AchievementFrame, WorldMapFrame, CommunitiesFrame, PVEFrame, CollectionsJournal, EncounterJournal, TransmogFrame, MerchantFrame, AuctionHouseFrame, MailFrame, SettingsPanel, BankFrame, ContainerFrameCombinedBags, ContainerFrame6, GuildBankFrame, ProfessionsFrame, FriendsFrame, and QuestFrame.
+
 ### Cursor
 Anchors up to two customizable textures (rings, glows, crosses, etc.) to the mouse cursor. Each layer has independent color, scale, opacity, combat-only visibility, and idle fade.
 

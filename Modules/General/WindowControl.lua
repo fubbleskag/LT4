@@ -1,0 +1,216 @@
+local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
+local Module = LT4:NewModule("Window Control", "AceHook-3.0", "AceEvent-3.0")
+
+Module.description = "Enables moving Blizzard windows by dragging their title bars."
+
+local db
+
+local FRAMES = {
+    { name = "CharacterFrame" },
+    { name = "ProfessionsBookFrame" },
+    { name = "PlayerSpellsFrame" },
+    { name = "AchievementFrame",  handle = "Header" },
+    { name = "WorldMapFrame",     handle = "BorderFrame" },
+    { name = "CommunitiesFrame" },
+    { name = "PVEFrame" },
+    { name = "CollectionsJournal" },
+    { name = "EncounterJournal" },
+    { name = "TransmogFrame" },
+    { name = "MerchantFrame" },
+    { name = "AuctionHouseFrame" },
+    { name = "MailFrame" },
+    { name = "SettingsPanel",     handle = "NineSlice.TopEdge" },
+    { name = "BankFrame" },
+    { name = "ContainerFrameCombinedBags" },
+    { name = "ContainerFrame6" },
+    { name = "GuildBankFrame",    handle = "Emblem" },
+    { name = "ProfessionsFrame" },
+    { name = "FriendsFrame" },
+    { name = "QuestFrame" },
+}
+
+local function RefreshDB()
+    db = LT4.db.profile.windowControl
+end
+
+local function ResolveHandle(frame, path)
+    if not path then return frame.TitleContainer or frame end
+    local obj = frame
+    for key in path:gmatch("[^%.]+") do
+        obj = obj[key]
+        if not obj then return frame end
+    end
+    return obj
+end
+
+local function SavePosition(frameName, frame)
+    local point, relativeTo, relativePoint, x, y = frame:GetPoint(1)
+    db.positions[frameName] = {
+        point = point,
+        relativePoint = relativePoint,
+        x = x,
+        y = y,
+    }
+end
+
+local function RestorePosition(frameName, frame)
+    local pos = db.positions[frameName]
+    if not pos then return end
+    frame:ClearAllPoints()
+    frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+end
+
+local function SetupFrame(entry)
+    local frame = _G[entry.name]
+    if not frame then return end
+
+    local handle = ResolveHandle(frame, entry.handle)
+
+    frame:SetMovable(true)
+    frame:SetClampedToScreen(true)
+
+    if not handle.RegisterForDrag then
+        local overlay = CreateFrame("Frame", nil, frame)
+        overlay:SetAllPoints(handle)
+        overlay:SetFrameStrata(frame:GetFrameStrata())
+        overlay:SetFrameLevel(frame:GetFrameLevel() + 10)
+        handle = overlay
+    end
+
+    handle:EnableMouse(true)
+    handle:RegisterForDrag("LeftButton")
+
+    handle:HookScript("OnDragStart", function()
+        if InCombatLockdown() then return end
+        frame:StartMoving()
+    end)
+
+    handle:HookScript("OnDragStop", function()
+        frame:StopMovingOrSizing()
+        SavePosition(entry.name, frame)
+    end)
+
+    handle:HookScript("OnMouseUp", function(_, button)
+        if button == "RightButton" then
+            db.positions[entry.name] = nil
+            frame:ClearAllPoints()
+            frame:SetUserPlaced(false)
+            UpdateUIPanelPositions(frame)
+        end
+    end)
+
+    if frame:IsShown() then
+        RestorePosition(entry.name, frame)
+    end
+end
+
+local function TeardownFrame(entry)
+    local frame = _G[entry.name]
+    if not frame then return end
+
+    frame:SetMovable(false)
+
+    local handle = ResolveHandle(frame, entry.handle)
+    handle:EnableMouse(false)
+end
+
+local framesByName = {}
+local pendingFrames = {}
+
+function Module:OnInitialize()
+    RefreshDB()
+    LT4.db.RegisterCallback(self, "OnProfileChanged", RefreshDB)
+
+    LT4:RegisterModuleOptions(self:GetName(), {
+        type = "group",
+        name = self:GetName(),
+        desc = self.description,
+        args = {
+            description = {
+                type = "description",
+                name = self.description .. "\n\n|cFFFFFF00Right-click|r a title bar to reset that window to its default position.\n",
+                order = 0,
+            },
+            resetAll = {
+                type = "execute",
+                name = "Reset All Positions",
+                desc = "Clear all saved window positions.",
+                order = 1,
+                confirm = true,
+                confirmText = "Reset all saved window positions?",
+                func = function()
+                    wipe(db.positions)
+                    for name, frame in pairs(framesByName) do
+                        if frame:IsShown() then
+                            frame:ClearAllPoints()
+                            frame:SetUserPlaced(false)
+                            UpdateUIPanelPositions(frame)
+                        end
+                    end
+                end,
+            },
+        },
+    })
+
+    if not LT4:GetModuleEnabled(self:GetName()) then
+        self:SetEnabledState(false)
+    end
+end
+
+local function HookFrameShow(entry, frame)
+    framesByName[entry.name] = frame
+    frame:HookScript("OnShow", function()
+        if InCombatLockdown() or not db.positions[entry.name] then return end
+        RestorePosition(entry.name, frame)
+    end)
+end
+
+local function TrySetupPending()
+    for i = #pendingFrames, 1, -1 do
+        local entry = pendingFrames[i]
+        local frame = _G[entry.name]
+        if frame then
+            SetupFrame(entry)
+            HookFrameShow(entry, frame)
+            table.remove(pendingFrames, i)
+        end
+    end
+end
+
+function Module:OnEnable()
+    RefreshDB()
+    wipe(framesByName)
+    wipe(pendingFrames)
+    for _, entry in ipairs(FRAMES) do
+        local frame = _G[entry.name]
+        if frame then
+            SetupFrame(entry)
+            HookFrameShow(entry, frame)
+        else
+            table.insert(pendingFrames, entry)
+        end
+    end
+    if #pendingFrames > 0 then
+        self:RegisterEvent("ADDON_LOADED", function()
+            TrySetupPending()
+            if #pendingFrames == 0 then
+                Module:UnregisterEvent("ADDON_LOADED")
+            end
+        end)
+    end
+    self:SecureHook("UpdateUIPanelPositions", function()
+        if InCombatLockdown() then return end
+        for name, frame in pairs(framesByName) do
+            if frame:IsShown() and db.positions[name] then
+                RestorePosition(name, frame)
+            end
+        end
+    end)
+end
+
+function Module:OnDisable()
+    for _, entry in ipairs(FRAMES) do
+        TeardownFrame(entry)
+    end
+    self:UnhookAll()
+end

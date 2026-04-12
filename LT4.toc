@@ -2,7 +2,7 @@
 ## Title: <4
 ## Notes: A modular suite of quality-of-life tweaks.
 ## Author: Fubbleskag
-## Version: 1.3.0
+## Version: 1.4.0
 ## SavedVariables: LT4DB
 ## OptionalDeps: Ace3
 ## IconTexture: Interface\AddOns\LT4\Media\LT4
@@ -34,6 +34,7 @@ Core.lua
 # Modules
 Modules\Minimap\SquareMinimap.lua
 Modules\General\QoL.lua
+Modules\General\WindowControl.lua
 Modules\Cursor\Cursor.lua
 Modules\Professions\General.lua
 Modules\Professions\Skinning.lua
