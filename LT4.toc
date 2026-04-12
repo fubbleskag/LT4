@@ -2,7 +2,7 @@
 ## Title: <4
 ## Notes: A modular suite of quality-of-life tweaks.
 ## Author: Fubbleskag
-## Version: 1.1.0
+## Version: 1.2.0
 ## SavedVariables: LT4DB
 ## OptionalDeps: Ace3
 ## IconTexture: Interface\AddOns\LT4\Media\LT4
