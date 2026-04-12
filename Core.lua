@@ -238,6 +238,10 @@ function LT4:OnEnable()
 end
 
 function LT4:OpenOptions()
+    if InCombatLockdown() then
+        self:Print("|cFFFF8800Cannot open settings during combat.|r")
+        return
+    end
     if self.categoryID then
         Settings.OpenToCategory(self.categoryID)
     else
