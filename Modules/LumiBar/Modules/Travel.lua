@@ -53,6 +53,56 @@ end
 
 function Travel:InvalidateCache()
     cachedScan = nil
+    self:RebuildDynamicOptions()
+end
+
+function Travel:RebuildDynamicOptions()
+    if not self.options then return end
+    local all = self:ScanAvailable()
+
+    local standardArgs = {}
+    for key, info in pairs(all.Standard) do
+        standardArgs[key:gsub(":", "_")] = {
+            name = function() return (GetResourceInfo(key)) or info.name or "Unknown Item" end,
+            type = "toggle",
+            width = "full",
+            get = function() return self.db.hiddenPortals[key] == true end,
+            set = function(_, val)
+                self.db.hiddenPortals[key] = val or nil
+                AceConfigRegistry:NotifyChange("LumiBar")
+            end,
+        }
+    end
+    self.options.args.standard.args = standardArgs
+
+    local expArgs = {
+        showSeasonPortals = self.options.args.expansions.args.showSeasonPortals,
+        sep = self.options.args.expansions.args.sep,
+    }
+    local sortedExps = {}
+    for expName in pairs(all.Expansions) do table_insert(sortedExps, expName) end
+    table_sort(sortedExps, function(a, b)
+        local weights = { ["Midnight"] = 1, ["The War Within"] = 2, ["Dragonflight"] = 3, ["Shadowlands"] = 4, ["BfA"] = 5, ["Legion"] = 6, ["Warlords"] = 7, ["Pandaria"] = 8, ["Cataclysm"] = 9, ["WotLK"] = 10 }
+        return (weights[a] or 99) < (weights[b] or 99)
+    end)
+    local eOrder = 1
+    for _, expName in ipairs(sortedExps) do
+        expArgs[expName:gsub(" ", "")] = {
+            name = expName,
+            type = "toggle",
+            width = "full",
+            get = function() return self.db.hiddenExpansions[expName] == true end,
+            set = function(_, val)
+                self.db.hiddenExpansions[expName] = val or nil
+                AceConfigRegistry:NotifyChange("LumiBar")
+            end,
+            order = eOrder,
+        }
+        eOrder = eOrder + 1
+    end
+    self.options.args.expansions.args = expArgs
+
+    AceConfigRegistry:NotifyChange("LumiBar")
 end
 
 function Travel:ScanAvailable()
@@ -181,45 +231,8 @@ function Travel:Init()
         }
     }
 
-    local all = self:ScanAvailable()
-    for key, info in pairs(all.Standard) do
-        options.args.standard.args[key:gsub(":", "_")] = {
-            name = info.name,
-            type = "toggle",
-            width = "full",
-            get = function() return self.db.hiddenPortals[key] == true end,
-            set = function(_, val) 
-                self.db.hiddenPortals[key] = val or nil
-                AceConfigRegistry:NotifyChange("LumiBar")
-            end,
-        }
-    end
-    
-    local eOrder = 1
-    -- Use a sorted list of expansion names for consistent order
-    local sortedExps = {}
-    for expName in pairs(all.Expansions) do table_insert(sortedExps, expName) end
-    table_sort(sortedExps, function(a, b) 
-        -- Custom sort to keep modern exps at top
-        local weights = { ["Midnight"] = 1, ["The War Within"] = 2, ["Dragonflight"] = 3, ["Shadowlands"] = 4, ["BfA"] = 5, ["Legion"] = 6, ["Warlords"] = 7, ["Pandaria"] = 8, ["Cataclysm"] = 9, ["WotLK"] = 10 }
-        return (weights[a] or 99) < (weights[b] or 99)
-    end)
-
-    for _, expName in ipairs(sortedExps) do
-        options.args.expansions.args[expName:gsub(" ", "")] = {
-            name = expName,
-            type = "toggle",
-            width = "full",
-            get = function() return self.db.hiddenExpansions[expName] == true end,
-            set = function(_, val) 
-                self.db.hiddenExpansions[expName] = val or nil
-                AceConfigRegistry:NotifyChange("LumiBar")
-            end,
-            order = eOrder,
-        }
-        eOrder = eOrder + 1
-    end
-
+    self.options = options
+    self:RebuildDynamicOptions()
     LumiBar:RegisterModuleOptions("Travel", options)
 end
 
@@ -388,6 +401,7 @@ function Travel:Enable(slotFrame)
         self.frame:RegisterEvent("SPELLS_CHANGED")
         self.frame:RegisterEvent("NEW_TOY_ADDED")
         self.frame:RegisterEvent("BAG_UPDATE_DELAYED")
+        self.frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
         self.frame:SetScript("OnEvent", function() self:InvalidateCache() end)
         self.eventsRegistered = true
     end
