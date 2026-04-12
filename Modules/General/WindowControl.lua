@@ -1,9 +1,13 @@
 local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
 local Module = LT4:NewModule("Window Control", "AceHook-3.0", "AceEvent-3.0")
 
-Module.description = "Enables moving Blizzard windows by dragging their title bars."
+Module.description = "Move and resize Blizzard windows."
 
 local db
+
+local SCALE_STEP = 0.05
+local SCALE_MIN  = 0.5
+local SCALE_MAX  = 2.0
 
 local FRAMES = {
     { name = "CharacterFrame" },
@@ -45,19 +49,26 @@ end
 
 local function SavePosition(frameName, frame)
     local point, relativeTo, relativePoint, x, y = frame:GetPoint(1)
+    local existing = db.positions[frameName] or {}
     db.positions[frameName] = {
         point = point,
         relativePoint = relativePoint,
         x = x,
         y = y,
+        scale = existing.scale,
     }
 end
 
 local function RestorePosition(frameName, frame)
     local pos = db.positions[frameName]
     if not pos then return end
-    frame:ClearAllPoints()
-    frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+    if pos.point then
+        frame:ClearAllPoints()
+        frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+    end
+    if pos.scale then
+        frame:SetScale(pos.scale)
+    end
 end
 
 local function SetupFrame(entry)
@@ -93,11 +104,32 @@ local function SetupFrame(entry)
     handle:HookScript("OnMouseUp", function(_, button)
         if button == "RightButton" then
             db.positions[entry.name] = nil
+            frame:SetScale(1)
             frame:ClearAllPoints()
             frame:SetUserPlaced(false)
             UpdateUIPanelPositions(frame)
         end
     end)
+
+    local function onMouseWheel(_, delta)
+        if not IsControlKeyDown() then return end
+        if InCombatLockdown() then return end
+        local current = frame:GetScale()
+        local newScale = math.max(SCALE_MIN, math.min(SCALE_MAX, current + delta * SCALE_STEP))
+        frame:SetScale(newScale)
+        if not db.positions[entry.name] then
+            db.positions[entry.name] = {}
+        end
+        db.positions[entry.name].scale = newScale
+    end
+
+    frame:EnableMouseWheel(true)
+    frame:HookScript("OnMouseWheel", onMouseWheel)
+
+    if handle ~= frame then
+        handle:EnableMouseWheel(true)
+        handle:HookScript("OnMouseWheel", onMouseWheel)
+    end
 
     if frame:IsShown() then
         RestorePosition(entry.name, frame)
@@ -109,6 +141,7 @@ local function TeardownFrame(entry)
     if not frame then return end
 
     frame:SetMovable(false)
+    frame:EnableMouseWheel(false)
 
     local handle = ResolveHandle(frame, entry.handle)
     handle:EnableMouse(false)
@@ -128,7 +161,7 @@ function Module:OnInitialize()
         args = {
             description = {
                 type = "description",
-                name = self.description .. "\n\n|cFFFFFF00Right-click|r a title bar to reset that window to its default position.\n",
+                name = self.description .. "\n\n|cFFFFFF00Drag|r a title bar to move.\n|cFFFFFF00Ctrl + Scroll Wheel|r to resize.\n|cFFFFFF00Right-click|r a title bar to reset position and scale.\n",
                 order = 0,
             },
             resetAll = {
@@ -141,6 +174,7 @@ function Module:OnInitialize()
                 func = function()
                     wipe(db.positions)
                     for name, frame in pairs(framesByName) do
+                        frame:SetScale(1)
                         if frame:IsShown() then
                             frame:ClearAllPoints()
                             frame:SetUserPlaced(false)
