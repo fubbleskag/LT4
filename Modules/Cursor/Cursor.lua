@@ -54,7 +54,7 @@ local function UpdateVisibility(index)
     if not frame then return end
     local cfg = db.cursors[index]
 
-    local visible = cfg.enabled and (not cfg.combatOnly or InCombatLockdown())
+    local visible = cfg.enabled and (not cfg.combatOnly or UnitAffectingCombat("player"))
     if visible then
         frame.lastX, frame.lastY = GetCursorUIPosition()
         frame.lastMove = GetTime()
