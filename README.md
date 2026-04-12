@@ -29,6 +29,7 @@ A full-width data bar anchored to the top or bottom of the screen. Modules are a
 - **Auto Sell Junk** — Sells grey items automatically at merchants.
 - **Collected Indicator** — Shows a checkmark and `[Known]` tag on already-collected items at merchants.
 - **Keystones** — Listens for `!keys` / `!keystone` / `!keystones` in party or guild chat and responds with a link to your current Mythic+ keystone.
+- **Social Automation** — Auto-accept group invites and summons, auto-reject duels and guild invites. Each toggle can be filtered to friends and/or guildmates.
 
 ### Cursor
 Anchors up to two customizable textures (rings, glows, crosses, etc.) to the mouse cursor. Each layer has independent color, scale, opacity, combat-only visibility, and idle fade.

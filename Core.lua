@@ -46,6 +46,17 @@ local defaults = {
             autoConfirmDelete = true,
             keystones = false,
             keystonesChannel = "BOTH",
+            autoAcceptGroup = false,
+            autoAcceptGroupFriends = false,
+            autoAcceptGroupGuild = false,
+            autoAcceptSummon = false,
+            autoAcceptSummonFriends = false,
+            autoAcceptSummonGuild = false,
+            autoRejectDuel = false,
+            autoRejectDuelFriends = false,
+            autoRejectDuelGuild = false,
+            autoRejectGuildInvite = false,
+            autoRejectGuildInviteFriends = false,
         },
         cursor = {
             cursors = {

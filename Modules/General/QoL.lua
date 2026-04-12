@@ -38,6 +38,44 @@ local function AddID(tooltip, id, typeLabel)
     tooltip:Show()
 end
 
+local function IsFriend(name)
+    if not name or name == "" then return false end
+    local short = Ambiguate(name, "short")
+
+    if C_FriendList.GetFriendInfo(short) then return true end
+
+    local numBN = BNGetNumFriends and BNGetNumFriends() or 0
+    for i = 1, numBN do
+        local accountInfo = C_BattleNet.GetFriendAccountInfo(i)
+        if accountInfo then
+            local gi = accountInfo.gameAccountInfo
+            if gi and gi.clientProgram == "WoW" and gi.characterName == short then
+                return true
+            end
+            local numGA = C_BattleNet.GetFriendNumGameAccounts and C_BattleNet.GetFriendNumGameAccounts(i) or 0
+            for j = 1, numGA do
+                local ga = C_BattleNet.GetFriendGameAccountInfo(i, j)
+                if ga and ga.clientProgram == "WoW" and ga.characterName == short then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+local function IsGuildmate(name)
+    if not name or not IsInGuild() then return false end
+    local short = Ambiguate(name, "short")
+    for i = 1, GetNumGuildMembers() do
+        local memberName = GetGuildRosterInfo(i)
+        if memberName and Ambiguate(memberName, "short") == short then
+            return true
+        end
+    end
+    return false
+end
+
 local function IsItemCollected(itemLink)
     if not itemLink then return false end
     
@@ -217,6 +255,137 @@ function Module:OnInitialize()
                         disabled = function() return not qol.keystones end,
                         get = function() return qol.keystonesChannel or "BOTH" end,
                         set = function(_, val) qol.keystonesChannel = val end,
+                    },
+                },
+            },
+            social = {
+                type = "group",
+                name = "Social",
+                inline = true,
+                order = 5,
+                args = {
+                    groupHeader = {
+                        type = "header",
+                        name = "Group Invites",
+                        order = 1,
+                    },
+                    autoAcceptGroup = {
+                        type = "toggle",
+                        name = "Auto-accept group invites",
+                        desc = "Automatically accept incoming party/raid invites.",
+                        width = "full",
+                        order = 2,
+                        get = function() return qol.autoAcceptGroup end,
+                        set = function(_, val) qol.autoAcceptGroup = val end,
+                    },
+                    autoAcceptGroupFriends = {
+                        type = "toggle",
+                        name = "Limit to friends",
+                        desc = "Only auto-accept from Battle.net or character friends. If both friends and guild are unchecked, invites from anyone are accepted.",
+                        order = 3,
+                        disabled = function() return not qol.autoAcceptGroup end,
+                        get = function() return qol.autoAcceptGroupFriends end,
+                        set = function(_, val) qol.autoAcceptGroupFriends = val end,
+                    },
+                    autoAcceptGroupGuild = {
+                        type = "toggle",
+                        name = "Limit to guild",
+                        desc = "Only auto-accept from guildmates. If both friends and guild are unchecked, invites from anyone are accepted.",
+                        order = 4,
+                        disabled = function() return not qol.autoAcceptGroup end,
+                        get = function() return qol.autoAcceptGroupGuild end,
+                        set = function(_, val) qol.autoAcceptGroupGuild = val end,
+                    },
+
+                    summonHeader = {
+                        type = "header",
+                        name = "Summons",
+                        order = 10,
+                    },
+                    autoAcceptSummon = {
+                        type = "toggle",
+                        name = "Auto-accept summons",
+                        desc = "Automatically confirm warlock/meeting stone summon requests.",
+                        width = "full",
+                        order = 11,
+                        get = function() return qol.autoAcceptSummon end,
+                        set = function(_, val) qol.autoAcceptSummon = val end,
+                    },
+                    autoAcceptSummonFriends = {
+                        type = "toggle",
+                        name = "Limit to friends",
+                        desc = "Only auto-accept summons from friends. If both friends and guild are unchecked, summons from anyone are accepted.",
+                        order = 12,
+                        disabled = function() return not qol.autoAcceptSummon end,
+                        get = function() return qol.autoAcceptSummonFriends end,
+                        set = function(_, val) qol.autoAcceptSummonFriends = val end,
+                    },
+                    autoAcceptSummonGuild = {
+                        type = "toggle",
+                        name = "Limit to guild",
+                        desc = "Only auto-accept summons from guildmates. If both friends and guild are unchecked, summons from anyone are accepted.",
+                        order = 13,
+                        disabled = function() return not qol.autoAcceptSummon end,
+                        get = function() return qol.autoAcceptSummonGuild end,
+                        set = function(_, val) qol.autoAcceptSummonGuild = val end,
+                    },
+
+                    duelHeader = {
+                        type = "header",
+                        name = "Duels",
+                        order = 20,
+                    },
+                    autoRejectDuel = {
+                        type = "toggle",
+                        name = "Auto-reject duels",
+                        desc = "Automatically decline incoming duel requests.",
+                        width = "full",
+                        order = 21,
+                        get = function() return qol.autoRejectDuel end,
+                        set = function(_, val) qol.autoRejectDuel = val end,
+                    },
+                    autoRejectDuelFriends = {
+                        type = "toggle",
+                        name = "Except from friends",
+                        desc = "Allow duel requests from friends through instead of rejecting them.",
+                        order = 22,
+                        disabled = function() return not qol.autoRejectDuel end,
+                        get = function() return qol.autoRejectDuelFriends end,
+                        set = function(_, val) qol.autoRejectDuelFriends = val end,
+                    },
+                    autoRejectDuelGuild = {
+                        type = "toggle",
+                        name = "Except from guild",
+                        desc = "Allow duel requests from guildmates through instead of rejecting them.",
+                        order = 23,
+                        disabled = function() return not qol.autoRejectDuel end,
+                        get = function() return qol.autoRejectDuelGuild end,
+                        set = function(_, val) qol.autoRejectDuelGuild = val end,
+                    },
+
+                    guildHeader = {
+                        type = "header",
+                        name = "Guild Invites",
+                        order = 30,
+                    },
+                    autoRejectGuildInvite = {
+                        type = "toggle",
+                        name = "Auto-reject guild invites",
+                        desc = "Automatically decline incoming guild invitations.",
+                        width = "full",
+                        order = 31,
+                        get = function() return qol.autoRejectGuildInvite end,
+                        set = function(_, val) qol.autoRejectGuildInvite = val end,
+                    },
+                    autoRejectGuildInviteFriends = {
+                        type = "toggle",
+                        name = "Except from friends",
+                        desc = "Allow guild invites from friends through instead of rejecting them.",
+                        width = "full",
+                        order = 32,
+                        disabled = function() return not qol.autoRejectGuildInvite end,
+                        get = function() return qol.autoRejectGuildInviteFriends end,
+                        set = function(_, val) qol.autoRejectGuildInviteFriends = val end,
                     },
                 },
             },
@@ -471,6 +640,64 @@ function Module:HandleKeystoneRequest(event, msg, _, _, _, _, _, _, _, _, _, _, 
     SendChatMessage(link, channel)
 end
 
+function Module:PARTY_INVITE_REQUEST(event, sender)
+    if not LT4:GetModuleEnabled("Quality of Life") or not qol.autoAcceptGroup then return end
+    if not sender or sender == "" then return end
+
+    local limitFriends = qol.autoAcceptGroupFriends
+    local limitGuild = qol.autoAcceptGroupGuild
+    if limitFriends or limitGuild then
+        local ok = false
+        if limitFriends and IsFriend(sender) then ok = true end
+        if not ok and limitGuild and IsGuildmate(sender) then ok = true end
+        if not ok then return end
+    end
+
+    AcceptGroup()
+    StaticPopup_Hide("PARTY_INVITE")
+    StaticPopup_Hide("PARTY_INVITE_XREALM")
+end
+
+function Module:CONFIRM_SUMMON()
+    if not LT4:GetModuleEnabled("Quality of Life") or not qol.autoAcceptSummon then return end
+
+    local summoner = GetSummonConfirmSummoner and GetSummonConfirmSummoner()
+    if not summoner or summoner == "" then return end
+
+    local limitFriends = qol.autoAcceptSummonFriends
+    local limitGuild = qol.autoAcceptSummonGuild
+    if limitFriends or limitGuild then
+        local ok = false
+        if limitFriends and IsFriend(summoner) then ok = true end
+        if not ok and limitGuild and IsGuildmate(summoner) then ok = true end
+        if not ok then return end
+    end
+
+    ConfirmSummon()
+    StaticPopup_Hide("CONFIRM_SUMMON")
+end
+
+function Module:DUEL_REQUESTED(event, challenger)
+    if not LT4:GetModuleEnabled("Quality of Life") or not qol.autoRejectDuel then return end
+    if not challenger or challenger == "" then return end
+
+    if qol.autoRejectDuelFriends and IsFriend(challenger) then return end
+    if qol.autoRejectDuelGuild and IsGuildmate(challenger) then return end
+
+    CancelDuel()
+    StaticPopup_Hide("DUEL_REQUESTED")
+end
+
+function Module:GUILD_INVITE_REQUEST(event, inviter)
+    if not LT4:GetModuleEnabled("Quality of Life") or not qol.autoRejectGuildInvite then return end
+    if not inviter or inviter == "" then return end
+
+    if qol.autoRejectGuildInviteFriends and IsFriend(inviter) then return end
+
+    DeclineGuild()
+    StaticPopup_Hide("GUILD_INVITE")
+end
+
 function Module:MERCHANT_SHOW()
     if not LT4:GetModuleEnabled("Quality of Life") then return end
 
@@ -713,6 +940,15 @@ function Module:OnEnable()
     self:RegisterEvent("CHAT_MSG_PARTY", "HandleKeystoneRequest")
     self:RegisterEvent("CHAT_MSG_PARTY_LEADER", "HandleKeystoneRequest")
     self:RegisterEvent("CHAT_MSG_GUILD", "HandleKeystoneRequest")
+    self:RegisterEvent("PARTY_INVITE_REQUEST")
+    self:RegisterEvent("CONFIRM_SUMMON")
+    self:RegisterEvent("DUEL_REQUESTED")
+    self:RegisterEvent("GUILD_INVITE_REQUEST")
+
+    -- Prime guild roster for friend/guild filter checks
+    if IsInGuild() and C_GuildInfo and C_GuildInfo.GuildRoster then
+        C_GuildInfo.GuildRoster()
+    end
     self:SecureHook("MerchantFrame_UpdateMerchantInfo", "UpdateMerchantCollectedIndicators")
 
     -- Update alt list visibility when switching between Inbox/Send Mail tabs
