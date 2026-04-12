@@ -8,6 +8,10 @@ local DOUBLE_CLICK_MIN = 0.05
 local DOUBLE_CLICK_MAX = 0.4
 local FISHING_OVERRIDE_CLEAR_DELAY = 1
 
+local KEYSTONE_ITEM_ID = 180653
+local KEYSTONE_RESPONSE_COOLDOWN = 5
+local keystoneLastResponse = {}
+
 -- AceDB profile slices; refreshed via RefreshDB on init and profile changes
 local qol, minimap
 
@@ -182,6 +186,37 @@ function Module:OnInitialize()
                         order = 4,
                         get = function() return qol.collectedIndicator end,
                         set = function(_, val) qol.collectedIndicator = val end,
+                    },
+                },
+            },
+            keystones = {
+                type = "group",
+                name = "Keystones",
+                inline = true,
+                order = 4,
+                args = {
+                    enabled = {
+                        type = "toggle",
+                        name = "Announce on !keys",
+                        desc = "Listen for !keys, !keystone, or !keystones in chat and respond with a link to your current Mythic+ keystone.",
+                        width = "full",
+                        order = 1,
+                        get = function() return qol.keystones end,
+                        set = function(_, val) qol.keystones = val end,
+                    },
+                    channel = {
+                        type = "select",
+                        name = "Listen in",
+                        desc = "Which chat channels to monitor for keystone requests.",
+                        order = 2,
+                        values = {
+                            PARTY = "Party",
+                            GUILD = "Guild",
+                            BOTH = "Both",
+                        },
+                        disabled = function() return not qol.keystones end,
+                        get = function() return qol.keystonesChannel or "BOTH" end,
+                        set = function(_, val) qol.keystonesChannel = val end,
                     },
                 },
             },
@@ -387,6 +422,53 @@ function Module:UpdateMerchantCollectedIndicators()
             end
         end
     end
+end
+
+local function GetOwnedKeystoneLink()
+    if not C_MythicPlus or not C_MythicPlus.GetOwnedKeystoneChallengeMapID then return nil end
+    if not C_MythicPlus.GetOwnedKeystoneChallengeMapID() then return nil end
+
+    for bag = 0, 5 do
+        local numSlots = C_Container.GetContainerNumSlots(bag)
+        for slot = 1, numSlots do
+            local info = C_Container.GetContainerItemInfo(bag, slot)
+            if info and info.itemID == KEYSTONE_ITEM_ID then
+                return C_Container.GetContainerItemLink(bag, slot)
+            end
+        end
+    end
+    return nil
+end
+
+function Module:HandleKeystoneRequest(event, msg, _, _, _, _, _, _, _, _, _, _, guid)
+    if not LT4:GetModuleEnabled("Quality of Life") or not qol.keystones then return end
+
+    local setting = qol.keystonesChannel or "BOTH"
+    local isGuild = (event == "CHAT_MSG_GUILD")
+    if isGuild then
+        if setting ~= "GUILD" and setting ~= "BOTH" then return end
+    else
+        if setting ~= "PARTY" and setting ~= "BOTH" then return end
+    end
+
+    if guid and guid == UnitGUID("player") then return end
+
+    local firstWord = msg and strlower(msg):match("^(%S+)")
+    if firstWord ~= "!keys" and firstWord ~= "!keystone" and firstWord ~= "!keystones" then
+        return
+    end
+
+    local channel = isGuild and "GUILD" or "PARTY"
+    local now = GetTime()
+    if keystoneLastResponse[channel] and (now - keystoneLastResponse[channel]) < KEYSTONE_RESPONSE_COOLDOWN then
+        return
+    end
+
+    local link = GetOwnedKeystoneLink()
+    if not link then return end
+
+    keystoneLastResponse[channel] = now
+    SendChatMessage(link, channel)
 end
 
 function Module:MERCHANT_SHOW()
@@ -628,6 +710,9 @@ function Module:OnEnable()
     self:RegisterEvent("MERCHANT_SHOW")
     self:RegisterEvent("MAIL_SHOW")
     self:RegisterEvent("MAIL_CLOSED")
+    self:RegisterEvent("CHAT_MSG_PARTY", "HandleKeystoneRequest")
+    self:RegisterEvent("CHAT_MSG_PARTY_LEADER", "HandleKeystoneRequest")
+    self:RegisterEvent("CHAT_MSG_GUILD", "HandleKeystoneRequest")
     self:SecureHook("MerchantFrame_UpdateMerchantInfo", "UpdateMerchantCollectedIndicators")
 
     -- Update alt list visibility when switching between Inbox/Send Mail tabs

@@ -34,6 +34,7 @@ Core.lua
 # Modules
 Modules\Minimap\SquareMinimap.lua
 Modules\General\QoL.lua
+Modules\Cursor\Cursor.lua
 Modules\Professions\General.lua
 Modules\Professions\Skinning.lua
 Modules\Professions\SkinningTracker.lua

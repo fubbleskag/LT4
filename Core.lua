@@ -8,6 +8,7 @@ LT4.moduleOrder = {
     ["LumiBar"]        = 10,
     ["SquareMinimap"]  = 20,
     ["Professions"]    = 30,
+    ["Cursor"]         = 40,
     ["Quality of Life"] = 99,
 }
 
@@ -43,6 +44,30 @@ local defaults = {
             mailAlts = true,
             mailAltSort = "login",
             autoConfirmDelete = true,
+            keystones = false,
+            keystonesChannel = "BOTH",
+        },
+        cursor = {
+            cursors = {
+                [1] = {
+                    enabled = true,
+                    texture = "Ring 1",
+                    color = { r = 1, g = 1, b = 1 },
+                    scale = 1,
+                    opacity = 1,
+                    fadeIdle = false,
+                    combatOnly = false,
+                },
+                [2] = {
+                    enabled = true,
+                    texture = "Ring Soft 1",
+                    color = { r = 1, g = 0, b = 0 },
+                    scale = 0.9,
+                    opacity = 1,
+                    fadeIdle = false,
+                    combatOnly = true,
+                },
+            },
         },
     },
 }
