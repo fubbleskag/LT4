@@ -271,6 +271,7 @@ function Module:UpdateMinimap()
         MinimapCluster.BorderTop,
         MinimapCluster.InstanceDifficulty,
         MinimapCluster.IndicatorFrame.MailFrame,
+	MinimapCluster.Tracking,
     }
 
     for _, frame in pairs(hideFrames) do
