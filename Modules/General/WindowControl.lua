@@ -31,6 +31,7 @@ local FRAMES = {
     { name = "ProfessionsFrame" },
     { name = "FriendsFrame" },
     { name = "QuestFrame" },
+    { name = "HousingDashboardFrame" },
 }
 
 local function RefreshDB()
