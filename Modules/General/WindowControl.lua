@@ -14,7 +14,7 @@ local FRAMES = {
     { name = "ProfessionsBookFrame" },
     { name = "PlayerSpellsFrame" },
     { name = "AchievementFrame",  handle = "Header" },
-    { name = "WorldMapFrame",     handle = "BorderFrame" },
+    { name = "WorldMapFrame", },
     { name = "CommunitiesFrame" },
     { name = "PVEFrame" },
     { name = "CollectionsJournal" },
@@ -62,6 +62,10 @@ local function SavePosition(frameName, frame)
     }
 end
 
+local function IsMaximized(frame)
+    return frame.IsMaximized and frame:IsMaximized()
+end
+
 local function RestorePosition(frameName, frame)
     local pos = db.positions[frameName]
     if not pos then return end
@@ -69,7 +73,7 @@ local function RestorePosition(frameName, frame)
         frame:ClearAllPoints()
         frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
     end
-    if pos.scale then
+    if pos.scale and not IsMaximized(frame) then
         frame:SetScale(pos.scale)
     end
 end
@@ -121,6 +125,7 @@ local function SetupFrame(entry)
     local function onMouseWheel(_, delta)
         if not IsControlKeyDown() then return end
         if InCombatLockdown() then return end
+        if IsMaximized(frame) then return end
         local current = frame:GetScale()
         local newScale = math.max(SCALE_MIN, math.min(SCALE_MAX, current + delta * SCALE_STEP))
         frame:SetScale(newScale)
@@ -204,6 +209,22 @@ local function HookFrameShow(entry, frame)
         if InCombatLockdown() or not db.positions[entry.name] then return end
         RestorePosition(entry.name, frame)
     end)
+    if frame.Maximize then
+        hooksecurefunc(frame, "Maximize", function()
+            local pos = db.positions[entry.name]
+            if pos and pos.scale then
+                frame:SetScale(1)
+            end
+        end)
+    end
+    if frame.Minimize then
+        hooksecurefunc(frame, "Minimize", function()
+            local pos = db.positions[entry.name]
+            if pos and pos.scale then
+                frame:SetScale(pos.scale)
+            end
+        end)
+    end
 end
 
 local function TrySetupPending()
