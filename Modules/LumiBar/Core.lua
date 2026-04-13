@@ -273,6 +273,12 @@ function LumiBar:RefreshConfig()
     self:RefreshModules()
 end
 
+function LumiBar:InvalidateCaches()
+    for name, module in pairs(self.Modules) do
+        safeCall(module, name, "InvalidateCache")
+    end
+end
+
 function LumiBar:OnDisable()
     for name, module in pairs(self.Modules) do
         safeCall(module, name, "Disable")

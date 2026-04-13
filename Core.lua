@@ -174,8 +174,9 @@ function LT4:OnInitialize()
             if IsShiftKeyDown() and button == "LeftButton" then
                 local LumiBar = self:GetModule("LumiBar", true)
                 if LumiBar and not InCombatLockdown() then
+                    LumiBar:InvalidateCaches()
                     LumiBar:RefreshConfig()
-                    self:Print("|cff00ccffLumiBar|r refreshed.")
+                    self:Print("|cff00ccffLumiBar|r refreshed and caches invalidated.")
                 end
             else
                 self:OpenOptions()
@@ -184,7 +185,7 @@ function LT4:OnInitialize()
         OnTooltipShow = function(tooltip)
             tooltip:AddLine("|cFF00AAFF" .. LT4.title .. "|r")
             tooltip:AddLine("|cFFFFFFFFLeft-Click:|r Open Settings")
-            tooltip:AddLine("|cFFFFFFFFShift + Left-Click:|r Refresh LumiBar")
+            tooltip:AddLine("|cFFFFFFFFShift + Left-Click:|r Refresh LumiBar & Rescan Caches")
         end,
     })
     icon:Register("LT4", LT4_LDB, self.db.profile.minimap)
