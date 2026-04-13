@@ -29,7 +29,7 @@ Data.PortalNames = {
     [1254559] = "Maisara Caverns",
     [1254551] = "Seat of the Triumvirate",
     [393273]  = "Algeth'ar Academy",
-    [1254557] = "Skyreach",
+    [159898] = "Skyreach",
     [1254555] = "Pit of Saron",
 
     -- The War Within
