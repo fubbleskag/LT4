@@ -10,6 +10,7 @@ LT4.moduleOrder = {
     ["Professions"]    = 30,
     ["Cursor"]         = 40,
     ["Window Control"]  = 50,
+    ["Chat"]            = 60,
     ["Quality of Life"] = 99,
 }
 
@@ -20,6 +21,7 @@ LT4.title = C_AddOns.GetAddOnMetadata("LT4", "Title") or "LT4"
 local defaults = {
     global = {
         altCharacters = {},
+        chatHistory = {},
     },
     profile = {
         minimap = {
@@ -61,6 +63,16 @@ local defaults = {
         },
         windowControl = {
             positions = {},
+        },
+        chat = {
+            history = {
+                enabled = true,
+                lines = 128,
+            },
+            style = {
+                flatTabs = true,
+                alwaysShowEditBox = true,
+            },
         },
         cursor = {
             cursors = {

@@ -35,6 +35,7 @@ Core.lua
 Modules\Minimap\SquareMinimap.lua
 Modules\General\QoL.lua
 Modules\General\WindowControl.lua
+Modules\Chat\Chat.lua
 Modules\Cursor\Cursor.lua
 Modules\Professions\General.lua
 Modules\Professions\Skinning.lua
