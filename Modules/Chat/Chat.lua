@@ -10,8 +10,44 @@ local isReplaying = false
 
 local FLAT_BG = { 0, 0, 0, 0.596 }
 local FLAT_BORDER = { 0.3, 0.3, 0.3, 1 }
-local TAB_SELECTED = { 0.15, 0.15, 0.15, 0.9 }
-local TAB_NORMAL = { 0.08, 0.08, 0.08, 0.6 }
+
+local frameColors = {}
+
+local function GetChatFrameIndex(cf)
+    if not cf then return nil end
+    local name = cf:GetName() or ""
+    return tonumber(name:match("ChatFrame(%d+)$"))
+end
+
+local function LoadFrameColorsFromWoW()
+    for i = 1, NUM_CHAT_WINDOWS do
+        local _, _, r, g, b, a = GetChatWindowInfo(i)
+        if r then
+            frameColors[i] = { r = r, g = g, b = b, a = a }
+        end
+    end
+end
+
+local function GetFrameColor(cf)
+    if not cf then return unpack(FLAT_BG) end
+    local n = GetChatFrameIndex(cf)
+    local c = n and frameColors[n]
+    if c then
+        return (c.r or FLAT_BG[1]), (c.g or FLAT_BG[2]), (c.b or FLAT_BG[3]), (c.a or FLAT_BG[4])
+    end
+    return unpack(FLAT_BG)
+end
+
+local function GetEditBoxForFrame(cf)
+    local n = GetChatFrameIndex(cf)
+    return n and _G["ChatFrame" .. n .. "EditBox"]
+end
+
+local function GetFrameForEditBox(eb)
+    local name = (eb and eb:GetName()) or ""
+    local n = tonumber(name:match("ChatFrame(%d+)EditBox"))
+    return n and _G["ChatFrame" .. n]
+end
 
 local function RefreshDB()
     db = LT4.db.profile.chat
@@ -157,11 +193,8 @@ local function UpdateTabBackground(tab)
     if not tab or not tab.flatBg then return end
     local cf = _G["ChatFrame" .. tab:GetID()]
     local selected = cf and cf == SELECTED_CHAT_FRAME
-    if selected then
-        tab.flatBg:SetColorTexture(unpack(TAB_SELECTED))
-    else
-        tab.flatBg:SetColorTexture(unpack(TAB_NORMAL))
-    end
+    local r, g, b, a = GetFrameColor(cf)
+    tab.flatBg:SetColorTexture(r, g, b, selected and a or a * 0.65)
     local text = tab.Text or _G[(tab:GetName() or "") .. "Text"]
     if text then
         text:SetTextColor(1, 1, 1, 1)
@@ -173,6 +206,14 @@ local function UpdateAllTabBackgrounds()
     for i = 1, NUM_CHAT_WINDOWS do
         local tab = _G["ChatFrame" .. i .. "Tab"]
         if tab then UpdateTabBackground(tab) end
+    end
+end
+
+local function SyncEditBoxToSelected()
+    local cf = SELECTED_CHAT_FRAME or ChatFrame1
+    local editBox = ChatFrame1EditBox
+    if editBox and editBox.flatBg then
+        editBox.flatBg:SetColorTexture(GetFrameColor(cf))
     end
 end
 
@@ -201,7 +242,7 @@ local function StyleTab(tab)
     local bg = tab:CreateTexture(nil, "BACKGROUND", nil, -8)
     bg:SetPoint("TOPLEFT", 2, -4)
     bg:SetPoint("BOTTOMRIGHT", -2, 2)
-    bg:SetColorTexture(unpack(TAB_NORMAL))
+    bg:SetColorTexture(0, 0, 0, 0)
     tab.flatBg = bg
 
     tab:HookScript("OnEnter", function(self)
@@ -214,6 +255,7 @@ local function StyleTab(tab)
     end)
     tab:HookScript("OnClick", function()
         C_Timer.After(0, UpdateAllTabBackgrounds)
+        C_Timer.After(0, SyncEditBoxToSelected)
     end)
 
     local function IsTabFrame(f)
@@ -245,12 +287,26 @@ local function StyleTab(tab)
     styledTabs[tab] = true
 end
 
+local function SyncFrameColor(cf)
+    if not cf then return end
+    local n = GetChatFrameIndex(cf)
+    if n then
+        local tab = _G["ChatFrame" .. n .. "Tab"]
+        if tab then UpdateTabBackground(tab) end
+    end
+    local editBox = GetEditBoxForFrame(cf)
+    if editBox and editBox.flatBg then
+        editBox.flatBg:SetColorTexture(GetFrameColor(cf))
+    end
+end
+
 local function StyleAllTabs()
     for i = 1, NUM_CHAT_WINDOWS do
         local tab = _G["ChatFrame" .. i .. "Tab"]
         if tab then StyleTab(tab) end
     end
     UpdateAllTabBackgrounds()
+    SyncEditBoxToSelected()
 end
 
 -- ============================================================
@@ -283,7 +339,7 @@ local function StyleEditBox(editBox)
 
     local bg = editBox:CreateTexture(nil, "BACKGROUND", nil, -8)
     bg:SetAllPoints()
-    bg:SetColorTexture(unpack(FLAT_BG))
+    bg:SetColorTexture(GetFrameColor(GetFrameForEditBox(editBox)))
     editBox.flatBg = bg
 
     local topLine = editBox:CreateTexture(nil, "BORDER", nil, -7)
@@ -322,6 +378,11 @@ local function StyleChatFrame(cf)
     end
     if cf.SetBackdropBorderColor then
         cf:SetBackdropBorderColor(0, 0, 0, 0)
+    end
+    if cf.SetBackdropColor then
+        hooksecurefunc(cf, "SetBackdropColor", function(self)
+            SyncFrameColor(self)
+        end)
     end
 end
 
@@ -486,11 +547,33 @@ function Module:OnEnable()
         self:SecureHook(ChatFrame1, "AddMessage", CaptureMessage)
     end
 
+    LoadFrameColorsFromWoW()
+
     if db.style.flatTabs then
         StyleAllTabs()
         self:SecureHook("FCF_OpenNewWindow", function()
             C_Timer.After(0.1, StyleAllTabs)
         end)
+        if FCF_SetWindowColor then
+            self:SecureHook("FCF_SetWindowColor", function(cf, r, g, b)
+                local n = GetChatFrameIndex(cf)
+                if n then
+                    frameColors[n] = frameColors[n] or {}
+                    frameColors[n].r, frameColors[n].g, frameColors[n].b = r, g, b
+                    SyncFrameColor(cf)
+                end
+            end)
+        end
+        if FCF_SetWindowAlpha then
+            self:SecureHook("FCF_SetWindowAlpha", function(cf, a)
+                local n = GetChatFrameIndex(cf)
+                if n then
+                    frameColors[n] = frameColors[n] or {}
+                    frameColors[n].a = a
+                    SyncFrameColor(cf)
+                end
+            end)
+        end
         for i = 1, NUM_CHAT_WINDOWS do
             local tab = _G["ChatFrame" .. i .. "Tab"]
             if tab then
