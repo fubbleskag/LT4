@@ -223,21 +223,20 @@ function LT4:SetupAllOptions()
     for name, entry in pairs(self.moduleRegistry) do
         table.insert(sorted, { name = name, options = entry.options, order = entry.order })
     end
-    table.sort(sorted, function(a, b) return a.order < b.order end)
+    table.sort(sorted, function(a, b) return a.name < b.name end)
 
     -- 2. Register in sorted order
-    for _, entry in ipairs(sorted) do
+    for i, entry in ipairs(sorted) do
         local name = entry.name
         local options = entry.options
-        local order = entry.order
 
         -- Add toggle to main page
         self.options.args.moduleToggles.args[name] = {
             type = "toggle",
-            name = "Enable " .. name,
+            name = name,
             desc = "Enable or disable the " .. name .. " module.",
             width = "full",
-            order = order,
+            order = i,
             get = function() return self:GetModuleEnabled(name) end,
             set = function(_, val) self:SetModuleEnabled(name, val) end,
         }
@@ -266,11 +265,18 @@ function LT4:OnEnable()
     for name, module in self:IterateModules() do
         if self:GetModuleEnabled(name) then
             module:Enable()
-            table.insert(enabledModules, "|cFF00FF00" .. name .. "|r")
+            table.insert(enabledModules, name)
         end
     end
 
-    local status = #enabledModules > 0 and ("Active Modules: " .. table.concat(enabledModules, ", ")) or "|cFFFF8800No modules enabled.|r"
+    table.sort(enabledModules)
+
+    local names = {}
+    for _, name in ipairs(enabledModules) do
+        table.insert(names, "|cFF00FF00" .. name .. "|r")
+    end
+
+    local status = #names > 0 and ("Active Modules: " .. table.concat(names, ", ")) or "|cFFFF8800No modules enabled.|r"
     self:Print(string.format("|cFF00AAFFv%s Loaded.|r %s", self.version, status))
 end
 
