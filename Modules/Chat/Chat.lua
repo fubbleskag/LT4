@@ -1,5 +1,6 @@
 local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
 local Module = LT4:NewModule("Chat", "AceEvent-3.0", "AceHook-3.0")
+local LSM = LibStub("LibSharedMedia-3.0", true)
 Module.description = "Chat enhancements: history persistence, copy support, and flat styling."
 Module.requiresReload = true
 
@@ -7,6 +8,7 @@ local db, chatHistory
 local copyFrame, buttonBar
 local styledTabs, styledEditBoxes = {}, {}
 local isReplaying = false
+local originalChatFont = nil
 
 local FLAT_BG = { 0, 0, 0, 0.596 }
 local FLAT_BORDER = { 0.3, 0.3, 0.3, 1 }
@@ -78,6 +80,16 @@ local function StripFormatting(text)
     return strtrim(text)
 end
 
+local function StripFormattingKeepColors(text)
+    if not text then return "" end
+    text = text:gsub("|H.-|h(.-)|h", "%1")  -- hyperlinks: keep display text
+    text = text:gsub("|T.-|t", "")
+    text = text:gsub("|A.-|a", "")
+    text = text:gsub("|K.-|k", "")
+    text = text:gsub("{.-}", "")
+    return strtrim(text)
+end
+
 -- ============================================================
 -- History
 -- ============================================================
@@ -120,15 +132,37 @@ end
 -- Copy Frame
 -- ============================================================
 
+local function SaveCopyWindowState(f)
+    local cw = db.copyWindow
+    cw.x = f:GetLeft()
+    cw.y = f:GetTop()
+    cw.width  = f:GetWidth()
+    cw.height = f:GetHeight()
+end
+
+local function RestoreCopyWindowState(f)
+    local cw = db.copyWindow
+    f:SetSize(cw.width or 500, cw.height or 400)
+    if cw.x and cw.y then
+        f:ClearAllPoints()
+        f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", cw.x, cw.y)
+    end
+end
+
 local function CreateCopyFrame()
     local f = CreateFrame("Frame", "LT4ChatCopyFrame", UIParent, "BackdropTemplate")
     f:SetSize(500, 400)
     f:SetPoint("CENTER")
     f:SetMovable(true)
+    f:SetResizable(true)
+    f:SetResizeBounds(300, 200)
     f:EnableMouse(true)
     f:RegisterForDrag("LeftButton")
     f:SetScript("OnDragStart", f.StartMoving)
-    f:SetScript("OnDragStop", f.StopMovingOrSizing)
+    f:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        SaveCopyWindowState(self)
+    end)
     f:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -148,7 +182,7 @@ local function CreateCopyFrame()
 
     local scroll = CreateFrame("ScrollFrame", "LT4ChatCopyScroll", f, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 10, -30)
-    scroll:SetPoint("BOTTOMRIGHT", -30, 10)
+    scroll:SetPoint("BOTTOMRIGHT", -30, 16)
 
     local editBox = CreateFrame("EditBox", "LT4ChatCopyEditBox", scroll)
     editBox:SetMultiLine(true)
@@ -158,7 +192,28 @@ local function CreateCopyFrame()
     editBox:SetScript("OnEscapePressed", function() f:Hide() end)
     scroll:SetScrollChild(editBox)
 
+    local grip = CreateFrame("Button", nil, f)
+    grip:SetSize(16, 16)
+    grip:SetPoint("BOTTOMRIGHT", -2, 2)
+    grip:SetScript("OnMouseDown", function() f:StartSizing("BOTTOMRIGHT") end)
+    grip:SetScript("OnMouseUp", function()
+        f:StopMovingOrSizing()
+        editBox:SetWidth(scroll:GetWidth())
+        SaveCopyWindowState(f)
+    end)
+    local gripTex = grip:CreateTexture(nil, "OVERLAY")
+    gripTex:SetAllPoints()
+    gripTex:SetTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+
+    f:SetScript("OnSizeChanged", function()
+        editBox:SetWidth(scroll:GetWidth())
+    end)
+
     f.editBox = editBox
+    f.scroll = scroll
+    RestoreCopyWindowState(f)
     f:Hide()
     tinsert(UISpecialFrames, "LT4ChatCopyFrame")
     return f
@@ -175,14 +230,15 @@ local function ShowCopyFrame(chatFrame)
     for i = 1, numMessages do
         local msg = chatFrame:GetMessageInfo(i)
         if msg then
-            lines[#lines + 1] = StripFormatting(msg)
+            lines[#lines + 1] = StripFormattingKeepColors(msg)
         end
     end
 
     copyFrame.editBox:SetText(table.concat(lines, "\n"))
-    copyFrame.editBox:HighlightText()
-    copyFrame.editBox:SetFocus()
     copyFrame:Show()
+    C_Timer.After(0, function()
+        copyFrame.scroll:SetVerticalScroll(copyFrame.scroll:GetVerticalScrollRange())
+    end)
 end
 
 -- ============================================================
@@ -264,25 +320,27 @@ local function StyleTab(tab)
         return n:match("^ChatFrame%d+Tab$") ~= nil
     end
 
-    local offsetting = false
-    hooksecurefunc(tab, "SetPoint", function(self, p, r, rp, x, y)
-        if offsetting or IsTabFrame(r) then return end
-        offsetting = true
-        self:SetPoint(p, r, rp, x, (y or 0) - 2)
-        offsetting = false
-    end)
-
-    for i = 1, tab:GetNumPoints() do
-        local p, r, rp, x, y = tab:GetPoint(i)
-        if p and not IsTabFrame(r) then
+    if db.style.flatTabs then
+        local offsetting = false
+        hooksecurefunc(tab, "SetPoint", function(self, p, r, rp, x, y)
+            if offsetting or IsTabFrame(r) then return end
             offsetting = true
-            tab:SetPoint(p, r, rp, x, (y or 0) - 2)
+            self:SetPoint(p, r, rp, x, (y or 0) - 2)
             offsetting = false
-        end
-    end
+        end)
 
-    local h = tab:GetHeight()
-    if h and h > 2 then tab:SetHeight(h - 2) end
+        for i = 1, tab:GetNumPoints() do
+            local p, r, rp, x, y = tab:GetPoint(i)
+            if p and not IsTabFrame(r) then
+                offsetting = true
+                tab:SetPoint(p, r, rp, x, (y or 0) - 2)
+                offsetting = false
+            end
+        end
+
+        local h = tab:GetHeight()
+        if h and h > 2 then tab:SetHeight(h - 2) end
+    end
 
     styledTabs[tab] = true
 end
@@ -455,6 +513,36 @@ local function RepositionQuickJoinButton()
 end
 
 -- ============================================================
+-- Font
+-- ============================================================
+
+local function ApplyChatFont()
+    local fontCfg = db.style.font
+    local path, size, flags = ChatFontNormal:GetFont()
+
+    if not originalChatFont then
+        originalChatFont = { path = path, size = size, flags = flags or "" }
+    end
+
+    local newPath, newSize, newFlags
+    if fontCfg and fontCfg.enabled then
+        newPath  = (fontCfg.face and LSM and LSM:Fetch("font", fontCfg.face)) or originalChatFont.path
+        newSize  = fontCfg.size or originalChatFont.size
+        newFlags = originalChatFont.flags
+    else
+        newPath  = originalChatFont.path
+        newSize  = originalChatFont.size
+        newFlags = originalChatFont.flags
+    end
+
+    ChatFontNormal:SetFont(newPath, newSize, newFlags)
+    for i = 1, NUM_CHAT_WINDOWS do
+        local cf = _G["ChatFrame" .. i]
+        if cf then cf:SetFont(newPath, newSize, newFlags) end
+    end
+end
+
+-- ============================================================
 -- Lifecycle
 -- ============================================================
 
@@ -530,6 +618,45 @@ function Module:OnInitialize()
                             StaticPopup_Show("LT4_RELOAD_UI")
                         end,
                     },
+                    fontEnabled = {
+                        type = "toggle",
+                        name = "Override Font",
+                        desc = "Apply a custom font to chat frames.",
+                        width = "full",
+                        order = 3,
+                        get = function() return db.style.font.enabled end,
+                        set = function(_, val)
+                            db.style.font.enabled = val
+                            ApplyChatFont()
+                        end,
+                    },
+                    fontFace = {
+                        type = "select",
+                        name = "Font Face",
+                        width = "full",
+                        order = 4,
+                        dialogControl = LSM and "LSM30_Font" or nil,
+                        values = LSM and LSM:HashTable("font") or { ["Friz Quadrata TT"] = "Friz Quadrata TT" },
+                        disabled = function() return not db.style.font.enabled end,
+                        get = function() return db.style.font.face end,
+                        set = function(_, val)
+                            db.style.font.face = val
+                            ApplyChatFont()
+                        end,
+                    },
+                    fontSize = {
+                        type = "range",
+                        name = "Font Size",
+                        min = 6, max = 32, step = 1,
+                        width = "full",
+                        order = 5,
+                        disabled = function() return not db.style.font.enabled end,
+                        get = function() return db.style.font.size end,
+                        set = function(_, val)
+                            db.style.font.size = val
+                            ApplyChatFont()
+                        end,
+                    },
                 },
             },
         },
@@ -545,44 +672,43 @@ function Module:OnEnable()
 
     if db.history.enabled then
         self:SecureHook(ChatFrame1, "AddMessage", CaptureMessage)
+        ReplayHistory()
     end
 
     LoadFrameColorsFromWoW()
 
-    if db.style.flatTabs then
-        StyleAllTabs()
-        self:SecureHook("FCF_OpenNewWindow", function()
-            C_Timer.After(0.1, StyleAllTabs)
-        end)
-        if FCF_SetWindowColor then
-            self:SecureHook("FCF_SetWindowColor", function(cf, r, g, b)
-                local n = GetChatFrameIndex(cf)
-                if n then
-                    frameColors[n] = frameColors[n] or {}
-                    frameColors[n].r, frameColors[n].g, frameColors[n].b = r, g, b
-                    SyncFrameColor(cf)
-                end
-            end)
-        end
-        if FCF_SetWindowAlpha then
-            self:SecureHook("FCF_SetWindowAlpha", function(cf, a)
-                local n = GetChatFrameIndex(cf)
-                if n then
-                    frameColors[n] = frameColors[n] or {}
-                    frameColors[n].a = a
-                    SyncFrameColor(cf)
-                end
-            end)
-        end
-        for i = 1, NUM_CHAT_WINDOWS do
-            local tab = _G["ChatFrame" .. i .. "Tab"]
-            if tab then
-                tab:HookScript("OnUpdate", function(self)
-                    local cf = _G["ChatFrame" .. self:GetID()]
-                    local target = (cf and cf == SELECTED_CHAT_FRAME) and 1 or 0.85
-                    if self:GetAlpha() ~= target then self:SetAlpha(target) end
-                end)
+    StyleAllTabs()
+    self:SecureHook("FCF_OpenNewWindow", function()
+        C_Timer.After(0.1, StyleAllTabs)
+    end)
+    if FCF_SetWindowColor then
+        self:SecureHook("FCF_SetWindowColor", function(cf, r, g, b)
+            local n = GetChatFrameIndex(cf)
+            if n then
+                frameColors[n] = frameColors[n] or {}
+                frameColors[n].r, frameColors[n].g, frameColors[n].b = r, g, b
+                SyncFrameColor(cf)
             end
+        end)
+    end
+    if FCF_SetWindowAlpha then
+        self:SecureHook("FCF_SetWindowAlpha", function(cf, a)
+            local n = GetChatFrameIndex(cf)
+            if n then
+                frameColors[n] = frameColors[n] or {}
+                frameColors[n].a = a
+                SyncFrameColor(cf)
+            end
+        end)
+    end
+    for i = 1, NUM_CHAT_WINDOWS do
+        local tab = _G["ChatFrame" .. i .. "Tab"]
+        if tab then
+            tab:HookScript("OnUpdate", function(self)
+                local cf = _G["ChatFrame" .. self:GetID()]
+                local target = (cf and cf == SELECTED_CHAT_FRAME) and 1 or 0.85
+                if self:GetAlpha() ~= target then self:SetAlpha(target) end
+            end)
         end
     end
 
@@ -595,17 +721,13 @@ function Module:OnEnable()
         if editBox then StyleEditBox(editBox) end
     end
 
+    ApplyChatFont()
     CreateCopyButton()
     RepositionQuickJoinButton()
     StyleChatFrame(ChatFrame1)
 
     self:RegisterEvent("PLAYER_ENTERING_WORLD", function(_, _, isLogin, isReload)
-        if isLogin or isReload then
-            C_Timer.After(1, ReplayHistory)
-        end
-        if db.style.flatTabs then
-            C_Timer.After(0.5, StyleAllTabs)
-        end
+        C_Timer.After(0.5, StyleAllTabs)
     end)
 end
 

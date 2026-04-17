@@ -69,9 +69,18 @@ local defaults = {
                 enabled = true,
                 lines = 128,
             },
+            copyWindow = {
+                width = 500,
+                height = 400,
+            },
             style = {
                 flatTabs = true,
                 alwaysShowEditBox = true,
+                font = {
+                    enabled = false,
+                    face = "Friz Quadrata TT",
+                    size = 12,
+                },
             },
         },
         cursor = {
