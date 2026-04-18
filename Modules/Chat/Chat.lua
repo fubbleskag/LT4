@@ -8,6 +8,7 @@ local db, chatHistory
 local copyFrame, buttonBar
 local styledTabs, styledEditBoxes = {}, {}
 local isReplaying = false
+local historyReplayed = false
 local originalChatFont = nil
 
 local FLAT_BG = { 0, 0, 0, 0.596 }
@@ -665,6 +666,12 @@ function Module:OnInitialize()
 
     if not LT4:GetModuleEnabled(self:GetName()) then
         self:SetEnabledState(false)
+        return
+    end
+
+    if db.history.enabled then
+        historyReplayed = true
+        ReplayHistory()
     end
 end
 
