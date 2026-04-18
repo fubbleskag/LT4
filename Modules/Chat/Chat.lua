@@ -674,7 +674,6 @@ end
 -- ============================================================
 
 local function ApplyChatFont()
-    if not Module:IsEnabled() then return end
     local fontCfg = db.style.font
     local path, size, flags = ChatFontNormal:GetFont()
 
@@ -682,8 +681,10 @@ local function ApplyChatFont()
         originalChatFont = { path = path, size = size, flags = flags or "" }
     end
 
+    local moduleOn = Module:IsEnabled()
+
     local newPath, newSize, newFlags
-    if fontCfg and fontCfg.enabled then
+    if moduleOn and fontCfg and fontCfg.enabled then
         newPath  = (fontCfg.face and LSM and LSM:Fetch("font", fontCfg.face)) or originalChatFont.path
         newSize  = fontCfg.size or originalChatFont.size
         newFlags = originalChatFont.flags
@@ -927,6 +928,7 @@ function Module:OnDisable()
     if flatStyleActive then
         self:DisableFlatStyle()
     end
+    ApplyChatFont()
     self:UnhookAll()
     self:UnregisterAllEvents()
 end
