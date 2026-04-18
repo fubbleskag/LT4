@@ -680,62 +680,64 @@ function Module:OnEnable()
 
     if db.history.enabled then
         self:SecureHook(ChatFrame1, "AddMessage", CaptureMessage)
-        ReplayHistory()
     end
 
     LoadFrameColorsFromWoW()
 
-    StyleAllTabs()
-    self:SecureHook("FCF_OpenNewWindow", function()
-        C_Timer.After(0.1, StyleAllTabs)
-    end)
-    if FCF_SetWindowColor then
-        self:SecureHook("FCF_SetWindowColor", function(cf, r, g, b)
-            local n = GetChatFrameIndex(cf)
-            if n then
-                frameColors[n] = frameColors[n] or {}
-                frameColors[n].r, frameColors[n].g, frameColors[n].b = r, g, b
-                SyncFrameColor(cf)
-            end
+    if db.style.flatTabs then
+        StyleAllTabs()
+        self:SecureHook("FCF_OpenNewWindow", function()
+            C_Timer.After(0.1, StyleAllTabs)
         end)
-    end
-    if FCF_SetWindowAlpha then
-        self:SecureHook("FCF_SetWindowAlpha", function(cf, a)
-            local n = GetChatFrameIndex(cf)
-            if n then
-                frameColors[n] = frameColors[n] or {}
-                frameColors[n].a = a
-                SyncFrameColor(cf)
-            end
-        end)
-    end
-    for i = 1, NUM_CHAT_WINDOWS do
-        local tab = _G["ChatFrame" .. i .. "Tab"]
-        if tab then
-            tab:HookScript("OnUpdate", function(self)
-                local cf = _G["ChatFrame" .. self:GetID()]
-                local target = (cf and cf == SELECTED_CHAT_FRAME) and 1 or 0.85
-                if self:GetAlpha() ~= target then self:SetAlpha(target) end
+        if FCF_SetWindowColor then
+            self:SecureHook("FCF_SetWindowColor", function(cf, r, g, b)
+                local n = GetChatFrameIndex(cf)
+                if n then
+                    frameColors[n] = frameColors[n] or {}
+                    frameColors[n].r, frameColors[n].g, frameColors[n].b = r, g, b
+                    SyncFrameColor(cf)
+                end
             end)
         end
+        if FCF_SetWindowAlpha then
+            self:SecureHook("FCF_SetWindowAlpha", function(cf, a)
+                local n = GetChatFrameIndex(cf)
+                if n then
+                    frameColors[n] = frameColors[n] or {}
+                    frameColors[n].a = a
+                    SyncFrameColor(cf)
+                end
+            end)
+        end
+        for i = 1, NUM_CHAT_WINDOWS do
+            local tab = _G["ChatFrame" .. i .. "Tab"]
+            if tab then
+                tab:HookScript("OnUpdate", function(self)
+                    local cf = _G["ChatFrame" .. self:GetID()]
+                    local target = (cf and cf == SELECTED_CHAT_FRAME) and 1 or 0.85
+                    if self:GetAlpha() ~= target then self:SetAlpha(target) end
+                end)
+            end
+        end
+        for i = 1, NUM_CHAT_WINDOWS do
+            local editBox = _G["ChatFrame" .. i .. "EditBox"]
+            if editBox then StyleEditBox(editBox) end
+        end
+        StyleChatFrame(ChatFrame1)
     end
 
     if db.style.alwaysShowEditBox then
         SetupAlwaysVisibleEditBox()
     end
 
-    for i = 1, NUM_CHAT_WINDOWS do
-        local editBox = _G["ChatFrame" .. i .. "EditBox"]
-        if editBox then StyleEditBox(editBox) end
-    end
-
     ApplyChatFont()
     CreateCopyButton()
     RepositionQuickJoinButton()
-    StyleChatFrame(ChatFrame1)
 
-    self:RegisterEvent("PLAYER_ENTERING_WORLD", function(_, _, isLogin, isReload)
-        C_Timer.After(0.5, StyleAllTabs)
+    self:RegisterEvent("PLAYER_ENTERING_WORLD", function()
+        if db.style.flatTabs then
+            C_Timer.After(0.5, StyleAllTabs)
+        end
     end)
 end
 
