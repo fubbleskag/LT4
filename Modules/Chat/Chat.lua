@@ -2,11 +2,12 @@ local LT4 = LibStub("AceAddon-3.0"):GetAddon("LT4")
 local Module = LT4:NewModule("Chat", "AceEvent-3.0", "AceHook-3.0")
 local LSM = LibStub("LibSharedMedia-3.0", true)
 Module.description = "Chat enhancements: history persistence, copy support, and flat styling."
-Module.requiresReload = true
 
 local db, chatHistory
 local copyFrame, buttonBar
 local styledTabs, styledEditBoxes = {}, {}
+local styledChatFrames = {}
+local flatStyleActive = false
 local isReplaying = false
 local historyReplayed = false
 local originalChatFont = nil
@@ -55,6 +56,10 @@ end
 local function RefreshDB()
     db = LT4.db.profile.chat
     chatHistory = LT4.db.global.chatHistory
+    if db.style.flatTabs ~= nil then
+        db.style.flatStyle = db.style.flatTabs
+        db.style.flatTabs = nil
+    end
 end
 
 local function GetCharKey()
@@ -243,10 +248,11 @@ local function ShowCopyFrame(chatFrame)
 end
 
 -- ============================================================
--- Style: Flat Tabs
+-- Style: Flat Style
 -- ============================================================
 
 local function UpdateTabBackground(tab)
+    if not flatStyleActive then return end
     if not tab or not tab.flatBg then return end
     local cf = _G["ChatFrame" .. tab:GetID()]
     local selected = cf and cf == SELECTED_CHAT_FRAME
@@ -267,6 +273,7 @@ local function UpdateAllTabBackgrounds()
 end
 
 local function SyncEditBoxToSelected()
+    if not flatStyleActive then return end
     local cf = SELECTED_CHAT_FRAME or ChatFrame1
     local editBox = ChatFrame1EditBox
     if editBox and editBox.flatBg then
@@ -274,27 +281,101 @@ local function SyncEditBoxToSelected()
     end
 end
 
-local function StyleTab(tab)
-    if not tab or styledTabs[tab] then return end
+local TAB_SUFFIXES = {
+    "Left", "Middle", "Right",
+    "SelectedLeft", "SelectedMiddle", "SelectedRight",
+    "HighlightLeft", "HighlightMiddle", "HighlightRight",
+    "ActiveLeft", "ActiveMiddle", "ActiveRight",
+}
 
+local function IsTabFrame(f)
+    if not f then return false end
+    local n = f:GetName() or ""
+    return n:match("^ChatFrame%d+Tab$") ~= nil
+end
+
+local function CaptureTabTextures(tab)
+    if tab._lt4Textures then return end
+    local list = {}
     for _, region in pairs({ tab:GetRegions() }) do
         if region:IsObjectType("Texture") then
-            region:SetAlpha(0)
+            list[#list + 1] = { tex = region, alpha = region:GetAlpha() }
         end
     end
-
     local name = tab:GetName()
     if name then
-        for _, suffix in ipairs({
-            "Left", "Middle", "Right",
-            "SelectedLeft", "SelectedMiddle", "SelectedRight",
-            "HighlightLeft", "HighlightMiddle", "HighlightRight",
-            "ActiveLeft", "ActiveMiddle", "ActiveRight",
-        }) do
+        for _, suffix in ipairs(TAB_SUFFIXES) do
             local tex = _G[name .. suffix]
-            if tex and tex.SetAlpha then tex:SetAlpha(0) end
+            if tex and tex.SetAlpha then
+                list[#list + 1] = { tex = tex, alpha = tex:GetAlpha() }
+            end
         end
     end
+    tab._lt4Textures = list
+end
+
+local function HideTabTextures(tab)
+    if not tab._lt4Textures then return end
+    for _, entry in ipairs(tab._lt4Textures) do
+        entry.tex:SetAlpha(0)
+    end
+end
+
+local function RestoreTabTextures(tab)
+    if not tab._lt4Textures then return end
+    for _, entry in ipairs(tab._lt4Textures) do
+        entry.tex:SetAlpha(entry.alpha)
+    end
+end
+
+local function CaptureTabGeometry(tab)
+    if tab._lt4Points then return end
+    local points = {}
+    for i = 1, tab:GetNumPoints() do
+        local p, r, rp, x, y = tab:GetPoint(i)
+        points[#points + 1] = { p, r, rp, x, y }
+    end
+    tab._lt4Points = points
+    tab._lt4Height = tab:GetHeight()
+end
+
+local function ApplyTabOffset(tab)
+    tab._lt4Offsetting = true
+    for i = 1, tab:GetNumPoints() do
+        local p, r, rp, x, y = tab:GetPoint(i)
+        if p and not IsTabFrame(r) then
+            tab:SetPoint(p, r, rp, x, (y or 0) - 2)
+        end
+    end
+    tab._lt4Offsetting = false
+    local h = tab:GetHeight()
+    if h and h > 2 then tab:SetHeight(h - 2) end
+end
+
+local function RestoreTabGeometry(tab)
+    if not tab._lt4Points then return end
+    tab._lt4Offsetting = true
+    tab:ClearAllPoints()
+    for _, pt in ipairs(tab._lt4Points) do
+        tab:SetPoint(pt[1], pt[2], pt[3], pt[4], pt[5])
+    end
+    tab._lt4Offsetting = false
+    if tab._lt4Height then tab:SetHeight(tab._lt4Height) end
+end
+
+local function ApplyFlatTab(tab)
+    if not tab then return end
+    if styledTabs[tab] then
+        CaptureTabGeometry(tab)
+        HideTabTextures(tab)
+        if tab.flatBg then tab.flatBg:Show() end
+        ApplyTabOffset(tab)
+        return
+    end
+
+    CaptureTabTextures(tab)
+    CaptureTabGeometry(tab)
+    HideTabTextures(tab)
 
     local bg = tab:CreateTexture(nil, "BACKGROUND", nil, -8)
     bg:SetPoint("TOPLEFT", 2, -4)
@@ -303,47 +384,45 @@ local function StyleTab(tab)
     tab.flatBg = bg
 
     tab:HookScript("OnEnter", function(self)
+        if not flatStyleActive then return end
         if self.flatBg then
             self.flatBg:SetColorTexture(0.2, 0.2, 0.2, 0.85)
         end
     end)
     tab:HookScript("OnLeave", function(self)
+        if not flatStyleActive then return end
         UpdateTabBackground(self)
     end)
     tab:HookScript("OnClick", function()
+        if not flatStyleActive then return end
         C_Timer.After(0, UpdateAllTabBackgrounds)
         C_Timer.After(0, SyncEditBoxToSelected)
     end)
+    tab:HookScript("OnUpdate", function(self)
+        if not flatStyleActive then return end
+        local cf = _G["ChatFrame" .. self:GetID()]
+        local target = (cf and cf == SELECTED_CHAT_FRAME) and 1 or 0.85
+        if self:GetAlpha() ~= target then self:SetAlpha(target) end
+    end)
 
-    local function IsTabFrame(f)
-        if not f then return false end
-        local n = f:GetName() or ""
-        return n:match("^ChatFrame%d+Tab$") ~= nil
-    end
+    hooksecurefunc(tab, "SetPoint", function(self, p, r, rp, x, y)
+        if not flatStyleActive then return end
+        if self._lt4Offsetting or IsTabFrame(r) then return end
+        self._lt4Offsetting = true
+        self:SetPoint(p, r, rp, x, (y or 0) - 2)
+        self._lt4Offsetting = false
+    end)
 
-    if db.style.flatTabs then
-        local offsetting = false
-        hooksecurefunc(tab, "SetPoint", function(self, p, r, rp, x, y)
-            if offsetting or IsTabFrame(r) then return end
-            offsetting = true
-            self:SetPoint(p, r, rp, x, (y or 0) - 2)
-            offsetting = false
-        end)
-
-        for i = 1, tab:GetNumPoints() do
-            local p, r, rp, x, y = tab:GetPoint(i)
-            if p and not IsTabFrame(r) then
-                offsetting = true
-                tab:SetPoint(p, r, rp, x, (y or 0) - 2)
-                offsetting = false
-            end
-        end
-
-        local h = tab:GetHeight()
-        if h and h > 2 then tab:SetHeight(h - 2) end
-    end
-
+    ApplyTabOffset(tab)
     styledTabs[tab] = true
+end
+
+local function RemoveFlatTab(tab)
+    if not tab or not styledTabs[tab] then return end
+    RestoreTabTextures(tab)
+    if tab.flatBg then tab.flatBg:Hide() end
+    RestoreTabGeometry(tab)
+    tab:SetAlpha(1)
 end
 
 local function SyncFrameColor(cf)
@@ -362,35 +441,78 @@ end
 local function StyleAllTabs()
     for i = 1, NUM_CHAT_WINDOWS do
         local tab = _G["ChatFrame" .. i .. "Tab"]
-        if tab then StyleTab(tab) end
+        if tab then ApplyFlatTab(tab) end
     end
     UpdateAllTabBackgrounds()
     SyncEditBoxToSelected()
+end
+
+local function UnstyleAllTabs()
+    for i = 1, NUM_CHAT_WINDOWS do
+        local tab = _G["ChatFrame" .. i .. "Tab"]
+        if tab then RemoveFlatTab(tab) end
+    end
 end
 
 -- ============================================================
 -- Style: Edit Box
 -- ============================================================
 
-local function StyleEditBox(editBox)
-    if not editBox or styledEditBoxes[editBox] then return end
+local EDITBOX_SUFFIXES = { "Left", "Right", "Mid", "FocusLeft", "FocusRight", "FocusMid" }
 
+local function CaptureEditBoxTextures(editBox)
+    if editBox._lt4Textures then return end
+    local list = {}
     local name = editBox:GetName()
     if name then
-        for _, suffix in ipairs({ "Left", "Right", "Mid", "FocusLeft", "FocusRight", "FocusMid" }) do
+        for _, suffix in ipairs(EDITBOX_SUFFIXES) do
             local tex = _G[name .. suffix]
-            if tex then tex:SetAlpha(0) end
+            if tex then
+                list[#list + 1] = { tex = tex, alpha = tex:GetAlpha() }
+            end
         end
     end
-
     for _, region in pairs({ editBox:GetRegions() }) do
         if region:IsObjectType("Texture") then
             local layer = region:GetDrawLayer()
             if layer == "BACKGROUND" or layer == "BORDER" then
-                region:SetAlpha(0)
+                list[#list + 1] = { tex = region, alpha = region:GetAlpha() }
             end
         end
     end
+    editBox._lt4Textures = list
+end
+
+local function OffsetChatFrame1EditBox(editBox)
+    local point, rel, relPoint, x, y = editBox:GetPoint(1)
+    if point then
+        editBox:SetPoint(point, rel, relPoint, x - 27, y - 4)
+    end
+    for i = 1, editBox:GetNumPoints() do
+        local p, r, rp, px, py = editBox:GetPoint(i)
+        if p == "RIGHT" or p == "TOPRIGHT" or p == "BOTTOMRIGHT" then
+            editBox:SetPoint(p, r, rp, px - 1, py)
+            break
+        end
+    end
+end
+
+local function ApplyFlatEditBox(editBox)
+    if not editBox then return end
+    if styledEditBoxes[editBox] then
+        if editBox._lt4Textures then
+            for _, e in ipairs(editBox._lt4Textures) do e.tex:SetAlpha(0) end
+        end
+        if editBox.flatBg then editBox.flatBg:Show() end
+        if editBox.flatTopLine then editBox.flatTopLine:Show() end
+        if editBox == ChatFrame1EditBox and editBox._lt4Points then
+            OffsetChatFrame1EditBox(editBox)
+        end
+        return
+    end
+
+    CaptureEditBoxTextures(editBox)
+    for _, e in ipairs(editBox._lt4Textures) do e.tex:SetAlpha(0) end
 
     if editBox.SetBackdropBorderColor then
         editBox:SetBackdropBorderColor(0, 0, 0, 0)
@@ -406,42 +528,70 @@ local function StyleEditBox(editBox)
     topLine:SetPoint("TOPLEFT", editBox, "TOPLEFT", 0, 0)
     topLine:SetPoint("TOPRIGHT", editBox, "TOPRIGHT", 0, 0)
     topLine:SetColorTexture(0, 0, 0, 0.8)
+    editBox.flatTopLine = topLine
 
     if editBox == ChatFrame1EditBox then
-        local point, rel, relPoint, x, y = editBox:GetPoint(1)
-        if point then
-            editBox:SetPoint(point, rel, relPoint, x - 27, y - 4)
+        local points = {}
+        for i = 1, editBox:GetNumPoints() do
+            local p, r, rp, x, y = editBox:GetPoint(i)
+            points[#points + 1] = { p, r, rp, x, y }
         end
-        local numPoints = editBox:GetNumPoints()
-        for i = 1, numPoints do
-            local p, r, rp, px, py = editBox:GetPoint(i)
-            if p == "RIGHT" or p == "TOPRIGHT" or p == "BOTTOMRIGHT" then
-                editBox:SetPoint(p, r, rp, px - 1, py)
-                break
-            end
-        end
+        editBox._lt4Points = points
+        OffsetChatFrame1EditBox(editBox)
     end
 
     styledEditBoxes[editBox] = true
 end
 
-local function StyleChatFrame(cf)
-    if not cf then return end
-    for _, region in pairs({ cf:GetRegions() }) do
-        if region:IsObjectType("Texture") then
-            local layer = region:GetDrawLayer()
-            if layer == "BORDER" then
-                region:SetAlpha(0)
-            end
+local function RemoveFlatEditBox(editBox)
+    if not editBox or not styledEditBoxes[editBox] then return end
+    if editBox._lt4Textures then
+        for _, e in ipairs(editBox._lt4Textures) do e.tex:SetAlpha(e.alpha) end
+    end
+    if editBox.flatBg then editBox.flatBg:Hide() end
+    if editBox.flatTopLine then editBox.flatTopLine:Hide() end
+    if editBox._lt4Points then
+        editBox:ClearAllPoints()
+        for _, pt in ipairs(editBox._lt4Points) do
+            editBox:SetPoint(pt[1], pt[2], pt[3], pt[4], pt[5])
         end
     end
+end
+
+local function ApplyFlatChatFrame(cf)
+    if not cf then return end
+    if styledChatFrames[cf] then
+        if cf._lt4Textures then
+            for _, e in ipairs(cf._lt4Textures) do e.tex:SetAlpha(0) end
+        end
+        return
+    end
+
+    local list = {}
+    for _, region in pairs({ cf:GetRegions() }) do
+        if region:IsObjectType("Texture") and region:GetDrawLayer() == "BORDER" then
+            list[#list + 1] = { tex = region, alpha = region:GetAlpha() }
+            region:SetAlpha(0)
+        end
+    end
+    cf._lt4Textures = list
+
     if cf.SetBackdropBorderColor then
         cf:SetBackdropBorderColor(0, 0, 0, 0)
     end
     if cf.SetBackdropColor then
         hooksecurefunc(cf, "SetBackdropColor", function(self)
+            if not flatStyleActive then return end
             SyncFrameColor(self)
         end)
+    end
+    styledChatFrames[cf] = true
+end
+
+local function RemoveFlatChatFrame(cf)
+    if not cf or not styledChatFrames[cf] then return end
+    if cf._lt4Textures then
+        for _, e in ipairs(cf._lt4Textures) do e.tex:SetAlpha(e.alpha) end
     end
 end
 
@@ -551,6 +701,61 @@ local function ApplyChatFont()
 end
 
 -- ============================================================
+-- Flat Style: Enable / Disable
+-- ============================================================
+
+function Module:EnableFlatStyle()
+    flatStyleActive = true
+    LoadFrameColorsFromWoW()
+    StyleAllTabs()
+    for i = 1, NUM_CHAT_WINDOWS do
+        local editBox = _G["ChatFrame" .. i .. "EditBox"]
+        if editBox then ApplyFlatEditBox(editBox) end
+    end
+    ApplyFlatChatFrame(ChatFrame1)
+
+    if not self:IsHooked("FCF_OpenNewWindow") then
+        self:SecureHook("FCF_OpenNewWindow", function()
+            if not flatStyleActive then return end
+            C_Timer.After(0.1, StyleAllTabs)
+        end)
+    end
+    if FCF_SetWindowColor and not self:IsHooked("FCF_SetWindowColor") then
+        self:SecureHook("FCF_SetWindowColor", function(cf, r, g, b)
+            local n = GetChatFrameIndex(cf)
+            if n then
+                frameColors[n] = frameColors[n] or {}
+                frameColors[n].r, frameColors[n].g, frameColors[n].b = r, g, b
+                if flatStyleActive then SyncFrameColor(cf) end
+            end
+        end)
+    end
+    if FCF_SetWindowAlpha and not self:IsHooked("FCF_SetWindowAlpha") then
+        self:SecureHook("FCF_SetWindowAlpha", function(cf, a)
+            local n = GetChatFrameIndex(cf)
+            if n then
+                frameColors[n] = frameColors[n] or {}
+                frameColors[n].a = a
+                if flatStyleActive then SyncFrameColor(cf) end
+            end
+        end)
+    end
+end
+
+function Module:DisableFlatStyle()
+    flatStyleActive = false
+    UnstyleAllTabs()
+    for i = 1, NUM_CHAT_WINDOWS do
+        local editBox = _G["ChatFrame" .. i .. "EditBox"]
+        if editBox then RemoveFlatEditBox(editBox) end
+    end
+    RemoveFlatChatFrame(ChatFrame1)
+    if self:IsHooked("FCF_OpenNewWindow") then self:Unhook("FCF_OpenNewWindow") end
+    if self:IsHooked("FCF_SetWindowColor") then self:Unhook("FCF_SetWindowColor") end
+    if self:IsHooked("FCF_SetWindowAlpha") then self:Unhook("FCF_SetWindowAlpha") end
+end
+
+-- ============================================================
 -- Lifecycle
 -- ============================================================
 
@@ -602,16 +807,20 @@ function Module:OnInitialize()
                 inline = true,
                 order = 2,
                 args = {
-                    flatTabs = {
+                    flatStyle = {
                         type = "toggle",
-                        name = "Flat Tabs",
-                        desc = "Replace default tab textures with a flat style.",
+                        name = "Flat Style",
+                        desc = "Replace default tab and edit box textures with a flat style.",
                         width = "full",
                         order = 1,
-                        get = function() return db.style.flatTabs end,
+                        get = function() return db.style.flatStyle end,
                         set = function(_, val)
-                            db.style.flatTabs = val
-                            StaticPopup_Show("LT4_RELOAD_UI")
+                            db.style.flatStyle = val
+                            if val then
+                                Module:EnableFlatStyle()
+                            else
+                                Module:DisableFlatStyle()
+                            end
                         end,
                     },
                     alwaysShowEditBox = {
@@ -695,46 +904,8 @@ function Module:OnEnable()
 
     LoadFrameColorsFromWoW()
 
-    if db.style.flatTabs then
-        StyleAllTabs()
-        self:SecureHook("FCF_OpenNewWindow", function()
-            C_Timer.After(0.1, StyleAllTabs)
-        end)
-        if FCF_SetWindowColor then
-            self:SecureHook("FCF_SetWindowColor", function(cf, r, g, b)
-                local n = GetChatFrameIndex(cf)
-                if n then
-                    frameColors[n] = frameColors[n] or {}
-                    frameColors[n].r, frameColors[n].g, frameColors[n].b = r, g, b
-                    SyncFrameColor(cf)
-                end
-            end)
-        end
-        if FCF_SetWindowAlpha then
-            self:SecureHook("FCF_SetWindowAlpha", function(cf, a)
-                local n = GetChatFrameIndex(cf)
-                if n then
-                    frameColors[n] = frameColors[n] or {}
-                    frameColors[n].a = a
-                    SyncFrameColor(cf)
-                end
-            end)
-        end
-        for i = 1, NUM_CHAT_WINDOWS do
-            local tab = _G["ChatFrame" .. i .. "Tab"]
-            if tab then
-                tab:HookScript("OnUpdate", function(self)
-                    local cf = _G["ChatFrame" .. self:GetID()]
-                    local target = (cf and cf == SELECTED_CHAT_FRAME) and 1 or 0.85
-                    if self:GetAlpha() ~= target then self:SetAlpha(target) end
-                end)
-            end
-        end
-        for i = 1, NUM_CHAT_WINDOWS do
-            local editBox = _G["ChatFrame" .. i .. "EditBox"]
-            if editBox then StyleEditBox(editBox) end
-        end
-        StyleChatFrame(ChatFrame1)
+    if db.style.flatStyle then
+        self:EnableFlatStyle()
     end
 
     if db.style.alwaysShowEditBox then
@@ -746,13 +917,16 @@ function Module:OnEnable()
     RepositionQuickJoinButton()
 
     self:RegisterEvent("PLAYER_ENTERING_WORLD", function()
-        if db.style.flatTabs then
+        if flatStyleActive then
             C_Timer.After(0.5, StyleAllTabs)
         end
     end)
 end
 
 function Module:OnDisable()
+    if flatStyleActive then
+        self:DisableFlatStyle()
+    end
     self:UnhookAll()
     self:UnregisterAllEvents()
 end

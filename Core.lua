@@ -74,7 +74,7 @@ local defaults = {
                 height = 400,
             },
             style = {
-                flatTabs = true,
+                flatStyle = true,
                 alwaysShowEditBox = true,
                 font = {
                     enabled = false,
