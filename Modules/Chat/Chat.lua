@@ -445,23 +445,29 @@ local function StyleChatFrame(cf)
     end
 end
 
+local alwaysShowSetup = false
+
 local function SetupAlwaysVisibleEditBox()
     local editBox = ChatFrame1EditBox
     if not editBox then return end
 
-    -- Hook Hide directly on the instance to catch all code paths
-    hooksecurefunc(editBox, "Hide", function(self)
-        if db.style.alwaysShowEditBox and not InCombatLockdown() then
-            self:Show()
-        end
-    end)
+    if not alwaysShowSetup then
+        -- Hook Hide directly on the instance to catch all code paths
+        hooksecurefunc(editBox, "Hide", function(self)
+            if db.style.alwaysShowEditBox and not InCombatLockdown() then
+                self:Show()
+            end
+        end)
 
-    -- Also hook DeactivateChat to clear focus without hiding
-    hooksecurefunc("ChatEdit_DeactivateChat", function(eb)
-        if eb == ChatFrame1EditBox and db.style.alwaysShowEditBox and not InCombatLockdown() then
-            eb:Show()
-        end
-    end)
+        -- Also hook DeactivateChat to clear focus without hiding
+        hooksecurefunc("ChatEdit_DeactivateChat", function(eb)
+            if eb == ChatFrame1EditBox and db.style.alwaysShowEditBox and not InCombatLockdown() then
+                eb:Show()
+            end
+        end)
+
+        alwaysShowSetup = true
+    end
 
     editBox:Show()
 end
@@ -617,7 +623,12 @@ function Module:OnInitialize()
                         get = function() return db.style.alwaysShowEditBox end,
                         set = function(_, val)
                             db.style.alwaysShowEditBox = val
-                            StaticPopup_Show("LT4_RELOAD_UI")
+                            if val then
+                                SetupAlwaysVisibleEditBox()
+                            else
+                                local editBox = ChatFrame1EditBox
+                                if editBox then editBox:Hide() end
+                            end
                         end,
                     },
                     fontEnabled = {
