@@ -517,6 +517,7 @@ end
 -- ============================================================
 
 local function ApplyChatFont()
+    if not Module:IsEnabled() then return end
     local fontCfg = db.style.font
     local path, size, flags = ChatFontNormal:GetFont()
 
