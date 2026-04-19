@@ -23,7 +23,7 @@ local FRAMES = {
     { name = "MerchantFrame" },
     { name = "AuctionHouseFrame" },
     { name = "MailFrame" },
-    { name = "SettingsPanel",     handle = "NineSlice.TopEdge" },
+    { name = "SettingsPanel",     handle = "NineSlice.Text" },
     { name = "BankFrame" },
     { name = "ContainerFrameCombinedBags" },
     { name = "ContainerFrame6" },
