@@ -454,16 +454,21 @@ function Module:OnInitialize()
                         get = function() return qol.autoConfirmDelete end,
                         set = function(_, val) qol.autoConfirmDelete = val end,
                     },
-                    hideTalkingHead = {
-                        type = "toggle",
-                        name = "Hide Talking Head",
-                        desc = "Completely hides the TalkingHeadFrame (NPC dialog pop-ups). Re-enabling requires a /reload.",
-                        width = "full",
+                    talkingHead = {
+                        type = "select",
+                        name = "Talking Head",
+                        desc = "Control NPC dialog pop-ups. Switching to a less restrictive mode requires a /reload.",
                         order = 4,
-                        get = function() return qol.hideTalkingHead end,
+                        values = {
+                            off = "Normal",
+                            visual = "Hide",
+                            full = "Mute + Hide",
+                        },
+                        sorting = { "off", "visual", "full" },
+                        get = function() return qol.talkingHead end,
                         set = function(_, val)
-                            qol.hideTalkingHead = val
-                            if val then self:ApplyHideTalkingHead() end
+                            qol.talkingHead = val
+                            self:ApplyHideTalkingHead()
                         end,
                     },
                 },
@@ -947,11 +952,21 @@ function Module:MAIL_CLOSED()
 end
 
 function Module:ApplyHideTalkingHead()
-    if not LT4:GetModuleEnabled("Quality of Life") or not qol.hideTalkingHead then return end
+    if not LT4:GetModuleEnabled("Quality of Life") then return end
+    local mode = qol.talkingHead
+    if mode == nil or mode == "off" then return end
     local f = TalkingHeadFrame
     if f then
-        f:UnregisterAllEvents()
-        if f:IsShown() then f:Hide() end
+        if mode == "full" then
+            f:UnregisterAllEvents()
+            if f:IsShown() then f:Hide() end
+        elseif mode == "visual" then
+            if not self.talkingHeadVisualHooked then
+                self.talkingHeadVisualHooked = true
+                f:HookScript("OnShow", function(frame) frame:Hide() end)
+            end
+            if f:IsShown() then f:Hide() end
+        end
         return
     end
     if not self.talkingHeadWatcher then
