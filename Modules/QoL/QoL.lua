@@ -454,6 +454,18 @@ function Module:OnInitialize()
                         get = function() return qol.autoConfirmDelete end,
                         set = function(_, val) qol.autoConfirmDelete = val end,
                     },
+                    hideTalkingHead = {
+                        type = "toggle",
+                        name = "Hide Talking Head",
+                        desc = "Completely hides the TalkingHeadFrame (NPC dialog pop-ups). Re-enabling requires a /reload.",
+                        width = "full",
+                        order = 4,
+                        get = function() return qol.hideTalkingHead end,
+                        set = function(_, val)
+                            qol.hideTalkingHead = val
+                            if val then self:ApplyHideTalkingHead() end
+                        end,
+                    },
                 },
             },
         },
@@ -934,9 +946,28 @@ function Module:MAIL_CLOSED()
     end
 end
 
+function Module:ApplyHideTalkingHead()
+    if not LT4:GetModuleEnabled("Quality of Life") or not qol.hideTalkingHead then return end
+    local f = TalkingHeadFrame
+    if f then
+        f:UnregisterAllEvents()
+        if f:IsShown() then f:Hide() end
+        return
+    end
+    if not self.talkingHeadWatcher then
+        self.talkingHeadWatcher = true
+        self:RegisterEvent("ADDON_LOADED", function(_, name)
+            if name == "Blizzard_TalkingHeadUI" then
+                self:ApplyHideTalkingHead()
+            end
+        end)
+    end
+end
+
 function Module:OnEnable()
     playerGUID = UnitGUID("player")
     self:RegisterCurrentAlt()
+    self:ApplyHideTalkingHead()
     self:RegisterEvent("MERCHANT_SHOW")
     self:RegisterEvent("MAIL_SHOW")
     self:RegisterEvent("MAIL_CLOSED")

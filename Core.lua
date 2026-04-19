@@ -47,6 +47,7 @@ local defaults = {
             mailAlts = true,
             mailAltSort = "login",
             autoConfirmDelete = true,
+            hideTalkingHead = true,
             keystones = false,
             keystonesChannel = "BOTH",
             autoAcceptGroup = false,
