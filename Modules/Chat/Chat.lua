@@ -366,10 +366,8 @@ end
 local function ApplyFlatTab(tab)
     if not tab then return end
     if styledTabs[tab] then
-        CaptureTabGeometry(tab)
         HideTabTextures(tab)
         if tab.flatBg then tab.flatBg:Show() end
-        ApplyTabOffset(tab)
         return
     end
 
